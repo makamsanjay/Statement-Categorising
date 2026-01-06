@@ -24,7 +24,12 @@ const TransactionSchema = new mongoose.Schema({
   confidence: {
   type: Number,
   default: 0.8
+},
+userOverridden: {
+  type: Boolean,
+  default: false
 }
+
 }, { timestamps: true });
 
 module.exports = mongoose.model("Transaction", TransactionSchema);

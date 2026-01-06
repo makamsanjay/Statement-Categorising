@@ -15,10 +15,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-/**
- * GET /transactions
- * Fetch all transactions
- */
 router.get("/", async (req, res) => {
   try {
     const transactions = await Transaction.find().sort({ createdAt: -1 });
@@ -27,6 +23,61 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+router.get("/summary", async (req, res) => {
+  try {
+    const { from, to } = req.query;
+
+    const filter = {};
+    if (from && to) {
+      filter.date = {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      };
+    }
+
+    const txns = await Transaction.find(filter);
+
+    let income = 0;
+    let expense = 0;
+    const categories = {};
+
+    txns.forEach((t) => {
+      if (t.amount > 0) income += t.amount;
+      else expense += Math.abs(t.amount);
+
+      categories[t.category] =
+        (categories[t.category] || 0) + Math.abs(t.amount);
+    });
+
+    res.json({ income, expense, categories });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.put("/:id", async (req, res) => {
+  try {
+    const { category } = req.body;
+
+    const updated = await Transaction.findByIdAndUpdate(
+      req.params.id,
+      {
+        category,
+        categorySource: "user",
+        confidence: 1,
+        userOverridden: true
+      },
+      { new: true }
+    );
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 router.get("/summary", async (req, res) => {
   try {
