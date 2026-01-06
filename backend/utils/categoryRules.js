@@ -1,7 +1,7 @@
 module.exports = [
   {
     category: "Food & Dining",
-    keywords: ["restaurant", "zomato", "swiggy", "doordash", "ubereats", "starbucks", "mcdonald"]
+    keywords: ["restaurant", "zomato", "swiggy", "doordash", "ubereats",, "mcdonald"]
   },
   {
     category: "Groceries",

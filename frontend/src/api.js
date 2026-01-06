@@ -16,3 +16,8 @@ export const getTransactions = async () => {
   const res = await fetch(`${BASE_URL}/transactions`);
   return res.json();
 };
+
+export const fetchSummary = async () => {
+  const res = await fetch("http://localhost:5050/transactions/summary");
+  return res.json();
+};

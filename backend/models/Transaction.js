@@ -20,7 +20,11 @@ const TransactionSchema = new mongoose.Schema({
   taxEligible: {
     type: Boolean,
     default: false
-  }
+  },
+  confidence: {
+  type: Number,
+  default: 0.8
+}
 }, { timestamps: true });
 
 module.exports = mongoose.model("Transaction", TransactionSchema);
