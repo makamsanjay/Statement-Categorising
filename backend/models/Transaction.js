@@ -1,11 +1,26 @@
 const mongoose = require("mongoose");
 
 const TransactionSchema = new mongoose.Schema({
-  date: String,
-  description: String,
-  amount: Number,
-  category: String,
-  taxEligible: Boolean
-});
+  date: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  category: {
+    type: String,
+    default: "Uncategorized"
+  },
+  taxEligible: {
+    type: Boolean,
+    default: false
+  }
+}, { timestamps: true });
 
 module.exports = mongoose.model("Transaction", TransactionSchema);
