@@ -7,7 +7,7 @@ import {
   saveConfirmedTransactions
 } from "./api";
 
-import { Pie, Bar, Line } from "react-chartjs-2";
+import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
 
@@ -28,12 +28,6 @@ const CATEGORIES = [
 ];
 
 function App() {
-  const [chartType, setChartType] = useState("pie");
-  const [range, setRange] = useState("30d");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-
-
   const [file, setFile] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -41,81 +35,71 @@ function App() {
   const [preview, setPreview] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
 
+  const [editMode, setEditMode] = useState(false);
+  const [selectedTxns, setSelectedTxns] = useState([]);
+  const [bulkCategory, setBulkCategory] = useState("");
+
+  /* ===========================
+     LOAD DATA
+  ============================ */
   const fetchTransactions = async () => {
     const data = await getTransactions();
     setTransactions(data);
   };
 
-const resolveDateRange = () => {
-  if (range === "custom") {
-    if (!fromDate || !toDate) return null;
-
-    return {
-      from: new Date(fromDate).toISOString(),
-      to: new Date(toDate).toISOString()
-    };
-  }
-
-  const now = new Date();
-  let from;
-
-  if (range === "30d") {
-    from = new Date();
-    from.setDate(from.getDate() - 30);
-  } else if (range === "ytd") {
-    from = new Date(new Date().getFullYear(), 0, 1);
-  } else if (range === "1y") {
-    from = new Date();
-    from.setFullYear(from.getFullYear() - 1);
-  }
-
-  return {
-    from: from.toISOString(),
-    to: now.toISOString()
-  };
-};
-
-
   const loadSummary = async () => {
-  const rangeData = resolveDateRange();
-
-  if (!rangeData) {
-    return;
-  }
-
-  const { from, to } = rangeData;
-  const data = await fetchSummary(from, to);
-  setSummary(data);
-};
-
+    const data = await fetchSummary();
+    setSummary(data);
+  };
 
   useEffect(() => {
     fetchTransactions();
     loadSummary();
   }, []);
 
-  useEffect(() => {
-    loadSummary();
-  }, [range, fromDate, toDate, chartType]);
-
-
+  /* ===========================
+     UPLOAD
+  ============================ */
   const handleUpload = async () => {
     if (!file) return alert("Select a file");
 
+    const isPDF = file.type === "application/pdf";
+
     try {
-      const data = await previewUpload(file);
-      setPreview(data.map((t) => ({ ...t, selected: true })));
-      setShowPreview(true);
+      if (isPDF) {
+        const data = await previewUpload(file);
+        setPreview(data.map(t => ({ ...t, selected: true })));
+        setShowPreview(true);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await fetch("http://localhost:5050/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      setFile(null);
+      fetchTransactions();
+      loadSummary();
+      alert("File uploaded successfully");
+
     } catch (err) {
-      alert(err.message || "Preview failed");
+      alert(err.message || "Upload failed");
     }
   };
 
+  /* ===========================
+     PREVIEW CONFIRM
+  ============================ */
   const handleConfirm = async () => {
-    const selected = preview.filter((t) => t.selected);
+    const selected = preview.filter(t => t.selected);
     if (!selected.length) return alert("No transactions selected");
 
     await saveConfirmedTransactions(selected);
+
     setPreview([]);
     setShowPreview(false);
     setFile(null);
@@ -124,44 +108,106 @@ const resolveDateRange = () => {
     loadSummary();
   };
 
-  const chartData = summary
-    ? {
-        labels: Object.keys(summary.categories),
-        datasets: [
-          {
-            data: Object.values(summary.categories),
-            backgroundColor: [
-              "#FF6384",
-              "#36A2EB",
-              "#FFCE56",
-              "#8AFFC1",
-              "#9966FF",
-              "#FF9F40",
-            ],
-          },
-        ],
-      }
-    : null;
+  /* ===========================
+     EDIT MODE SELECTION
+  ============================ */
+  const toggleTxnSelection = (id) => {
+    setSelectedTxns(prev =>
+      prev.includes(id)
+        ? prev.filter(x => x !== id)
+        : [...prev, id]
+    );
+  };
 
-  const Chart =
-    chartType === "pie" ? Pie :
-    chartType === "bar" ? Bar :
-    Line;
+  const toggleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedTxns(transactions.map(t => t._id));
+    } else {
+      setSelectedTxns([]);
+    }
+  };
+
+  /* ===========================
+     BULK UPDATE
+  ============================ */
+  const handleBulkUpdate = async () => {
+    if (!bulkCategory || !selectedTxns.length) {
+      alert("Select category and transactions");
+      return;
+    }
+
+    for (const id of selectedTxns) {
+      await updateCategory(id, bulkCategory);
+    }
+
+    setSelectedTxns([]);
+    setBulkCategory("");
+    setEditMode(false);
+    fetchTransactions();
+    loadSummary();
+  };
+
+  /* ===========================
+     BULK DELETE
+  ============================ */
+  const handleBulkDelete = async () => {
+    if (!selectedTxns.length) return;
+
+    if (!window.confirm("Delete selected transactions permanently?")) return;
+
+    await fetch("http://localhost:5050/transactions/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: selectedTxns })
+    });
+
+    setSelectedTxns([]);
+    setEditMode(false);
+    fetchTransactions();
+    loadSummary();
+  };
+
+  /* ===========================
+     CHART
+  ============================ */
+  const chartData =
+    summary?.categories
+      ? {
+          labels: Object.keys(summary.categories),
+          datasets: [
+            {
+              data: Object.values(summary.categories),
+              backgroundColor: [
+                "#FF6384",
+                "#36A2EB",
+                "#FFCE56",
+                "#8AFFC1",
+                "#9966FF",
+                "#FF9F40"
+              ]
+            }
+          ]
+        }
+      : null;
 
   return (
     <div className="container">
-      <h2>Statement Categorising</h2>
+      <h2>Statement Categorizing</h2>
 
+      {/* Upload */}
       <input
         type="file"
         accept=".csv,.xls,.xlsx,.pdf"
         onChange={(e) => setFile(e.target.files[0])}
       />
-      <button onClick={handleUpload}>Upload</button>
+      <button onClick={handleUpload}>
+        {file?.type === "application/pdf" ? "Preview PDF" : "Upload File"}
+      </button>
+
+      {/* Preview */}
       {showPreview && (
         <>
-          <h3>Preview Transactions</h3>
-
+          <h3>Preview Transactions (Editable)</h3>
           <table>
             <thead>
               <tr>
@@ -187,7 +233,16 @@ const resolveDateRange = () => {
                     />
                   </td>
                   <td>{t.date}</td>
-                  <td>{t.description}</td>
+                  <td>
+                    <input
+                      value={t.description}
+                      onChange={(e) => {
+                        const copy = [...preview];
+                        copy[i].description = e.target.value;
+                        setPreview(copy);
+                      }}
+                    />
+                  </td>
                   <td>{t.amount}</td>
                   <td>
                     <select
@@ -198,7 +253,7 @@ const resolveDateRange = () => {
                         setPreview(copy);
                       }}
                     >
-                      {CATEGORIES.map((c) => (
+                      {CATEGORIES.map(c => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>
@@ -212,44 +267,62 @@ const resolveDateRange = () => {
         </>
       )}
 
-      <h3>Visualization</h3>
-
-      <select value={chartType} onChange={(e) => setChartType(e.target.value)}>
-        <option value="pie">Pie</option>
-        <option value="bar">Bar</option>
-        <option value="line">Line</option>
-      </select>
-
-      <select value={range} onChange={(e) => setRange(e.target.value)}>
-        <option value="30d">Last 30 Days</option>
-        <option value="ytd">Year to Date</option>
-        <option value="1y">Last Year</option>
-        <option value="custom">Custom</option>
-      </select>
-
-      {range === "custom" && (
+      {/* Summary */}
+      {summary && (
         <>
-          <input type="date" onChange={(e) => setFromDate(e.target.value)} />
-          <input type="date" onChange={(e) => setToDate(e.target.value)} />
-        </>
-      )}
-
-      {summary && chartData && (
-        <>
+          <h3>Financial Summary</h3>
           <p><b>Total Income:</b> ${summary.income}</p>
           <p><b>Total Expense:</b> ${summary.expense}</p>
 
-          <div style={{ width: "450px", height: "450px" }}>
-            <Chart data={chartData} options={{ responsive: true }} />
-          </div>
+          {chartData && (
+            <div style={{ width: "450px", height: "450px" }}>
+              <Pie data={chartData} />
+            </div>
+          )}
         </>
       )}
 
+      {/* Edit Mode */}
       <h3>Transactions</h3>
+
+      <button
+        onClick={() => {
+          setEditMode(!editMode);
+          setSelectedTxns([]);
+        }}
+      >
+        {editMode ? "Cancel" : "Update / Delete"}
+      </button>
+
+      {editMode && (
+        <>
+          <div style={{ margin: "10px 0" }}>
+            <input
+              type="checkbox"
+              checked={selectedTxns.length === transactions.length && transactions.length > 0}
+              onChange={(e) => toggleSelectAll(e.target.checked)}
+            /> Select All
+          </div>
+
+          <select
+            value={bulkCategory}
+            onChange={(e) => setBulkCategory(e.target.value)}
+          >
+            <option value="">Select category</option>
+            {CATEGORIES.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          <button onClick={handleBulkUpdate}>Update Selected</button>
+          <button onClick={handleBulkDelete}>Delete Selected</button>
+        </>
+      )}
 
       <table>
         <thead>
           <tr>
+            {editMode && <th>Select</th>}
             <th>Date</th>
             <th>Description</th>
             <th>Amount</th>
@@ -257,25 +330,21 @@ const resolveDateRange = () => {
           </tr>
         </thead>
         <tbody>
-          {transactions.map((t) => (
+          {transactions.map(t => (
             <tr key={t._id}>
+              {editMode && (
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedTxns.includes(t._id)}
+                    onChange={() => toggleTxnSelection(t._id)}
+                  />
+                </td>
+              )}
               <td>{t.date}</td>
               <td>{t.description}</td>
               <td>{t.amount}</td>
-              <td>
-                <select
-                  value={t.category}
-                  onChange={async (e) => {
-                    await updateCategory(t._id, e.target.value);
-                    fetchTransactions();
-                    loadSummary();
-                  }}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </td>
+              <td>{t.category}</td>
             </tr>
           ))}
         </tbody>

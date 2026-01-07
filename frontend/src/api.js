@@ -1,28 +1,5 @@
 const BASE_URL = "http://localhost:5050";
 
-/* =========================
-   Upload (direct save)
-========================= */
-export const uploadCSV = async (file) => {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const res = await fetch(`${BASE_URL}/upload`, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Upload failed");
-  }
-
-  return res.json();
-};
-
-/* =========================
-   Preview before save
-========================= */
 export const previewUpload = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -33,16 +10,17 @@ export const previewUpload = async (file) => {
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Preview failed");
+    let message = "Preview failed";
+    try {
+      const err = await res.json();
+      message = err.error || message;
+    } catch {}
+    throw new Error(message);
   }
 
   return res.json();
 };
 
-/* =========================
-   Confirm & Save preview
-========================= */
 export const saveConfirmedTransactions = async (transactions) => {
   const res = await fetch(`${BASE_URL}/upload/confirm`, {
     method: "POST",
@@ -51,16 +29,17 @@ export const saveConfirmedTransactions = async (transactions) => {
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Save failed");
+    throw new Error("Saving transactions failed");
   }
 
   return res.json();
 };
 
-/* =========================
-   Transactions
-========================= */
+export const getTransactions = async () => {
+  const res = await fetch(`${BASE_URL}/transactions`);
+  return res.json();
+};
+
 export const updateCategory = async (id, category) => {
   const res = await fetch(`${BASE_URL}/transactions/${id}`, {
     method: "PUT",
@@ -71,19 +50,7 @@ export const updateCategory = async (id, category) => {
   return res.json();
 };
 
-export const getTransactions = async () => {
-  const res = await fetch(`${BASE_URL}/transactions`);
+export const fetchSummary = async () => {
+  const res = await fetch(`${BASE_URL}/transactions/summary`);
   return res.json();
 };
-
-export const fetchSummary = async (from, to) => {
-  let url = `${BASE_URL}/transactions/summary`;
-
-  if (from && to) {
-    url += `?from=${from}&to=${to}`;
-  }
-
-  const res = await fetch(url);
-  return res.json();
-};
-

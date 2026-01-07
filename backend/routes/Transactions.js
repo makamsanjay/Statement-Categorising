@@ -2,10 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Transaction = require("../models/Transaction");
 
-/**
- * POST /transactions
- * Save a transaction
- */
 router.post("/", async (req, res) => {
   try {
     const transaction = await Transaction.create(req.body);
@@ -78,36 +74,26 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-
-router.get("/summary", async (req, res) => {
+router.post("/bulk-delete", async (req, res) => {
   try {
-    const txns = await Transaction.find();
+    const { ids } = req.body;
 
-    let income = 0;
-    let expense = 0;
-    const categoryTotals = {};
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "No transaction IDs provided" });
+    }
 
-    txns.forEach((txn) => {
-      if (txn.amount > 0) {
-        income += txn.amount;
-      } else {
-        expense += Math.abs(txn.amount);
-      }
-
-      if (!categoryTotals[txn.category]) {
-        categoryTotals[txn.category] = 0;
-      }
-
-      categoryTotals[txn.category] += Math.abs(txn.amount);
+    const result = await Transaction.deleteMany({
+      _id: { $in: ids }
     });
 
     res.json({
-      income,
-      expense,
-      categories: categoryTotals,
+      message: "Transactions deleted successfully",
+      deletedCount: result.deletedCount
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Bulk delete failed:", err);
+    res.status(500).json({ error: "Bulk delete failed" });
   }
 });
 
