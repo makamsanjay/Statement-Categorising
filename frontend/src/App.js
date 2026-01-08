@@ -27,6 +27,11 @@ const CATEGORIES = [
   "Other"
 ];
 
+const fixAmountSign = (amount, type) => {
+  const abs = Math.abs(amount);
+  return type === "income" ? abs : -abs;
+};
+
 function App() {
   const [file, setFile] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -39,9 +44,6 @@ function App() {
   const [selectedTxns, setSelectedTxns] = useState([]);
   const [bulkCategory, setBulkCategory] = useState("");
 
-  /* ===========================
-     LOAD DATA
-  ============================ */
   const fetchTransactions = async () => {
     const data = await getTransactions();
     setTransactions(data);
@@ -57,9 +59,6 @@ function App() {
     loadSummary();
   }, []);
 
-  /* ===========================
-     UPLOAD
-  ============================ */
   const handleUpload = async () => {
     if (!file) return alert("Select a file");
 
@@ -91,9 +90,6 @@ function App() {
     }
   };
 
-  /* ===========================
-     PREVIEW CONFIRM
-  ============================ */
   const handleConfirm = async () => {
     const selected = preview.filter(t => t.selected);
     if (!selected.length) return alert("No transactions selected");
@@ -108,9 +104,6 @@ function App() {
     loadSummary();
   };
 
-  /* ===========================
-     EDIT MODE SELECTION
-  ============================ */
   const toggleTxnSelection = (id) => {
     setSelectedTxns(prev =>
       prev.includes(id)
@@ -127,9 +120,6 @@ function App() {
     }
   };
 
-  /* ===========================
-     BULK UPDATE
-  ============================ */
   const handleBulkUpdate = async () => {
     if (!bulkCategory || !selectedTxns.length) {
       alert("Select category and transactions");
@@ -147,9 +137,6 @@ function App() {
     loadSummary();
   };
 
-  /* ===========================
-     BULK DELETE
-  ============================ */
   const handleBulkDelete = async () => {
     if (!selectedTxns.length) return;
 
@@ -167,9 +154,6 @@ function App() {
     loadSummary();
   };
 
-  /* ===========================
-     CHART
-  ============================ */
   const chartData =
     summary?.categories
       ? {
@@ -194,7 +178,6 @@ function App() {
     <div className="container">
       <h2>Statement Categorizing</h2>
 
-      {/* Upload */}
       <input
         type="file"
         accept=".csv,.xls,.xlsx,.pdf"
@@ -204,10 +187,10 @@ function App() {
         {file?.type === "application/pdf" ? "Preview PDF" : "Upload File"}
       </button>
 
-      {/* Preview */}
       {showPreview && (
         <>
           <h3>Preview Transactions (Editable)</h3>
+
           <table>
             <thead>
               <tr>
@@ -215,6 +198,7 @@ function App() {
                 <th>Date</th>
                 <th>Description</th>
                 <th>Amount</th>
+                <th>Type</th>
                 <th>Category</th>
               </tr>
             </thead>
@@ -232,7 +216,9 @@ function App() {
                       }}
                     />
                   </td>
+
                   <td>{t.date}</td>
+
                   <td>
                     <input
                       value={t.description}
@@ -243,7 +229,38 @@ function App() {
                       }}
                     />
                   </td>
+
                   <td>{t.amount}</td>
+                  <td>
+                    <label>
+                      <input
+                        type="radio"
+                        name={`preview-${i}`}
+                        checked={t.amount > 0}
+                        onChange={() => {
+                          const copy = [...preview];
+                          copy[i].amount = fixAmountSign(copy[i].amount, "income");
+                          setPreview(copy);
+                        }}
+                      />
+                      Income
+                    </label>
+
+                    <label style={{ marginLeft: "10px" }}>
+                      <input
+                        type="radio"
+                        name={`preview-${i}`}
+                        checked={t.amount < 0}
+                        onChange={() => {
+                          const copy = [...preview];
+                          copy[i].amount = fixAmountSign(copy[i].amount, "expense");
+                          setPreview(copy);
+                        }}
+                      />
+                      Expense
+                    </label>
+                  </td>
+
                   <td>
                     <select
                       value={t.category}
@@ -267,7 +284,6 @@ function App() {
         </>
       )}
 
-      {/* Summary */}
       {summary && (
         <>
           <h3>Financial Summary</h3>
@@ -282,7 +298,6 @@ function App() {
         </>
       )}
 
-      {/* Edit Mode */}
       <h3>Transactions</h3>
 
       <button
