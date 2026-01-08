@@ -33,7 +33,7 @@ const fixAmountSign = (amount, type) => {
 };
 
 function App() {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [summary, setSummary] = useState(null);
 
@@ -60,45 +60,73 @@ function App() {
   }, []);
 
   const handleUpload = async () => {
-    if (!file) return alert("Select a file");
-
-    const isPDF = file.type === "application/pdf";
-
-    try {
-      if (isPDF) {
-        const data = await previewUpload(file);
-        setPreview(data.map(t => ({ ...t, selected: true })));
-        setShowPreview(true);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("file", file);
-
-      await fetch("http://localhost:5050/upload", {
-        method: "POST",
-        body: formData
-      });
-
-      setFile(null);
-      fetchTransactions();
-      loadSummary();
-      alert("File uploaded successfully");
-
-    } catch (err) {
-      alert(err.message || "Upload failed");
+    if (!files.length) {
+      alert("Select file(s)");
+      return;
     }
+
+    let pdfPreview = [];
+    let skippedMessages = [];
+
+    for (const file of files) {
+      try {
+        if (file.type === "application/pdf") {
+          const data = await previewUpload(file);
+          pdfPreview.push(...data.map(t => ({ ...t, selected: true })));
+        } else {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const res = await fetch("http://localhost:5050/upload", {
+            method: "POST",
+            body: formData
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            skippedMessages.push(`${file.name}: ${data.error || "Upload failed"}`);
+          }
+
+          if (data.skippedFiles?.length) {
+            data.skippedFiles.forEach(f =>
+              skippedMessages.push(`${f.file}: ${f.reason}`)
+            );
+          }
+        }
+      } catch (err) {
+        skippedMessages.push(`${file.name}: ${err.message}`);
+      }
+    }
+
+    if (pdfPreview.length) {
+      setPreview(pdfPreview);
+      setShowPreview(true);
+    }
+
+    if (skippedMessages.length) {
+      alert(
+        "Some files were skipped:\n\n" +
+        skippedMessages.map(m => `• ${m}`).join("\n")
+      );
+    }
+
+    setFiles([]);
+    fetchTransactions();
+    loadSummary();
   };
 
   const handleConfirm = async () => {
     const selected = preview.filter(t => t.selected);
-    if (!selected.length) return alert("No transactions selected");
+    if (!selected.length) {
+      alert("No transactions selected");
+      return;
+    }
 
     await saveConfirmedTransactions(selected);
 
     setPreview([]);
     setShowPreview(false);
-    setFile(null);
 
     fetchTransactions();
     loadSummary();
@@ -113,11 +141,9 @@ function App() {
   };
 
   const toggleSelectAll = (checked) => {
-    if (checked) {
-      setSelectedTxns(transactions.map(t => t._id));
-    } else {
-      setSelectedTxns([]);
-    }
+    setSelectedTxns(
+      checked ? transactions.map(t => t._id) : []
+    );
   };
 
   const handleBulkUpdate = async () => {
@@ -180,17 +206,18 @@ function App() {
 
       <input
         type="file"
+        multiple
         accept=".csv,.xls,.xlsx,.pdf"
-        onChange={(e) => setFile(e.target.files[0])}
+        onChange={(e) => setFiles([...e.target.files])}
       />
+
       <button onClick={handleUpload}>
-        {file?.type === "application/pdf" ? "Preview PDF" : "Upload File"}
+        Upload / Preview
       </button>
 
       {showPreview && (
         <>
-          <h3>Preview Transactions (Editable)</h3>
-
+          <h3>Preview Transactions</h3>
           <table>
             <thead>
               <tr>
@@ -216,9 +243,7 @@ function App() {
                       }}
                     />
                   </td>
-
                   <td>{t.date}</td>
-
                   <td>
                     <input
                       value={t.description}
@@ -229,38 +254,33 @@ function App() {
                       }}
                     />
                   </td>
-
                   <td>{t.amount}</td>
                   <td>
                     <label>
                       <input
                         type="radio"
-                        name={`preview-${i}`}
+                        name={`amt-${i}`}
                         checked={t.amount > 0}
                         onChange={() => {
                           const copy = [...preview];
                           copy[i].amount = fixAmountSign(copy[i].amount, "income");
                           setPreview(copy);
                         }}
-                      />
-                      Income
+                      /> Income
                     </label>
-
-                    <label style={{ marginLeft: "10px" }}>
+                    <label style={{ marginLeft: 10 }}>
                       <input
                         type="radio"
-                        name={`preview-${i}`}
+                        name={`amt-${i}`}
                         checked={t.amount < 0}
                         onChange={() => {
                           const copy = [...preview];
                           copy[i].amount = fixAmountSign(copy[i].amount, "expense");
                           setPreview(copy);
                         }}
-                      />
-                      Expense
+                      /> Expense
                     </label>
                   </td>
-
                   <td>
                     <select
                       value={t.category}
@@ -291,7 +311,7 @@ function App() {
           <p><b>Total Expense:</b> ${summary.expense}</p>
 
           {chartData && (
-            <div style={{ width: "450px", height: "450px" }}>
+            <div style={{ width: 450, height: 450 }}>
               <Pie data={chartData} />
             </div>
           )}
@@ -300,21 +320,19 @@ function App() {
 
       <h3>Transactions</h3>
 
-      <button
-        onClick={() => {
-          setEditMode(!editMode);
-          setSelectedTxns([]);
-        }}
-      >
+      <button onClick={() => {
+        setEditMode(!editMode);
+        setSelectedTxns([]);
+      }}>
         {editMode ? "Cancel" : "Update / Delete"}
       </button>
 
       {editMode && (
         <>
-          <div style={{ margin: "10px 0" }}>
+          <div>
             <input
               type="checkbox"
-              checked={selectedTxns.length === transactions.length && transactions.length > 0}
+              checked={selectedTxns.length === transactions.length}
               onChange={(e) => toggleSelectAll(e.target.checked)}
             /> Select All
           </div>

@@ -16,6 +16,10 @@ const normalizeMerchant = require("../utils/normalizeMerchant");
 
 const router = express.Router();
 
+let allTransactions = [];
+let skippedFiles = [];
+
+
 const upload = multer({
   dest: "uploads/",
   fileFilter: (req, file, cb) => {
@@ -64,7 +68,7 @@ async function parsePDF(filePath) {
   if (!text || text.trim().length < 50) {
     throw new Error("Unable to extract text from PDF");
   }
-  
+
   return await aiExtractTransactions(text);
 }
 
@@ -131,69 +135,110 @@ async function parseFile(req) {
   throw new Error("Unsupported file type");
 }
 
-router.post("/", upload.single("file"), async (req, res) => {
+router.post("/", upload.array("file", 10), async (req, res) => {
   try {
-    const rows = await parseFile(req);
-    const formatted = [];
+    let allTransactions = [];
+    let skippedFiles = [];
 
-    for (const raw of rows) {
-      const row = normalizeRow(raw);
+    for (const file of req.files) {
+      let rows = [];
+      const name = file.originalname.toLowerCase();
 
-      const date = row.date;
-      const description = row.description;
-      const amount = Number(row.amount);
+      try {
+        if (name.endsWith(".csv")) {
+          rows = await parseCSV(file.path);
+        } else if (name.endsWith(".xls") || name.endsWith(".xlsx")) {
+          rows = parseExcel(file.path);
+        } else if (name.endsWith(".pdf")) {
+          rows = await parsePDF(file.path);
+        }
 
-      if (!date || !description || isNaN(amount)) continue;
+        if (!rows || rows.length === 0) {
+          skippedFiles.push({
+            file: file.originalname,
+            reason: "No transactions found"
+          });
+          continue;
+        }
 
-      const result = await resolveCategory(description);
+        for (const row of rows) {
+          const date = row.date || row.Date;
+          const description = row.description || row.Description;
+          const amount = Number(row.amount || row.Amount);
 
-      formatted.push({
-        date,
-        description,
-        amount,
-        category: result.category,
-        confidence: result.confidence,
-        categorySource: result.source
+          if (!date || !description || isNaN(amount)) continue;
+
+          const result = await resolveCategory(description);
+
+          allTransactions.push({
+            date,
+            description,
+            amount,
+            category: result.category,
+            confidence: result.confidence,
+            categorySource: result.source
+          });
+        }
+
+      } catch (err) {
+        skippedFiles.push({
+          file: file.originalname,
+          reason: "Failed to parse"
+        });
+      } finally {
+        fs.existsSync(file.path) && fs.unlinkSync(file.path);
+      }
+    }
+
+    if (allTransactions.length === 0) {
+      return res.status(400).json({
+        error: "No transactions found in uploaded file(s)",
+        skippedFiles
       });
     }
 
-    await Transaction.insertMany(formatted);
-    fs.unlinkSync(req.file.path);
+    await Transaction.insertMany(allTransactions);
 
-    res.json({ message: "File uploaded successfully", inserted: formatted.length });
+    res.json({
+      message: "Upload completed",
+      inserted: allTransactions.length,
+      skippedFiles
+    });
+
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Upload failed:", err);
+    res.status(500).json({
+      error: "Upload failed",
+      details: err.message
+    });
   }
 });
 
-router.post("/preview", upload.single("file"), async (req, res) => {
+
+router.post("/preview", upload.array("file", 10), async (req, res) => {
   try {
-    const rows = await parseFile(req);
-    const preview = [];
+    let preview = [];
 
-    for (const raw of rows) {
-      const row = normalizeRow(raw);
+    for (const file of req.files) {
+      if (!file.originalname.toLowerCase().endsWith(".pdf")) continue;
 
-      const date = row.date;
-      const description = row.description;
-      const amount = Number(row.amount);
+      const rows = await parsePDF(file.path);
 
-      if (!date || !description || isNaN(amount)) continue;
+      for (const row of rows) {
+        const result = await resolveCategory(row.description);
 
-      const result = await resolveCategory(description);
+        preview.push({
+          id: crypto.randomUUID(),
+          ...row,
+          category: result.category,
+          confidence: result.confidence,
+          selected: true
+        });
+      }
 
-      preview.push({
-        id: crypto.randomUUID(),
-        date,
-        description,
-        amount,
-        category: result.category,
-        confidence: result.confidence,
-        selected: true
-      });
+      fs.unlinkSync(file.path);
     }
 
-    fs.unlinkSync(req.file.path);
     res.json(preview);
   } catch (err) {
     res.status(400).json({ error: err.message });
