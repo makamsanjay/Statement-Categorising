@@ -6,6 +6,7 @@ const XLSX = require("xlsx");
 const pdfParse = require("pdf-parse");
 const Tesseract = require("tesseract.js");
 const crypto = require("crypto");
+const { aiExtractTransactions } = require("../ai/aiExtractTransactions");
 
 const Transaction = require("../models/Transaction");
 const categorize = require("../utils/categorize");
@@ -53,17 +54,20 @@ async function parsePDF(filePath) {
   const buffer = fs.readFileSync(filePath);
   const pdf = await pdfParse(buffer);
 
-  if (pdf.text && pdf.text.trim().length > 50) {
-    return parseTextToRows(pdf.text);
+  let text = pdf.text;
+
+  if (!text || text.trim().length < 50) {
+    const ocr = await Tesseract.recognize(filePath, "eng");
+    text = ocr.data.text;
   }
 
-  try {
-    const ocr = await Tesseract.recognize(filePath, "eng");
-    return parseTextToRows(ocr.data.text);
-  } catch {
-    return [];
+  if (!text || text.trim().length < 50) {
+    throw new Error("Unable to extract text from PDF");
   }
+  
+  return await aiExtractTransactions(text);
 }
+
 
 function parseTextToRows(text) {
   const rows = [];
@@ -195,6 +199,7 @@ router.post("/preview", upload.single("file"), async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
 
 router.post("/confirm", async (req, res) => {
   try {
