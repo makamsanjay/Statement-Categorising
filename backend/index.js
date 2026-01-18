@@ -3,9 +3,10 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-
 const transactionRoutes = require("./routes/Transactions");
 const uploadRoutes = require("./routes/Upload");
+const BudgetRoutes = require("./routes/budget");
+const HealthScore = require("./routes/health")
 
 const app = express();
 
@@ -22,7 +23,19 @@ app.use((req, res, next) => {
 app.use("/transactions", transactionRoutes);
 app.use("/upload", uploadRoutes);
 
+app.use("/budget", BudgetRoutes);
 
+app.use("/health", HealthScore );
+
+const cardRoutes = require("./routes/cards");
+
+app.use("/cards", cardRoutes);
+
+app.use("/statements", require("./routes/statements"));
+app.use("/analytics", require("./routes/analytics"));
+app.use("/cards", require("./routes/cards"));
+
+ 
 
 // MongoDB
 mongoose

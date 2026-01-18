@@ -249,7 +249,7 @@ router.post("/preview", upload.array("file", 10), async (req, res) => {
 router.post("/confirm", async (req, res) => {
   try {
     await Transaction.insertMany(req.body.transactions);
-    res.json({ message: "Transactions saved" });
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

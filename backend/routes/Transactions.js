@@ -97,5 +97,20 @@ router.post("/bulk-delete", async (req, res) => {
   }
 });
 
+router.get("/card/:cardId", async (req, res) => {
+  try {
+    const { cardId } = req.params;
+
+    const transactions = await Transaction.find({ cardId })
+      .sort({ createdAt: -1 });
+
+    res.json(transactions);
+  } catch (err) {
+    console.error("Fetch by card failed:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 module.exports = router;

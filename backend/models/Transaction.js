@@ -28,8 +28,14 @@ const TransactionSchema = new mongoose.Schema({
 userOverridden: {
   type: Boolean,
   default: false
+},
+cardId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Card",
+  required: true
 }
 
 }, { timestamps: true });
+
 
 module.exports = mongoose.model("Transaction", TransactionSchema);

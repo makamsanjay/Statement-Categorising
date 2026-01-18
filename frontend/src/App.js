@@ -4,12 +4,17 @@ import {
   getTransactions,
   fetchSummary,
   updateCategory,
-  saveConfirmedTransactions
+  saveConfirmedTransactions,
+  getCards,
+  createCard,
+  deleteCard,
+  getTransactionsByCard
 } from "./api";
 
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
+import { fetchHealthScore } from "./api";
 
 const CATEGORIES = [
   "Food & Dining",
@@ -43,6 +48,45 @@ function App() {
   const [editMode, setEditMode] = useState(false);
   const [selectedTxns, setSelectedTxns] = useState([]);
   const [bulkCategory, setBulkCategory] = useState("");
+  const [budgets, setBudgets] = useState({});
+
+const [category, setCategory] = useState("");
+const [budgetAmount, setBudgetAmount] = useState("");
+
+const [cards, setCards] = useState([]);
+const [activeCardIndex, setActiveCardIndex] = useState(0);
+
+useEffect(() => {
+  const loadCards = async () => {
+    const data = await getCards();
+    setCards(data);
+  };
+  loadCards();
+}, []);
+
+useEffect(() => {
+  if (!cards.length) {
+    setTransactions([]);
+    return;
+  }
+
+  const cardId = cards[activeCardIndex]?._id;
+  if (!cardId) return;
+
+  setTransactions([]);
+
+  getTransactionsByCard(cardId).then(setTransactions);
+}, [cards, activeCardIndex]);
+
+
+
+const [health, setHealth] = useState(null);
+
+useEffect(() => {
+  fetchHealthScore().then(setHealth);
+}, []);
+
+
 
   const fetchTransactions = async () => {
     const data = await getTransactions();
@@ -123,7 +167,14 @@ function App() {
       return;
     }
 
-    await saveConfirmedTransactions(selected);
+    const cardId = cards[activeCardIndex]._id;
+
+await saveConfirmedTransactions(
+  selected.map(t => ({
+    ...t,
+    cardId
+  }))
+);
 
     setPreview([]);
     setShowPreview(false);
@@ -162,6 +213,34 @@ function App() {
     fetchTransactions();
     loadSummary();
   };
+
+  const budgetSummary = Object.entries(budgets).map(([cat, budget]) => {
+  const spent = transactions
+    .filter(t => t.category === cat && t.amount < 0)
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  return {
+    category: cat,
+    spent,
+    budget,
+    over: spent > budget
+  };
+});
+
+const handleSetBudget = () => {
+  if (!category || !budgetAmount) {
+    alert("Select category and budget");
+    return;
+  }
+
+  setBudgets(prev => ({
+    ...prev,
+    [category]: Number(budgetAmount)
+  }));
+
+  setCategory("");
+  setBudgetAmount("");
+};
 
   const handleBulkDelete = async () => {
     if (!selectedTxns.length) return;
@@ -304,6 +383,137 @@ function App() {
         </>
       )}
 
+<h3>Monthly Budgets</h3>
+
+<div style={{ marginBottom: 10 }}>
+  <select
+    value={category}
+    onChange={(e) => setCategory(e.target.value)}
+  >
+    <option value="">Select category</option>
+    {CATEGORIES.map(c => (
+      <option key={c} value={c}>{c}</option>
+    ))}
+  </select>
+
+  <input
+    type="number"
+    placeholder="Budget amount"
+    value={budgetAmount}
+    onChange={(e) => setBudgetAmount(e.target.value)}
+    style={{ marginLeft: 8 }}
+  />
+
+  <button onClick={handleSetBudget} style={{ marginLeft: 8 }}>
+    Set Budget
+  </button>
+</div>
+
+{budgetSummary.map(b => (
+  <div key={b.category} style={{ marginBottom: 6 }}>
+    <b>{b.category}</b> — ${b.spent} / ${b.budget}
+    {b.over && <span style={{ color: "red" }}> This is Over budget</span>}
+  </div>
+))}
+
+{health && (
+  <div className="health-score-header">
+  <h3>expense health score</h3>
+
+  <div className="info-tooltip">
+    <span className="info-icon">i</span>
+
+    <div className="tooltip-box">
+      <strong>calculation</strong>
+      <ul>
+        <li><b>savings rate (40%)</b> = (income − expenses) / income</li>
+        <li><b>category balance (25%)</b> = spending distribution</li>
+        <li><b>expense volatility (20%)</b> = monthly stability</li>
+        <li><b>unusual spending (15%)</b> = anomaly penalty</li>
+      </ul>
+    </div>
+  </div>
+
+
+    <div style={{
+      fontSize: "48px",
+      fontWeight: "bold",
+      color:
+        health.score >= 75 ? "green" :
+        health.score >= 50 ? "orange" : "red"
+    }}>
+      {health} / 100
+
+    </div>
+
+    <ul>
+  {health.insights?.map(i => (
+    <li key={i}>{i}</li>
+  ))}
+</ul>
+
+  </div>
+)}
+
+{cards.length > 0 && (
+  <div className="card-carousel">
+    <button
+      disabled={activeCardIndex === 0}
+      onClick={() => setActiveCardIndex(i => i - 1)}
+    >
+      ←
+    </button>
+
+    <strong>
+      {cards[activeCardIndex].name}
+      {cards[activeCardIndex].last4 && ` (${cards[activeCardIndex].last4})`}
+    </strong>
+
+    <button
+      disabled={activeCardIndex === cards.length - 1}
+      onClick={() => setActiveCardIndex(i => i + 1)}
+    >
+      →
+    </button>
+  </div>
+)}
+
+<button
+  type="button"
+  onClick={async () => {
+    const name = prompt("Card name");
+    if (!name) return;
+
+    const last4 = prompt("Last 4 digits (optional)");
+    await createCard({ name, last4 });
+
+    const updated = await getCards();
+    setCards(updated);
+  }}
+>
+  + add card
+</button>
+
+<button
+  onClick={async () => {
+    const card = cards[activeCardIndex];
+
+    const ok = window.confirm(
+      `Delete card "${card.name}"?\nAll associated transactions will be permanently deleted.`
+    );
+
+    if (!ok) return;
+
+    await deleteCard(card._id);
+    const updated = await getCards();
+    setCards(updated);
+    setActiveCardIndex(0);
+  }}
+>
+  delete card
+</button>
+
+
       {summary && (
         <>
           <h3>Financial Summary</h3>
@@ -351,6 +561,9 @@ function App() {
           <button onClick={handleBulkDelete}>Delete Selected</button>
         </>
       )}
+
+     
+
 
       <table>
         <thead>
