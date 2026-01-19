@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   previewUpload,
   getTransactions,
-  fetchSummary,
   updateCategory,
   saveConfirmedTransactions,
   getCards,
@@ -19,7 +18,7 @@ import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   "Food & Dining",
   "Groceries",
   "Transportation",
@@ -66,6 +65,20 @@ const formatAmount = (num) => Number(num).toFixed(2);
 
 const [allTransactions, setAllTransactions] = useState([]);
 
+const [selectedCategory, setSelectedCategory] = useState(null);
+
+const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+
+const [showAddTxn, setShowAddTxn] = useState(false);
+
+const [newTxn, setNewTxn] = useState({
+  date: "",
+  description: "",
+  amount: "",
+  type: "expense",
+  category: "Other"
+});
+
 
 
 const [cards, setCards] = useState([]);
@@ -93,6 +106,16 @@ useEffect(() => {
   getTransactionsByCard(cardId).then(setTransactions);
 }, [cards, activeCardIndex]);
 
+useEffect(() => {
+  const saved = localStorage.getItem("activeCardIndex");
+  if (saved !== null) {
+    setActiveCardIndex(Number(saved));
+  }
+}, []);
+
+useEffect(() => {
+  localStorage.setItem("activeCardIndex", activeCardIndex);
+}, [activeCardIndex]);
 
 
 const [health, setHealth] = useState(null);
@@ -198,12 +221,66 @@ const totalExpense = allTransactions
     currency: card.displayCurrency
   }));
 
-  console.log("FINAL CONFIRM PAYLOAD", payload);
-
   await saveConfirmedTransactions(payload);
+
+const cardId = cards[activeCardIndex]._id;
+setTransactions(await getTransactionsByCard(cardId));
+setAllTransactions(await getTransactions());
+
+setPreview([]);
+setShowPreview(false);
 
   setPreview([]);
   setShowPreview(false);
+  fetchTransactions();
+};
+
+const handleAddTransaction = async () => {
+  const { date, description, amount, type, category } = newTxn;
+
+  if (!date || !description || !amount || !category) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  const card = cards[activeCardIndex];
+  if (!card) {
+    alert("No card selected");
+    return;
+  }
+
+  const finalAmount =
+    type === "income" ? Math.abs(Number(amount)) : -Math.abs(Number(amount));
+
+  const payload = [{
+    date,
+    description,
+    amount: finalAmount,
+    category,
+    cardId: card._id,
+    currency: card.displayCurrency
+  }];
+
+  await saveConfirmedTransactions(payload);
+
+const cardId = cards[activeCardIndex]._id;
+const updatedTxns = await getTransactionsByCard(cardId);
+setTransactions(updatedTxns);
+
+const all = await getTransactions();
+setAllTransactions(all);
+
+
+  // reset
+  setNewTxn({
+    date: "",
+    description: "",
+    amount: "",
+    type: "expense",
+    category: "Other"
+  });
+
+  setShowAddTxn(false);
   fetchTransactions();
 };
 
@@ -237,7 +314,17 @@ const totalExpense = allTransactions
     setBulkCategory("");
     setEditMode(false);
     fetchTransactions();
+    const cardId = cards[activeCardIndex]._id;
+setTransactions(await getTransactionsByCard(cardId));
+setAllTransactions(await getTransactions());
+
   };
+
+  
+  
+
+        <option value="__add_new__"> Add new category</option>
+
 
   const budgetSummary = Object.entries(budgets).map(([cat, budget]) => {
   const spent = transactions
@@ -344,6 +431,42 @@ const chartData =
         ]
       };
 
+const categoryTransactions = selectedCategory
+  ? allTransactions.filter(
+      t => t.category === selectedCategory && t.amount < 0
+    )
+  : [];
+
+
+const categoryCardSplit = {};
+
+categoryTransactions.forEach(t => {
+  const card = cards.find(c => c._id === t.cardId);
+  if (!card) return;
+
+  categoryCardSplit[card.name] =
+    (categoryCardSplit[card.name] || 0) + Math.abs(t.amount);
+});
+
+const categoryCardChartData =
+  Object.keys(categoryCardSplit).length === 0
+    ? null
+    : {
+        labels: Object.keys(categoryCardSplit),
+        datasets: [
+          {
+            data: Object.values(categoryCardSplit),
+            backgroundColor: [
+              "#36A2EB",
+              "#FF6384",
+              "#FFCE56",
+              "#8AFFC1",
+              "#9966FF"
+            ]
+          }
+        ]
+      };
+
 
   return (
     <div className="container">
@@ -390,14 +513,27 @@ const chartData =
                   </td>
                   <td>{t.date}</td>
                   <td>
-                    <input
-                      value={t.description}
-                      onChange={(e) => {
-                        const copy = [...preview];
-                        copy[i].description = e.target.value;
-                        setPreview(copy);
-                      }}
-                    />
+      <input
+  value={t.description}
+onChange={(e) => {
+  const value = e.target.value;
+
+  if (value === "__add_new__") {
+    const newCat = prompt("Enter new category name");
+    if (!newCat) return;
+
+    if (!categories.includes(newCat)) {
+      setCategories(prev => [...prev, newCat]);
+    }
+
+    setCategory(newCat);
+    return;
+  }
+
+  setCategory(value);
+}}
+
+/>
                   </td>
                   <td>{t.amount}</td>
                   <td>
@@ -430,14 +566,33 @@ const chartData =
                     <select
                       value={t.category}
                       onChange={(e) => {
-                        const copy = [...preview];
-                        copy[i].category = e.target.value;
-                        setPreview(copy);
-                      }}
+  const value = e.target.value;
+
+  if (value === "__add_new__") {
+    const newCat = prompt("Enter new category name");
+    if (!newCat) return;
+
+    if (!categories.includes(newCat)) {
+      setCategories(prev => [...prev, newCat]);
+    }
+
+    const copy = [...preview];
+    copy[i].category = newCat;
+    setPreview(copy);
+    return;
+  }
+
+  const copy = [...preview];
+  copy[i].category = value;
+  setPreview(copy);
+}}
+
                     >
-                      {CATEGORIES.map(c => (
+                      {categories.map(c => (
                         <option key={c} value={c}>{c}</option>
                       ))}
+                      <option value="__add_new__"> Add new category</option>
+
                     </select>
                   </td>
                 </tr>
@@ -453,13 +608,20 @@ const chartData =
   <div style={{ marginBottom: 12 }}>
     <label style={{ fontWeight: "bold" }}>Account Currency:</label>{" "}
     <select
-      value={cards[0].displayCurrency}
-      onChange={async (e) => {
-        await updateCardCurrency(cards[0]._id, e.target.value);
-        const updated = await getCards();
-        setCards(updated);
-      }}
-    >
+  value={cards[0].displayCurrency}
+  onChange={async (e) => {
+    const newCurrency = e.target.value;
+    await Promise.all(
+      cards.map(card =>
+        updateCardCurrency(card._id, newCurrency)
+      )
+    );
+
+    const updated = await getCards();
+    setCards(updated);
+  }}
+>
+
       <option value="USD">USD ($)</option>
       <option value="INR">INR (₹)</option>
       <option value="EUR">EUR (€)</option>
@@ -468,6 +630,49 @@ const chartData =
   </div>
 )}
 
+{selectedCategory && (
+  <div style={{ marginTop: 30, padding: 16, border: "1px solid #ddd" }}>
+    <h3>{selectedCategory} — Card-wise Split</h3>
+
+    {categoryCardChartData && (
+      <div style={{ width: 400 }}>
+        <Pie data={categoryCardChartData} />
+      </div>
+    )}
+
+    <h4>Transactions</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Card</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {categoryTransactions.map(t => {
+          const card = cards.find(c => c._id === t.cardId);
+          return (
+            <tr key={t._id}>
+              <td>{t.date}</td>
+              <td>{t.description}</td>
+              <td>{card?.name}</td>
+              <td>
+                {SYMBOL[t.currency]}
+                {formatAmount(Math.abs(t.amount))}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+
+    <button onClick={() => setSelectedCategory(null)}>
+      Close
+    </button>
+  </div>
+)}
 
 <h3>Monthly Budgets</h3>
 
@@ -477,9 +682,11 @@ const chartData =
     onChange={(e) => setCategory(e.target.value)}
   >
     <option value="">Select category</option>
-    {CATEGORIES.map(c => (
+{categories.map(c => (
+
       <option key={c} value={c}>{c}</option>
     ))}
+    <option value="__add_new__"> Add new category</option>
   </select>
 
   <input
@@ -614,7 +821,7 @@ await createCard({
 
 
 
-     <>
+   <div>
   <h3>Financial Summary</h3>
 
   <p>
@@ -631,91 +838,110 @@ await createCard({
 
   {chartData && (
     <div style={{ width: 450, height: 450 }}>
-      <Pie data={chartData} />
+      <Pie
+        data={chartData}
+        options={{
+          onClick: (_, elements) => {
+            if (!elements.length) return;
+            const index = elements[0].index;
+            const category = chartData.labels[index];
+            setSelectedCategory(category);
+          }
+        }}
+      />
     </div>
   )}
-</>
 
+  <h3>Transactions</h3>
 
-      <h3>Transactions</h3>
+  <button
+    onClick={() => {
+      setEditMode(!editMode);
+      setSelectedTxns([]);
+    }}
+  >
+    {editMode ? "Cancel" : "Update / Delete"}
+  </button>
 
-      <button onClick={() => {
-        setEditMode(!editMode);
-        setSelectedTxns([]);
-      }}>
-        {editMode ? "Cancel" : "Update / Delete"}
-      </button>
+  {editMode && (
+    <>
+      <div>
+        <input
+          type="checkbox"
+          checked={selectedTxns.length === transactions.length}
+          onChange={(e) => toggleSelectAll(e.target.checked)}
+        />{" "}
+        Select All
+      </div>
 
-      {editMode && (
-        <>
-          <div>
-            <input
-              type="checkbox"
-              checked={selectedTxns.length === transactions.length}
-              onChange={(e) => toggleSelectAll(e.target.checked)}
-            /> Select All
-          </div>
+      <select
+  value={bulkCategory}
+  onChange={(e) => {
+    const value = e.target.value;
 
-          <select
-            value={bulkCategory}
-            onChange={(e) => setBulkCategory(e.target.value)}
-          >
-            <option value="">Select category</option>
-            {CATEGORIES.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+    if (value === "__add_new__") {
+      const newCat = prompt("Enter new category name");
+      if (!newCat) return;
 
-          <button onClick={handleBulkUpdate}>Update Selected</button>
-          <button onClick={handleBulkDelete}>Delete Selected</button>
-        </>
-      )}
+      if (!categories.includes(newCat)) {
+        setCategories(prev => [...prev, newCat]);
+      }
 
-     
-<h3>Card-wise Expense Summary</h3>
+      setBulkCategory(newCat);
+      return;
+    }
 
+    setBulkCategory(value);
+  }}
+>
+
+        <option value="">Select category</option>
+        {categories.map(c => (
+          <option key={c} value={c}>{c}</option>
+        ))}
+        <option value="__add_new__"> Add new category</option>
+      </select>
+
+      <button onClick={handleBulkUpdate}>Update Selected</button>
+      <button onClick={handleBulkDelete}>Delete Selected</button>
+    </>
+  )}
+
+  <h3>Card-wise Expense Summary</h3>
 
 {cards.map(card => {
-  if (card._id !== cards[activeCardIndex]._id) {
-    return null;
-  }
+  if (card._id !== cards[activeCardIndex]._id) return null;
 
-const cardTxns = transactions.filter(t => t.cardId === card._id);
+  const cardTxns = transactions.filter(t => t.cardId === card._id);
 
-const cardIncome = cardTxns
-  .filter(t => t.amount > 0)
-  .reduce((sum, t) => sum + t.amount, 0);
+  const cardIncome = cardTxns
+    .filter(t => t.amount > 0)
+    .reduce((sum, t) => sum + t.amount, 0);
 
-const cardExpense = cardTxns
-  .filter(t => t.amount < 0)
-  .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-
+  const cardExpense = cardTxns
+    .filter(t => t.amount < 0)
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
   const cardChartData = buildCardChartData(cardTxns);
-  
+
 
   return (
-    
     <div key={card._id} style={{ marginTop: 30 }}>
       <h4>
         {card.name}
-        {card.last4 && ` (${card.last4})`}
-        {" "}— {card.displayCurrency}
+        {card.last4 && ` (${card.last4})`} — {card.displayCurrency}
       </h4>
 
       <p>
-  <b>Income:</b>{" "}
-  {SYMBOL[card.displayCurrency]}
-  {formatAmount(cardIncome)}
-</p>
-
+        <b>Income:</b>{" "}
+        {SYMBOL[card.displayCurrency]}
+        {formatAmount(cardIncome)}
+      </p>
 <p>
-  <b>Expense:</b>{" "}
-  {SYMBOL[card.displayCurrency]}
-  {formatAmount(cardExpense)}
-</p>
-
+        <b>Expense:</b>{" "}
+        {SYMBOL[card.displayCurrency]}
+        {formatAmount(cardExpense)}
+      </p>
 
       {!cardChartData ? (
         <p style={{ color: "#888" }}>
@@ -726,46 +952,133 @@ const cardExpense = cardTxns
           <Pie data={cardChartData} />
         </div>
       )}
-      
     </div>
   );
 })}
 
+{cards.length > 0 && (
+  <div style={{ marginTop: 12 }}>
+    <button onClick={() => setShowAddTxn(v => !v)}>
+      {showAddTxn ? "Cancel" : " Add Transaction"}
+    </button>
+
+    {showAddTxn && (
+      <div style={{
+        marginTop: 12,
+        padding: 12,
+        border: "1px solid #ccc",
+        borderRadius: 6,
+        maxWidth: 400
+      }}>
+        <h4>Add transaction to {cards[activeCardIndex].name}</h4>
+
+        <input
+          type="date"
+          value={newTxn.date}
+          onChange={e => setNewTxn({ ...newTxn, date: e.target.value })}
+        />
+
+        <input
+          type="text"
+          placeholder="Description"
+          value={newTxn.description}
+          onChange={e => setNewTxn({ ...newTxn, description: e.target.value })}
+        />
+
+        <input
+          type="number"
+          placeholder="Amount"
+          value={newTxn.amount}
+          onChange={e => setNewTxn({ ...newTxn, amount: e.target.value })}
+        />
+
+        <div>
+          <label>
+            <input
+              type="radio"
+              checked={newTxn.type === "expense"}
+              onChange={() => setNewTxn({ ...newTxn, type: "expense" })}
+            /> Expense
+          </label>
+
+          <label style={{ marginLeft: 10 }}>
+            <input
+              type="radio"
+              checked={newTxn.type === "income"}
+              onChange={() => setNewTxn({ ...newTxn, type: "income" })}
+            /> Income
+          </label>
+        </div>
+
+        <select
+          value={newTxn.category}
+          onChange={e => {
+            const value = e.target.value;
+
+            if (value === "__add_new__") {
+              const newCat = prompt("Enter new category name");
+              if (!newCat) return;
+
+              if (!categories.includes(newCat)) {
+                setCategories(prev => [...prev, newCat]);
+              }
+
+              setNewTxn({ ...newTxn, category: newCat });
+              return;
+            }
+
+            setNewTxn({ ...newTxn, category: value });
+          }}
+        >
+          {categories.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+          <option value="__add_new__">➕ Add new category</option>
+        </select>
+
+        <button onClick={handleAddTransaction} style={{ marginTop: 10 }}>
+          Save Transaction
+        </button>
+      </div>
+    )}
+  </div>
+)}
+
 
       <table>
-        <thead>
-          <tr>
-            {editMode && <th>Select</th>}
-            <th>Date</th>
-            <th>Description</th>
-            <th>Amount</th>
-            <th>Category</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map(t => (
-            <tr key={t._id}>
-              {editMode && (
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedTxns.includes(t._id)}
-                    onChange={() => toggleTxnSelection(t._id)}
-                  />
-                </td>
-              )}
-              <td>{t.date}</td>
-              <td>{t.description}</td>
-<td>
-  {SYMBOL[t.currency]}
-  {formatAmount(t.amount)}
-</td>
-
-              <td>{t.category}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  <thead>
+    <tr>
+      {editMode && <th>Select</th>}
+      <th>Date</th>
+      <th>Description</th>
+      <th>Amount</th>
+      <th>Category</th>
+    </tr>
+  </thead>
+  <tbody>
+    {transactions.map(t => (
+      <tr key={t._id}>
+        {editMode && (
+          <td>
+            <input
+              type="checkbox"
+              checked={selectedTxns.includes(t._id)}
+              onChange={() => toggleTxnSelection(t._id)}
+            />
+          </td>
+        )}
+        <td>{t.date}</td>
+        <td>{t.description}</td>
+        <td>
+          {SYMBOL[t.currency]}
+          {formatAmount(t.amount)}
+        </td>
+        <td>{t.category}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+</div>
     </div>
   );
 }
