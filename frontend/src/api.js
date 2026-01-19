@@ -80,15 +80,14 @@ export const getCards = async () => {
 
 
 export const createCard = async (card) => {
-  const res = await fetch("http://localhost:5050/cards/create", {
+  const res = await fetch("http://localhost:5050/cards", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(card)
   });
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Failed to create card");
+    throw new Error("Failed to create card");
   }
 
   return res.json();
@@ -106,5 +105,22 @@ export const deleteCard = async (id) => {
 export const getTransactionsByCard = async (cardId) => {
   const res = await fetch(`http://localhost:5050/transactions/card/${cardId}`);
   if (!res.ok) throw new Error("Failed to load transactions");
+  return res.json();
+};
+
+export const updateCardCurrency = async (cardId, displayCurrency) => {
+  const res = await fetch(
+    `http://localhost:5050/cards/currency/${cardId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayCurrency })
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to update card currency");
+  }
+
   return res.json();
 };

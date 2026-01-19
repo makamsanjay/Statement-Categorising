@@ -11,10 +11,13 @@ import {
   getTransactionsByCard
 } from "./api";
 
+import { fetchHealthScore } from "./api";
+import { updateCardCurrency } from "./api";
+
+
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
-import { fetchHealthScore } from "./api";
 
 const CATEGORIES = [
   "Food & Dining",
@@ -37,10 +40,17 @@ const fixAmountSign = (amount, type) => {
   return type === "income" ? abs : -abs;
 };
 
+const SYMBOL = {
+  USD: "$",
+  INR: "₹",
+  EUR: "€",
+  GBP: "£"
+};
+
+
 function App() {
   const [files, setFiles] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [summary, setSummary] = useState(null);
 
   const [preview, setPreview] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -52,6 +62,11 @@ function App() {
 
 const [category, setCategory] = useState("");
 const [budgetAmount, setBudgetAmount] = useState("");
+const formatAmount = (num) => Number(num).toFixed(2);
+
+const [allTransactions, setAllTransactions] = useState([]);
+
+
 
 const [cards, setCards] = useState([]);
 const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -86,22 +101,29 @@ useEffect(() => {
   fetchHealthScore().then(setHealth);
 }, []);
 
+useEffect(() => {
+  fetchHealthScore().then(setHealth);
+}, [transactions]);
 
 
   const fetchTransactions = async () => {
-    const data = await getTransactions();
-    setTransactions(data);
-  };
+  const data = await getTransactions();
+  setAllTransactions(data);
+};
 
-  const loadSummary = async () => {
-    const data = await fetchSummary();
-    setSummary(data);
-  };
 
   useEffect(() => {
     fetchTransactions();
-    loadSummary();
   }, []);
+
+const totalIncome = allTransactions
+  .filter(t => t.amount > 0)
+  .reduce((sum, t) => sum + t.amount, 0);
+
+const totalExpense = allTransactions
+  .filter(t => t.amount < 0)
+  .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
 
   const handleUpload = async () => {
     if (!files.length) {
@@ -157,31 +179,35 @@ useEffect(() => {
 
     setFiles([]);
     fetchTransactions();
-    loadSummary();
   };
 
   const handleConfirm = async () => {
-    const selected = preview.filter(t => t.selected);
-    if (!selected.length) {
-      alert("No transactions selected");
-      return;
-    }
+  const selected = preview.filter(t => t.selected);
+  if (!selected.length) return;
 
-    const cardId = cards[activeCardIndex]._id;
+  const card = cards[activeCardIndex];
 
-await saveConfirmedTransactions(
-  selected.map(t => ({
-    ...t,
-    cardId
-  }))
-);
+  console.log("USING CARD:", card);
 
-    setPreview([]);
-    setShowPreview(false);
+  const payload = selected.map(t => ({
+    date: t.date,
+    description: t.description,
+    amount: Number(t.amount),
+    category: t.category || "Other",
+    cardId: card._id,
+    currency: card.displayCurrency
+  }));
 
-    fetchTransactions();
-    loadSummary();
-  };
+  console.log("FINAL CONFIRM PAYLOAD", payload);
+
+  await saveConfirmedTransactions(payload);
+
+  setPreview([]);
+  setShowPreview(false);
+  fetchTransactions();
+};
+
+
 
   const toggleTxnSelection = (id) => {
     setSelectedTxns(prev =>
@@ -211,7 +237,6 @@ await saveConfirmedTransactions(
     setBulkCategory("");
     setEditMode(false);
     fetchTransactions();
-    loadSummary();
   };
 
   const budgetSummary = Object.entries(budgets).map(([cat, budget]) => {
@@ -256,28 +281,69 @@ const handleSetBudget = () => {
     setSelectedTxns([]);
     setEditMode(false);
     fetchTransactions();
-    loadSummary();
   };
 
-  const chartData =
-    summary?.categories
-      ? {
-          labels: Object.keys(summary.categories),
-          datasets: [
-            {
-              data: Object.values(summary.categories),
-              backgroundColor: [
-                "#FF6384",
-                "#36A2EB",
-                "#FFCE56",
-                "#8AFFC1",
-                "#9966FF",
-                "#FF9F40"
-              ]
-            }
-          ]
-        }
-      : null;
+  const buildCardChartData = (cardTxns) => {
+  if (!cardTxns || cardTxns.length === 0) return null;
+
+  const categories = {};
+
+  cardTxns.forEach(t => {
+    if (t.amount < 0) {
+      categories[t.category] =
+        (categories[t.category] || 0) + Math.abs(t.amount);
+    }
+  });
+
+  if (Object.keys(categories).length === 0) return null;
+
+  return {
+    labels: Object.keys(categories),
+    datasets: [
+      {
+        data: Object.values(categories),
+        backgroundColor: [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56",
+          "#8AFFC1",
+          "#9966FF",
+          "#FF9F40"
+        ]
+      }
+    ]
+  };
+};
+
+const mainCategories = {};
+
+allTransactions.forEach(t => {
+  if (t.amount < 0) {
+    mainCategories[t.category] =
+      (mainCategories[t.category] || 0) + Math.abs(t.amount);
+  }
+});
+
+const chartData =
+  Object.keys(mainCategories).length === 0
+    ? null
+    : {
+        labels: Object.keys(mainCategories),
+        datasets: [
+          {
+            data: Object.values(mainCategories),
+            backgroundColor: [
+              "#FF6384",
+              "#36A2EB",
+              "#FFCE56",
+              "#8AFFC1",
+              "#9966FF",
+              "#FF9F40"
+            ]
+          }
+        ]
+      };
+
 
   return (
     <div className="container">
@@ -383,6 +449,26 @@ const handleSetBudget = () => {
         </>
       )}
 
+      {cards.length > 0 && (
+  <div style={{ marginBottom: 12 }}>
+    <label style={{ fontWeight: "bold" }}>Account Currency:</label>{" "}
+    <select
+      value={cards[0].displayCurrency}
+      onChange={async (e) => {
+        await updateCardCurrency(cards[0]._id, e.target.value);
+        const updated = await getCards();
+        setCards(updated);
+      }}
+    >
+      <option value="USD">USD ($)</option>
+      <option value="INR">INR (₹)</option>
+      <option value="EUR">EUR (€)</option>
+      <option value="GBP">GBP (£)</option>
+    </select>
+  </div>
+)}
+
+
 <h3>Monthly Budgets</h3>
 
 <div style={{ marginBottom: 10 }}>
@@ -416,6 +502,7 @@ const handleSetBudget = () => {
   </div>
 ))}
 
+
 {health && (
   <div className="health-score-header">
   <h3>expense health score</h3>
@@ -442,7 +529,7 @@ const handleSetBudget = () => {
         health.score >= 75 ? "green" :
         health.score >= 50 ? "orange" : "red"
     }}>
-      {health} / 100
+      {health.score} / 100
 
     </div>
 
@@ -454,6 +541,7 @@ const handleSetBudget = () => {
 
   </div>
 )}
+
 
 {cards.length > 0 && (
   <div className="card-carousel">
@@ -478,6 +566,8 @@ const handleSetBudget = () => {
   </div>
 )}
 
+
+
 <button
   type="button"
   onClick={async () => {
@@ -485,7 +575,16 @@ const handleSetBudget = () => {
     if (!name) return;
 
     const last4 = prompt("Last 4 digits (optional)");
-    await createCard({ name, last4 });
+    const accountCurrency = cards[0]?.displayCurrency || "USD";
+
+await createCard({
+  name,
+  last4,
+  baseCurrency: accountCurrency,
+  displayCurrency: accountCurrency
+});
+
+
 
     const updated = await getCards();
     setCards(updated);
@@ -514,19 +613,29 @@ const handleSetBudget = () => {
 </button>
 
 
-      {summary && (
-        <>
-          <h3>Financial Summary</h3>
-          <p><b>Total Income:</b> ${summary.income}</p>
-          <p><b>Total Expense:</b> ${summary.expense}</p>
 
-          {chartData && (
-            <div style={{ width: 450, height: 450 }}>
-              <Pie data={chartData} />
-            </div>
-          )}
-        </>
-      )}
+     <>
+  <h3>Financial Summary</h3>
+
+  <p>
+    <b>Total Income:</b>{" "}
+    {SYMBOL[cards[0]?.displayCurrency || "USD"]}
+    {formatAmount(totalIncome)}
+  </p>
+
+  <p>
+    <b>Total Expense:</b>{" "}
+    {SYMBOL[cards[0]?.displayCurrency || "USD"]}
+    {formatAmount(totalExpense)}
+  </p>
+
+  {chartData && (
+    <div style={{ width: 450, height: 450 }}>
+      <Pie data={chartData} />
+    </div>
+  )}
+</>
+
 
       <h3>Transactions</h3>
 
@@ -563,6 +672,64 @@ const handleSetBudget = () => {
       )}
 
      
+<h3>Card-wise Expense Summary</h3>
+
+
+{cards.map(card => {
+  if (card._id !== cards[activeCardIndex]._id) {
+    return null;
+  }
+
+const cardTxns = transactions.filter(t => t.cardId === card._id);
+
+const cardIncome = cardTxns
+  .filter(t => t.amount > 0)
+  .reduce((sum, t) => sum + t.amount, 0);
+
+const cardExpense = cardTxns
+  .filter(t => t.amount < 0)
+  .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+
+
+  const cardChartData = buildCardChartData(cardTxns);
+  
+
+  return (
+    
+    <div key={card._id} style={{ marginTop: 30 }}>
+      <h4>
+        {card.name}
+        {card.last4 && ` (${card.last4})`}
+        {" "}— {card.displayCurrency}
+      </h4>
+
+      <p>
+  <b>Income:</b>{" "}
+  {SYMBOL[card.displayCurrency]}
+  {formatAmount(cardIncome)}
+</p>
+
+<p>
+  <b>Expense:</b>{" "}
+  {SYMBOL[card.displayCurrency]}
+  {formatAmount(cardExpense)}
+</p>
+
+
+      {!cardChartData ? (
+        <p style={{ color: "#888" }}>
+          Add transactions to see summary graph
+        </p>
+      ) : (
+        <div style={{ width: 400, height: 400 }}>
+          <Pie data={cardChartData} />
+        </div>
+      )}
+      
+    </div>
+  );
+})}
 
 
       <table>
@@ -589,7 +756,11 @@ const handleSetBudget = () => {
               )}
               <td>{t.date}</td>
               <td>{t.description}</td>
-              <td>{t.amount}</td>
+<td>
+  {SYMBOL[t.currency]}
+  {formatAmount(t.amount)}
+</td>
+
               <td>{t.category}</td>
             </tr>
           ))}

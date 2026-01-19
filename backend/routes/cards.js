@@ -3,10 +3,9 @@ const router = express.Router();
 
 const Card = require("../models/Card");
 const Transaction = require("../models/Transaction");
-const { calculateHealthScore } = require("../services/healthScore.js");
 
 /* ============================
-   1️⃣ GET ALL CARDS (CRITICAL)
+   1️⃣ GET ALL CARDS
    ============================ */
 router.get("/", async (req, res) => {
   try {
@@ -18,26 +17,55 @@ router.get("/", async (req, res) => {
 });
 
 /* ============================
-   2️⃣ CREATE CARD
+   2️⃣ CREATE CARD (UPDATED)
    ============================ */
 router.post("/", async (req, res) => {
   try {
-    const { name, last4, monthlyBudget } = req.body;
+    const { name, last4, baseCurrency, displayCurrency } = req.body;
+
+    if (!name || !baseCurrency || !displayCurrency) {
+      return res.status(400).json({
+        error: "name, baseCurrency, and displayCurrency are required"
+      });
+    }
 
     const card = await Card.create({
       name,
       last4,
-      monthlyBudget: monthlyBudget || 0
+      baseCurrency,
+      displayCurrency
     });
 
     res.json(card);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to create card" });
   }
 });
 
 /* ============================
-   3️⃣ DELETE CARD
+   3️⃣ CHANGE DISPLAY CURRENCY (NEW)
+   ============================ */
+router.put("/currency/:id", async (req, res) => {
+  try {
+    const { displayCurrency } = req.body;
+
+    if (!displayCurrency) {
+      return res.status(400).json({ error: "displayCurrency is required" });
+    }
+
+    await Card.findByIdAndUpdate(req.params.id, {
+      displayCurrency
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update display currency" });
+  }
+});
+
+/* ============================
+   4️⃣ DELETE CARD
    ============================ */
 router.delete("/:id", async (req, res) => {
   try {
@@ -53,41 +81,43 @@ router.delete("/:id", async (req, res) => {
 });
 
 /* ============================
-   4️⃣ CARD SUMMARY (ANALYTICS)
+   5️⃣ CARD SUMMARY (NO CURRENCY MIXING)
    ============================ */
 router.get("/summary", async (req, res) => {
   try {
-    const { month } = req.query;
-
-    const start = new Date(month);
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + 1);
-
     const cards = await Card.find();
     const result = [];
 
     for (const card of cards) {
       const agg = await Transaction.aggregate([
         {
-          $match: {
-            cardId: card._id.toString(),
-            date: { $gte: start, $lt: end }
-          }
+          $match: { cardId: card._id.toString() }
         },
-        { $group: { _id: null, spent: { $sum: "$amount" } } }
+        {
+          $group: {
+            _id: null,
+            income: {
+              $sum: {
+                $cond: [{ $gt: ["$amount", 0] }, "$amount", 0]
+              }
+            },
+            expense: {
+              $sum: {
+                $cond: [{ $lt: ["$amount", 0] }, { $abs: "$amount" }, 0]
+              }
+            }
+          }
+        }
       ]);
-
-      const spent = Math.abs(agg[0]?.spent || 0);
-      const budget = card.monthlyBudget || 0;
-      const healthScore = calculateHealthScore(spent, budget);
 
       result.push({
         _id: card._id,
         name: card.name,
         last4: card.last4,
-        monthlyBudget: budget,
-        spent,
-        healthScore
+        baseCurrency: card.baseCurrency,
+        displayCurrency: card.displayCurrency,
+        income: agg[0]?.income || 0,
+        expense: agg[0]?.expense || 0
       });
     }
 

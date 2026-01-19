@@ -33,7 +33,12 @@ cardId: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "Card",
   required: true
+},
+currency: {
+  type: String,
+  required: true
 }
+
 
 }, { timestamps: true });
 
