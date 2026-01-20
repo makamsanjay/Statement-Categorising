@@ -3,95 +3,25 @@ const router = express.Router();
 
 const Card = require("../models/Card");
 const Transaction = require("../models/Transaction");
+const auth = require("../middleware/auth");
 
 /* ============================
-   1️⃣ GET ALL CARDS
+   1️⃣ GET USER CARDS (SUMMARY)
    ============================ */
-router.get("/", async (req, res) => {
+router.get("/summary", auth, async (req, res) => {
   try {
-    const cards = await Card.find();
-    res.json(cards);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch cards" });
-  }
-});
+    const userId = req.user.userId;
+    const cards = await Card.find({ userId });
 
-/* ============================
-   2️⃣ CREATE CARD (UPDATED)
-   ============================ */
-router.post("/", async (req, res) => {
-  try {
-    const { name, last4, baseCurrency, displayCurrency } = req.body;
-
-    if (!name || !baseCurrency || !displayCurrency) {
-      return res.status(400).json({
-        error: "name, baseCurrency, and displayCurrency are required"
-      });
-    }
-
-    const card = await Card.create({
-      name,
-      last4,
-      baseCurrency,
-      displayCurrency
-    });
-
-    res.json(card);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to create card" });
-  }
-});
-
-/* ============================
-   3️⃣ CHANGE DISPLAY CURRENCY (NEW)
-   ============================ */
-router.put("/currency/:id", async (req, res) => {
-  try {
-    const { displayCurrency } = req.body;
-
-    if (!displayCurrency) {
-      return res.status(400).json({ error: "displayCurrency is required" });
-    }
-
-    await Card.findByIdAndUpdate(req.params.id, {
-      displayCurrency
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to update display currency" });
-  }
-});
-
-/* ============================
-   4️⃣ DELETE CARD
-   ============================ */
-router.delete("/:id", async (req, res) => {
-  try {
-    const cardId = req.params.id;
-
-    await Transaction.deleteMany({ cardId });
-    await Card.findByIdAndDelete(cardId);
-
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to delete card" });
-  }
-});
-
-/* ============================
-   5️⃣ CARD SUMMARY (NO CURRENCY MIXING)
-   ============================ */
-router.get("/summary", async (req, res) => {
-  try {
-    const cards = await Card.find();
     const result = [];
 
     for (const card of cards) {
       const agg = await Transaction.aggregate([
         {
-          $match: { cardId: card._id.toString() }
+          $match: {
+            cardId: card._id,
+            userId
+          }
         },
         {
           $group: {
@@ -123,7 +53,112 @@ router.get("/summary", async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch card summary" });
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch cards" });
+  }
+});
+
+/* ============================
+   2️⃣ CREATE CARD (USER SCOPED)
+   ============================ */
+router.post("/", auth, async (req, res) => {
+  try {
+    const { name, last4, baseCurrency, displayCurrency } = req.body;
+
+    if (!name || !baseCurrency || !displayCurrency) {
+      return res.status(400).json({
+        error: "name, baseCurrency, and displayCurrency are required"
+      });
+    }
+
+    if (last4 && !/^\d{4}$/.test(last4)) {
+      return res.status(400).json({
+        error: "Last 4 digits must be exactly 4 numbers"
+      });
+    }
+
+    const card = await Card.create({
+      userId: req.user.userId,
+      name,
+      last4,
+      baseCurrency,
+      displayCurrency
+    });
+
+    res.json(card);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+/* ============================
+   3️⃣ RENAME CARD ✅
+   ============================ */
+router.put("/:id/rename", auth, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: "name is required" });
+    }
+
+    const card = await Card.findOneAndUpdate(
+      { _id: req.params.id, userId },
+      { name },
+      { new: true }
+    );
+
+    if (!card) {
+      return res.status(404).json({ error: "Card not found" });
+    }
+
+    res.json(card);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to rename card" });
+  }
+});
+
+/* ============================
+   4️⃣ UPDATE DISPLAY CURRENCY
+   ============================ */
+router.put("/currency/:id", auth, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { displayCurrency } = req.body;
+
+    const card = await Card.findOneAndUpdate(
+      { _id: req.params.id, userId },
+      { displayCurrency },
+      { new: true }
+    );
+
+    if (!card) {
+      return res.status(404).json({ error: "Card not found" });
+    }
+
+    res.json(card);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update currency" });
+  }
+});
+
+/* ============================
+   5️⃣ DELETE CARD (USER SAFE)
+   ============================ */
+router.delete("/delete/:id", auth, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const cardId = req.params.id;
+
+    await Transaction.deleteMany({ cardId, userId });
+    await Card.findOneAndDelete({ _id: cardId, userId });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete card" });
   }
 });
 

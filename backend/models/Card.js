@@ -1,23 +1,39 @@
 const mongoose = require("mongoose");
 
-const CardSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  last4: String,
+const CardSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
 
-  baseCurrency: {
-    type: String,
-    enum: ["USD", "INR", "EUR", "GBP"],
-    required: true
+    last4: {
+      type: String,
+      maxlength: 4
+    },
+
+    baseCurrency: {
+      type: String,
+      enum: ["USD", "INR", "EUR", "GBP"],
+      default: "USD"
+    },
+
+    displayCurrency: {
+      type: String,
+      enum: ["USD", "INR", "EUR", "GBP"],
+      default: "USD"
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true
+    }
   },
-
-  displayCurrency: {
-    type: String,
-    enum: ["USD", "INR", "EUR", "GBP"],
-    required: true
-  },
-
-  createdAt: { type: Date, default: Date.now }
-});
-
+  {
+    timestamps: true
+  }
+);
 
 module.exports = mongoose.model("Card", CardSchema);

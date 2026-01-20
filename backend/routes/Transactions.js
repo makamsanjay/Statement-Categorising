@@ -1,38 +1,44 @@
 const express = require("express");
 const router = express.Router();
 const Transaction = require("../models/Transaction");
+const auth = require("../middleware/auth");
 
-router.post("/", async (req, res) => {
-  try {
-    const transaction = await Transaction.create(req.body);
-    res.status(201).json(transaction);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+/* ============================
+   CREATE TRANSACTION
+   ============================ */
+router.get("/", auth, async (req, res) => {
+  const transactions = await Transaction.find({
+    userId: req.user.userId
+  }).sort({ createdAt: -1 });
+
+  res.json(transactions);
 });
 
-router.get("/", async (req, res) => {
-  try {
-    const transactions = await Transaction.find().sort({ createdAt: -1 });
-    res.json(transactions);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
-router.get("/summary", async (req, res) => {
+/* ============================
+   TRANSACTION SUMMARY (USER-SCOPED)
+   ============================ */
+router.get("/summary", auth, async (req, res) => {
   try {
-    const { from, to } = req.query;
+   const userId = req.user.userId;
 
-    const filter = {};
+    const filter = { userId };
+
     if (from && to) {
       filter.date = {
         $gte: new Date(from),
-        $lte: new Date(to),
+        $lte: new Date(to)
       };
     }
 
-    const txns = await Transaction.find(filter);
+ const cards = await Card.find({ userId }).select("_id");
+const cardIds = cards.map(c => c._id);
+
+const txns = await Transaction.find({
+  userId,
+  cardId: { $in: cardIds }
+});
+
 
     let income = 0;
     let expense = 0;
@@ -52,64 +58,59 @@ router.get("/summary", async (req, res) => {
   }
 });
 
+/* ============================
+   UPDATE CATEGORY (SAFE)
+   ============================ */
+router.put("/:id", auth, async (req, res) => {
+  const { category } = req.body;
 
-router.put("/:id", async (req, res) => {
-  try {
-    const { category } = req.body;
+  const updated = await Transaction.findOneAndUpdate(
+    { _id: req.params.id, userId: req.user.userId },
+    {
+      category,
+      categorySource: "user",
+      confidence: 1,
+      userOverridden: true
+    },
+    { new: true }
+  );
 
-    const updated = await Transaction.findByIdAndUpdate(
-      req.params.id,
-      {
-        category,
-        categorySource: "user",
-        confidence: 1,
-        userOverridden: true
-      },
-      { new: true }
-    );
-
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  res.json(updated);
 });
 
-router.post("/bulk-delete", async (req, res) => {
-  try {
-    const { ids } = req.body;
+/* ============================
+   BULK DELETE (USER-SCOPED)
+   ============================ */
+router.post("/bulk-delete", auth, async (req, res) => {
+  const { ids } = req.body;
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ error: "No transaction IDs provided" });
-    }
+  const result = await Transaction.deleteMany({
+    _id: { $in: ids },
+    userId: req.user.userId
+  });
 
-    const result = await Transaction.deleteMany({
-      _id: { $in: ids }
-    });
-
-    res.json({
-      message: "Transactions deleted successfully",
-      deletedCount: result.deletedCount
-    });
-
-  } catch (err) {
-    console.error("Bulk delete failed:", err);
-    res.status(500).json({ error: "Bulk delete failed" });
-  }
+  res.json({ deletedCount: result.deletedCount });
 });
 
-router.get("/card/:cardId", async (req, res) => {
+
+/* ============================
+   GET TRANSACTIONS BY CARD (USER-SCOPED)
+   ============================ */
+router.get("/card/:cardId", auth, async (req, res) => {
   try {
     const { cardId } = req.params;
 
-    const transactions = await Transaction.find({ cardId })
-      .sort({ createdAt: -1 });
+    const transactions = await Transaction.find({
+      cardId,
+      userId: req.user.userId
+    }).sort({ createdAt: -1 });
 
     res.json(transactions);
   } catch (err) {
-    console.error("Fetch by card failed:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
