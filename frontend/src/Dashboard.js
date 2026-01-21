@@ -70,6 +70,7 @@ const [allTransactions, setAllTransactions] = useState([]);
 const [selectedCategory, setSelectedCategory] = useState(null);
 
 const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+const [creatingCard, setCreatingCard] = useState(false);
 
 const [showAddTxn, setShowAddTxn] = useState(false);
 
@@ -112,14 +113,12 @@ useEffect(() => {
 
 useEffect(() => {
   if (!cards.length) {
-    setTransactions([]);
     return;
   }
 
   const cardId = cards[activeCardIndex]?._id;
   if (!cardId) return;
 
-  setTransactions([]);
 
   getTransactionsByCard(cardId).then(setTransactions);
 }, [cards, activeCardIndex]);
@@ -162,62 +161,46 @@ const totalExpense = transactions
   .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
 
-  const handleUpload = async () => {
-    if (!files.length) {
-      alert("Select file(s)");
-      return;
-    }
+ const handleUpload = async () => {
+  if (!files.length) {
+    alert("Select file(s)");
+    return;
+  }
 
-    let pdfPreview = [];
-    let skippedMessages = [];
+  let pdfPreview = [];
+  let skippedMessages = [];
 
-    for (const file of files) {
+  for (const file of files) {
+    if (file.type === "application/pdf") {
       try {
-        if (file.type === "application/pdf") {
-          const data = await previewUpload(file);
-          pdfPreview.push(...data.map(t => ({ ...t, selected: true })));
-        } else {
-          const formData = new FormData();
-          formData.append("file", file);
-
-          const res = await fetch("http://localhost:5050/upload", {
-            method: "POST",
-            body: formData
-          });
-
-          const data = await res.json();
-
-          if (!res.ok) {
-            skippedMessages.push(`${file.name}: ${data.error || "Upload failed"}`);
-          }
-
-          if (data.skippedFiles?.length) {
-            data.skippedFiles.forEach(f =>
-              skippedMessages.push(`${f.file}: ${f.reason}`)
-            );
-          }
-        }
+        const data = await previewUpload(file);
+        pdfPreview.push(...data.map(t => ({ ...t, selected: true })));
       } catch (err) {
         skippedMessages.push(`${file.name}: ${err.message}`);
       }
-    }
-
-    if (pdfPreview.length) {
-      setPreview(pdfPreview);
-      setShowPreview(true);
-    }
-
-    if (skippedMessages.length) {
-      alert(
-        "Some files were skipped:\n\n" +
-        skippedMessages.map(m => `• ${m}`).join("\n")
+    } else {
+      skippedMessages.push(
+        `${file.name}: Only PDF uploads are supported for preview`
       );
     }
+  }
 
-    setFiles([]);
-  };
+  if (pdfPreview.length) {
+    setPreview(pdfPreview);
+    setShowPreview(true);
+  }
 
-  const handleConfirm = async (e) => {
+  if (skippedMessages.length) {
+    alert(
+      "Some files were skipped:\n\n" +
+        skippedMessages.map(m => `• ${m}`).join("\n")
+    );
+  }
+
+  setFiles([]);
+};
+
+const handleConfirm = async (e) => {
   e?.preventDefault();
 
   const selected = preview.filter(t => t.selected);
@@ -226,9 +209,11 @@ const totalExpense = transactions
     return;
   }
 
-  const card = cards[activeCardIndex];
-
-  const { userId } = JSON.parse(atob(localStorage.token.split(".")[1]));
+  const card = cards?.[activeCardIndex];
+  if (!card || !card._id) {
+    alert("Please select a card before confirming upload");
+    return;
+  }
 
   const payload = selected.map(t => ({
     date: t.date,
@@ -236,14 +221,27 @@ const totalExpense = transactions
     amount: Number(t.amount),
     category: t.category || "Other",
     cardId: card._id,
-    currency: card.displayCurrency,
-    userId
+    currency: card.displayCurrency
   }));
 
-  await saveConfirmedTransactions(payload);
+  try {
+    await saveConfirmedTransactions(payload);
+  } catch (err) {
+    // ✅ FRIENDLY MESSAGE (NO CRASH)
+    alert(err.message || "Upload failed");
+    return;
+  }
 
-  const cardId = card._id;
-  setTransactions(await getTransactionsByCard(cardId));
+  // ✅ REFRESH UI STATE
+  const updatedCards = await getCards();
+  setCards(updatedCards);
+
+  const newIndex = updatedCards.findIndex(c => c._id === card._id);
+  setActiveCardIndex(newIndex === -1 ? 0 : newIndex);
+
+  const txns = await getTransactionsByCard(card._id);
+  setTransactions(txns);
+
   setAllTransactions(await getTransactions());
 
   setPreview([]);
@@ -273,8 +271,7 @@ const handleAddTransaction = async () => {
     amount: finalAmount,
     category,
     cardId: card._id,
-    currency: card.displayCurrency,
-    userId
+    currency: card.displayCurrency
   }];
 
   await saveConfirmedTransactions(payload
@@ -824,32 +821,115 @@ onChange={(e) => {
   </div>
 )}
 
+{cards.length > 0 && (
+  <div style={{ marginTop: 12 }}>
+    <button onClick={() => setShowAddTxn(v => !v)}>
+      {showAddTxn ? "Cancel" : " Add Transaction"}
+    </button>
+
+    {showAddTxn && (
+      <div style={{
+        marginTop: 12,
+        padding: 12,
+        border: "1px solid #ccc",
+        borderRadius: 6,
+        maxWidth: 400
+      }}>
+        <h4>Add transaction to {cards[activeCardIndex].name}</h4>
+
+        <input
+          type="date"
+          value={newTxn.date}
+          onChange={e => setNewTxn({ ...newTxn, date: e.target.value })}
+        />
+
+        <input
+          type="text"
+          placeholder="Description"
+          value={newTxn.description}
+          onChange={e => setNewTxn({ ...newTxn, description: e.target.value })}
+        />
+
+        <input
+          type="number"
+          placeholder="Amount"
+          value={newTxn.amount}
+          onChange={e => setNewTxn({ ...newTxn, amount: e.target.value })}
+        />
+
+        <div>
+          <label>
+            <input
+              type="radio"
+              checked={newTxn.type === "expense"}
+              onChange={() => setNewTxn({ ...newTxn, type: "expense" })}
+            /> Expense
+          </label>
+
+          <label style={{ marginLeft: 10 }}>
+            <input
+              type="radio"
+              checked={newTxn.type === "income"}
+              onChange={() => setNewTxn({ ...newTxn, type: "income" })}
+            /> Income
+          </label>
+        </div>
+
+        <select
+          value={newTxn.category}
+          onChange={e => {
+            const value = e.target.value;
+
+            if (value === "__add_new__") {
+              const newCat = prompt("Enter new category name");
+              if (!newCat) return;
+
+              if (!categories.includes(newCat)) {
+                setCategories(prev => [...prev, newCat]);
+              }
+
+              setNewTxn({ ...newTxn, category: newCat });
+              return;
+            }
+
+            setNewTxn({ ...newTxn, category: value });
+          }}
+        >
+          {categories.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+          <option value="__add_new__">➕ Add new category</option>
+        </select>
+
+        <button onClick={handleAddTransaction} style={{ marginTop: 10 }}>
+          Save Transaction
+        </button>
+      </div>
+    )}
+  </div>
+)}
 
 
 <button
   type="button"
+  disabled={creatingCard}
   onClick={async () => {
-    let name = prompt("Card name");
-    if (!name) return;
+    if (creatingCard) return;
 
-    let last4 = "";
-
-    while (true) {
-      last4 = prompt("Last 4 digits (optional, exactly 4 numbers)");
-
-      // user clicked cancel
-      if (last4 === null) break;
-
-      // allow empty
-      if (last4 === "") break;
-
-      // validate
-      if (/^\d{4}$/.test(last4)) break;
-
-      alert(" Please enter EXACTLY 4 digits (numbers only)");
-    }
-
+    setCreatingCard(true);
     try {
+      let name = prompt("Card name");
+      if (!name) return;
+
+      let last4 = "";
+
+      while (true) {
+        last4 = prompt("Last 4 digits (optional, exactly 4 numbers)");
+        if (last4 === null || last4 === "") break;
+        if (/^\d{4}$/.test(last4)) break;
+        alert("Please enter EXACTLY 4 digits");
+      }
+
       const accountCurrency = cards[0]?.displayCurrency || "USD";
 
       await createCard({
@@ -861,16 +941,17 @@ onChange={(e) => {
 
       const updated = await getCards();
       setCards(updated);
-
-      // 🔥 ensure UI updates
       setActiveCardIndex(updated.length - 1);
     } catch (err) {
       alert(err.message || "Failed to create card");
+    } finally {
+      setCreatingCard(false);
     }
   }}
 >
-  + add card
+  {creatingCard ? "Creating..." : "+ add card"}
 </button>
+
 
 <button
   onClick={async () => {
@@ -1056,93 +1137,6 @@ onChange={(e) => {
   );
 })}
 
-{cards.length > 0 && (
-  <div style={{ marginTop: 12 }}>
-    <button onClick={() => setShowAddTxn(v => !v)}>
-      {showAddTxn ? "Cancel" : " Add Transaction"}
-    </button>
-
-    {showAddTxn && (
-      <div style={{
-        marginTop: 12,
-        padding: 12,
-        border: "1px solid #ccc",
-        borderRadius: 6,
-        maxWidth: 400
-      }}>
-        <h4>Add transaction to {cards[activeCardIndex].name}</h4>
-
-        <input
-          type="date"
-          value={newTxn.date}
-          onChange={e => setNewTxn({ ...newTxn, date: e.target.value })}
-        />
-
-        <input
-          type="text"
-          placeholder="Description"
-          value={newTxn.description}
-          onChange={e => setNewTxn({ ...newTxn, description: e.target.value })}
-        />
-
-        <input
-          type="number"
-          placeholder="Amount"
-          value={newTxn.amount}
-          onChange={e => setNewTxn({ ...newTxn, amount: e.target.value })}
-        />
-
-        <div>
-          <label>
-            <input
-              type="radio"
-              checked={newTxn.type === "expense"}
-              onChange={() => setNewTxn({ ...newTxn, type: "expense" })}
-            /> Expense
-          </label>
-
-          <label style={{ marginLeft: 10 }}>
-            <input
-              type="radio"
-              checked={newTxn.type === "income"}
-              onChange={() => setNewTxn({ ...newTxn, type: "income" })}
-            /> Income
-          </label>
-        </div>
-
-        <select
-          value={newTxn.category}
-          onChange={e => {
-            const value = e.target.value;
-
-            if (value === "__add_new__") {
-              const newCat = prompt("Enter new category name");
-              if (!newCat) return;
-
-              if (!categories.includes(newCat)) {
-                setCategories(prev => [...prev, newCat]);
-              }
-
-              setNewTxn({ ...newTxn, category: newCat });
-              return;
-            }
-
-            setNewTxn({ ...newTxn, category: value });
-          }}
-        >
-          {categories.map(c => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-          <option value="__add_new__">➕ Add new category</option>
-        </select>
-
-        <button onClick={handleAddTransaction} style={{ marginTop: 10 }}>
-          Save Transaction
-        </button>
-      </div>
-    )}
-  </div>
-)}
 
 
       <table>

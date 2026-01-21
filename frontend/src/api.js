@@ -44,12 +44,17 @@ export const saveConfirmedTransactions = async (transactions) => {
     body: JSON.stringify({ transactions }),
   });
 
+  const data = await res.json();
+
   if (!res.ok) {
-    throw new Error("Saving transactions failed");
+    throw new Error(
+      data.message || "Upgrade to Pro to upload more statements"
+    );
   }
 
-  return res.json();
+  return data;
 };
+
 
 /* ============================
    TRANSACTIONS
@@ -114,9 +119,18 @@ export const createCard = async (card) => {
     body: JSON.stringify(card),
   });
 
-  if (!res.ok) throw new Error("Failed to create card");
-  return res.json();
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(
+      data.message ||
+      "Free plan allows only 1 card. Upgrade to Pro."
+    );
+  }
+
+  return data;
 };
+
 
 export const deleteCard = async (id) => {
   const res = await authFetch(`${BASE_URL}/cards/delete/${id}`, {
@@ -178,3 +192,17 @@ export const renameCard = async (cardId, name) => {
 
   return res.json();
 };
+
+export async function startCheckout() {
+  const res = await fetch("http://localhost:5050/billing/create-checkout-session", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${localStorage.token}`
+    }
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Checkout failed");
+
+  return data.url;
+}

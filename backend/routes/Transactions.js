@@ -2,13 +2,15 @@ const express = require("express");
 const router = express.Router();
 const Transaction = require("../models/Transaction");
 const auth = require("../middleware/auth");
+const loadUser = require("../middleware/loadUser");
+
 
 /* ============================
    CREATE TRANSACTION
    ============================ */
-router.get("/", auth, async (req, res) => {
+router.get("/", auth, loadUser, async (req, res) => {
   const transactions = await Transaction.find({
-    userId: req.user.userId
+    userId: req.user._id
   }).sort({ createdAt: -1 });
 
   res.json(transactions);
@@ -18,9 +20,9 @@ router.get("/", auth, async (req, res) => {
 /* ============================
    TRANSACTION SUMMARY (USER-SCOPED)
    ============================ */
-router.get("/summary", auth, async (req, res) => {
+router.get("/summary", auth, loadUser, async (req, res) => {
   try {
-   const userId = req.user.userId;
+   const userId = req.user._id;
 
     const filter = { userId };
 
@@ -58,14 +60,11 @@ const txns = await Transaction.find({
   }
 });
 
-/* ============================
-   UPDATE CATEGORY (SAFE)
-   ============================ */
-router.put("/:id", auth, async (req, res) => {
+router.put("/:id", auth, loadUser, async (req, res) => {
   const { category } = req.body;
 
   const updated = await Transaction.findOneAndUpdate(
-    { _id: req.params.id, userId: req.user.userId },
+    { _id: req.params.id, userId: req.user._id },
     {
       category,
       categorySource: "user",
@@ -78,15 +77,12 @@ router.put("/:id", auth, async (req, res) => {
   res.json(updated);
 });
 
-/* ============================
-   BULK DELETE (USER-SCOPED)
-   ============================ */
-router.post("/bulk-delete", auth, async (req, res) => {
+router.post("/bulk-delete", auth, loadUser, async (req, res) => {
   const { ids } = req.body;
 
   const result = await Transaction.deleteMany({
     _id: { $in: ids },
-    userId: req.user.userId
+    userId: req.user._id
   });
 
   res.json({ deletedCount: result.deletedCount });
@@ -96,13 +92,13 @@ router.post("/bulk-delete", auth, async (req, res) => {
 /* ============================
    GET TRANSACTIONS BY CARD (USER-SCOPED)
    ============================ */
-router.get("/card/:cardId", auth, async (req, res) => {
+router.get("/card/:cardId", auth, loadUser, async (req, res) => {
   try {
     const { cardId } = req.params;
 
     const transactions = await Transaction.find({
       cardId,
-      userId: req.user.userId
+      userId: req.user._id
     }).sort({ createdAt: -1 });
 
     res.json(transactions);

@@ -35,10 +35,11 @@ app.use("/cards", cardRoutes);
 
 app.use("/statements", require("./routes/statements"));
 app.use("/analytics", require("./routes/analytics"));
-app.use("/cards", require("./routes/cards"));
 
 app.use("/auth", require("./routes/auth"));
 
+app.use("/billing", require("./routes/billing"));
+app.use("/webhook/stripe", require("./routes/stripeWebhook"));
 
 
  

@@ -4,13 +4,14 @@ const router = express.Router();
 const Card = require("../models/Card");
 const Transaction = require("../models/Transaction");
 const auth = require("../middleware/auth");
+const loadUser = require("../middleware/loadUser");
 
 /* ============================
    1️⃣ GET USER CARDS (SUMMARY)
    ============================ */
-router.get("/summary", auth, async (req, res) => {
+router.get("/summary", auth, loadUser, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user._id;
     const cards = await Card.find({ userId });
 
     const result = [];
@@ -59,9 +60,9 @@ router.get("/summary", auth, async (req, res) => {
 });
 
 /* ============================
-   2️⃣ CREATE CARD (USER SCOPED)
+   2️⃣ CREATE CARD (SAFE + IDEMPOTENT)
    ============================ */
-router.post("/", auth, async (req, res) => {
+router.post("/", auth, loadUser, async (req, res) => {
   try {
     const { name, last4, baseCurrency, displayCurrency } = req.body;
 
@@ -77,8 +78,34 @@ router.post("/", auth, async (req, res) => {
       });
     }
 
+    // 🔒 FREE PLAN LIMIT: ONLY 1 CARD TOTAL
+    if (req.user.plan === "free") {
+      const existingCardCount = await Card.countDocuments({
+        userId: req.user._id
+      });
+
+      if (existingCardCount >= 1) {
+        return res.status(403).json({
+          upgrade: true,
+          message: "Free plan allows only 1 card"
+        });
+      }
+    }
+
+    // 🛡️ IDEMPOTENCY: prevent double creation
+    const existing = await Card.findOne({
+      userId: req.user._id,
+      name,
+      baseCurrency,
+      displayCurrency
+    });
+
+    if (existing) {
+      return res.json(existing);
+    }
+
     const card = await Card.create({
-      userId: req.user.userId,
+      userId: req.user._id,
       name,
       last4,
       baseCurrency,
@@ -92,13 +119,11 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-
 /* ============================
-   3️⃣ RENAME CARD ✅
+   3️⃣ RENAME CARD
    ============================ */
-router.put("/:id/rename", auth, async (req, res) => {
+router.put("/:id/rename", auth, loadUser, async (req, res) => {
   try {
-    const userId = req.user.userId;
     const { name } = req.body;
 
     if (!name) {
@@ -106,7 +131,7 @@ router.put("/:id/rename", auth, async (req, res) => {
     }
 
     const card = await Card.findOneAndUpdate(
-      { _id: req.params.id, userId },
+      { _id: req.params.id, userId: req.user._id },
       { name },
       { new: true }
     );
@@ -124,13 +149,12 @@ router.put("/:id/rename", auth, async (req, res) => {
 /* ============================
    4️⃣ UPDATE DISPLAY CURRENCY
    ============================ */
-router.put("/currency/:id", auth, async (req, res) => {
+router.put("/currency/:id", auth, loadUser, async (req, res) => {
   try {
-    const userId = req.user.userId;
     const { displayCurrency } = req.body;
 
     const card = await Card.findOneAndUpdate(
-      { _id: req.params.id, userId },
+      { _id: req.params.id, userId: req.user._id },
       { displayCurrency },
       { new: true }
     );
@@ -148,13 +172,19 @@ router.put("/currency/:id", auth, async (req, res) => {
 /* ============================
    5️⃣ DELETE CARD (USER SAFE)
    ============================ */
-router.delete("/delete/:id", auth, async (req, res) => {
+router.delete("/delete/:id", auth, loadUser, async (req, res) => {
   try {
-    const userId = req.user.userId;
     const cardId = req.params.id;
 
-    await Transaction.deleteMany({ cardId, userId });
-    await Card.findOneAndDelete({ _id: cardId, userId });
+    await Transaction.deleteMany({
+      cardId,
+      userId: req.user._id
+    });
+
+    await Card.findOneAndDelete({
+      _id: cardId,
+      userId: req.user._id
+    });
 
     res.json({ success: true });
   } catch (err) {

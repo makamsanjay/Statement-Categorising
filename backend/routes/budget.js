@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const loadUser = require("../middleware/loadUser");
 
 router.post("/", async (req, res) => {
   const { category, amount, month } = req.body;
@@ -13,7 +14,7 @@ router.post("/", async (req, res) => {
   res.json(budget);
 });
 
-router.get("/summary", async (req, res) => {
+router.get("/summary", loadUser, async (req, res) => {
   const month = req.query.month; 
 
   const budgets = await Budget.find({ month });

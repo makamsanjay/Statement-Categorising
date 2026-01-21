@@ -14,6 +14,9 @@ const { aiCategorize } = require("../ai/aiCategorize");
 const AICategoryCache = require("../models/AICategoryCache");
 const normalizeMerchant = require("../utils/normalizeMerchant");
 
+const auth = require("../middleware/auth");
+const loadUser = require("../middleware/loadUser");
+
 const router = express.Router();
 
 /* =========================
@@ -38,6 +41,34 @@ const upload = multer({
     }
   }
 });
+
+/* =========================
+   FREE PLAN UPLOAD LIMIT
+   (COUNT ONLY ON CONFIRM)
+========================= */
+function canUploadToday(user) {
+  // default values (VERY IMPORTANT)
+  if (typeof user.uploadsToday !== "number") {
+    user.uploadsToday = 0;
+  }
+
+  if (!user.lastUploadDate) {
+    user.lastUploadDate = new Date(0);
+  }
+
+  if (!user.plan) {
+    user.plan = "free";
+  }
+
+  const today = new Date().toDateString();
+
+  if (user.lastUploadDate.toDateString() !== today) {
+    user.uploadsToday = 0;
+    user.lastUploadDate = new Date();
+  }
+
+  return user.plan !== "free" || user.uploadsToday < 1;
+}
 
 /* =========================
    PARSERS
@@ -106,114 +137,92 @@ async function resolveCategory(description) {
 }
 
 /* =========================
-   UPLOAD (NON-PDF)
+   PDF PREVIEW (NO LIMIT COUNT)
 ========================= */
-router.post("/", upload.array("file", 10), async (req, res) => {
-  try {
-    const allTransactions = [];
-    const skippedFiles = [];
+router.post(
+  "/preview",
+  auth,
+  loadUser,
+  upload.array("file", 10),
+  async (req, res) => {
+    try {
+      const preview = [];
 
-    for (const file of req.files) {
-      let rows = [];
-      const name = file.originalname.toLowerCase();
+      for (const file of req.files) {
+        if (!file.originalname.toLowerCase().endsWith(".pdf")) continue;
 
-      try {
-        if (name.endsWith(".csv")) rows = await parseCSV(file.path);
-        else if (name.endsWith(".xls") || name.endsWith(".xlsx"))
-          rows = parseExcel(file.path);
-        else if (name.endsWith(".pdf")) rows = await parsePDF(file.path);
-
+        const rows = await parsePDF(file.path);
         for (const row of rows) {
-          const date = row.date || row.Date;
-          const description = row.description || row.Description;
-          const amount = Number(row.amount || row.Amount);
+          const result = await resolveCategory(row.description);
 
-          if (!date || !description || Number.isNaN(amount)) continue;
-
-          const result = await resolveCategory(description);
-
-          allTransactions.push({
-            date,
-            description,
-            amount,
+          preview.push({
+            id: crypto.randomUUID(),
+            ...row,
             category: result.category,
-            confidence: result.confidence
+            confidence: result.confidence,
+            selected: true
           });
         }
-      } catch {
-        skippedFiles.push({ file: file.originalname, reason: "Failed to parse" });
-      } finally {
-        fs.existsSync(file.path) && fs.unlinkSync(file.path);
-      }
-    }
 
-    if (!allTransactions.length) {
-      return res.status(400).json({ error: "No transactions found", skippedFiles });
-    }
-
-    await Transaction.insertMany(allTransactions);
-    res.json({ success: true, inserted: allTransactions.length, skippedFiles });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* =========================
-   PDF PREVIEW
-========================= */
-router.post("/preview", upload.array("file", 10), async (req, res) => {
-  try {
-    const preview = [];
-
-    for (const file of req.files) {
-      if (!file.originalname.toLowerCase().endsWith(".pdf")) continue;
-
-      const rows = await parsePDF(file.path);
-      for (const row of rows) {
-        const result = await resolveCategory(row.description);
-
-        preview.push({
-          id: crypto.randomUUID(),
-          ...row,
-          category: result.category,
-          confidence: result.confidence,
-          selected: true
-        });
+        fs.unlinkSync(file.path);
       }
 
-      fs.unlinkSync(file.path);
+      res.json(preview);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+);
+
+router.post("/confirm", auth, loadUser, async (req, res) => {
+  try {
+    // 🔒 check limit FIRST
+    if (!canUploadToday(req.user)) {
+      return res.status(403).json({
+        upgrade: true,
+        message: "Free plan allows 1 upload per day"
+      });
     }
 
-    res.json(preview);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-/* =========================
-   CONFIRM SAVE (FINAL FIX)
-========================= */
-router.post("/confirm", async (req, res) => {
-  try {
-    const cleaned = (req.body.transactions || []).filter(t =>
-      t &&
-      t.date &&
-      t.description &&
-      typeof t.amount === "number" &&
-      !Number.isNaN(t.amount) &&
-      t.cardId &&
-      t.currency
+    // ✅ define cleaned BEFORE using it
+    const cleaned = (req.body.transactions || []).filter(
+      t =>
+        t &&
+        t.date &&
+        t.description &&
+        typeof t.amount === "number" &&
+        !Number.isNaN(t.amount) &&
+        t.cardId &&
+        t.currency
     );
 
     if (!cleaned.length) {
       return res.status(400).json({ error: "No valid transactions" });
     }
 
-    await Transaction.insertMany(cleaned, { ordered: false });
+    // 🛡️ dedupe + attach userId
+    const unique = new Map();
 
-    res.json({ success: true, inserted: cleaned.length });
+    cleaned.forEach(t => {
+      const key = `${t.date}-${t.description}-${t.amount}-${t.cardId}`;
+      unique.set(key, {
+        ...t,
+        userId: req.user._id
+      });
+    });
+
+    const deduped = Array.from(unique.values());
+
+    await Transaction.insertMany(deduped, { ordered: false });
+
+    // ✅ safe increment
+    req.user.uploadsToday = (req.user.uploadsToday || 0) + 1;
+    req.user.lastUploadDate = new Date();
+    await req.user.save();
+
+    res.json({ success: true, inserted: deduped.length });
   } catch (err) {
-    console.error("Confirm failed:", err.message);
+    console.error("Confirm failed:", err);
     res.status(500).json({ error: err.message });
   }
 });

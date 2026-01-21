@@ -2,11 +2,12 @@ const express = require("express");
 const router = express.Router();
 const Transaction = require("../models/Transaction");
 const { toUSD } = require("../utils/convertCurrency");
+const loadUser = require("../middleware/loadUser");
 
 /* ============================
    OVERVIEW (ALL CARDS → USD)
    ============================ */
-router.get("/overview", async (req, res) => {
+router.get("/overview", loadUser, async (req, res) => {
   try {
     const { month } = req.query;
 
@@ -42,7 +43,7 @@ router.get("/overview", async (req, res) => {
 /* ============================
    CARD-WISE (NATIVE CURRENCY)
    ============================ */
-router.get("/cards", async (req, res) => {
+router.get("/cards", loadUser, async (req, res) => {
   try {
     const { month } = req.query;
 

@@ -3,14 +3,16 @@ const router = express.Router();
 const Transaction = require("../models/Transaction");
 const auth = require("../middleware/auth");
 const { calculateHealthScore } = require("../services/healthScore");
+const loadUser = require("../middleware/loadUser");
+
 
 /**
  * GET /health
  * Returns expense health score for logged-in user
  */
-router.get("/", auth, async (req, res) => {
+router.get("/", auth, loadUser, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user._id  ;
 
     // ✅ USER-SCOPED QUERY
     const transactions = await Transaction.find({ userId });
