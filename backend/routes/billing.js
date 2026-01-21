@@ -5,11 +5,11 @@ const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
 
 /* ============================
-   1️⃣ START CHECKOUT
+   1️⃣ START CHECKOUT (UPGRADE)
    ============================ */
 router.post("/create-checkout-session", auth, loadUser, async (req, res) => {
   try {
-    // ✅ ALREADY PAID (MONTHLY / YEARLY)
+    // ⛔ Prevent duplicate subscriptions
     if (req.user.plan === "monthly" || req.user.plan === "yearly") {
       return res.status(400).json({
         error: "You already have an active Pro subscription"
@@ -20,10 +20,10 @@ router.post("/create-checkout-session", auth, loadUser, async (req, res) => {
       mode: "subscription",
       payment_method_types: ["card"],
 
-      // Attach to Stripe customer automatically
+      // Stripe will create or reuse customer automatically
       customer_email: req.user.email,
 
-      // 🔑 CRITICAL: metadata for webhook
+      // 🔑 IMPORTANT: metadata for webhook
       metadata: {
         userId: req.user._id.toString()
       },
@@ -63,12 +63,12 @@ router.post("/portal", auth, loadUser, async (req, res) => {
       });
     }
 
-    const portalSession = await stripe.billingPortal.sessions.create({
+    const session = await stripe.billingPortal.sessions.create({
       customer: req.user.stripeCustomerId,
       return_url: process.env.FRONTEND_URL
     });
 
-    res.json({ url: portalSession.url });
+    res.json({ url: session.url });
   } catch (err) {
     console.error("Billing portal error:", err);
     res.status(500).json({ error: "Failed to open billing portal" });
@@ -76,14 +76,13 @@ router.post("/portal", auth, loadUser, async (req, res) => {
 });
 
 /* ============================
-   3️⃣ BILLING STATUS (FRONTEND)
+   3️⃣ BILLING STATUS (READ-ONLY)
    ============================ */
 router.get("/status", auth, loadUser, async (req, res) => {
   res.json({
     plan: req.user.plan || "free",
-    isPro:
-      req.user.plan === "monthly" || req.user.plan === "yearly",
-    stripeCustomerId: req.user.stripeCustomerId || null,
+    subscriptionStatus: req.user.subscriptionStatus || "none",
+    cancelAtPeriodEnd: req.user.cancelAtPeriodEnd || false,
     planExpiresAt: req.user.planExpiresAt || null
   });
 });

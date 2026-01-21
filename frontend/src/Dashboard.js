@@ -20,7 +20,6 @@ import {
 
 
 
-
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
@@ -98,8 +97,9 @@ const [newTxn, setNewTxn] = useState({
   category: "Other"
 });
 
+const isPro =
+  billing?.plan === "monthly" || billing?.plan === "yearly";
 
-const tokenPayload = JSON.parse(atob(localStorage.token.split(".")[1]));
 
 
 const [cards, setCards] = useState([]);
@@ -145,10 +145,6 @@ useEffect(() => {
 
 
 const [health, setHealth] = useState(null);
-
-useEffect(() => {
-  fetchHealthScore().then(setHealth);
-}, []);
 
 useEffect(() => {
   fetchHealthScore().then(setHealth);
@@ -332,11 +328,6 @@ setAllTransactions(await getTransactions());
 
   };
 
-  
-  
-
-        <option value="__add_new__"> Add new category</option>
-
 
   const budgetSummary = Object.entries(budgets).map(([cat, budget]) => {
   const spent = transactions
@@ -366,20 +357,31 @@ const handleSetBudget = () => {
   setBudgetAmount("");
 };
 
-  const handleBulkDelete = async () => {
-    if (!selectedTxns.length) return;
+ const handleBulkDelete = async () => {
+  if (!selectedTxns.length) return;
 
-    if (!window.confirm("Delete selected transactions permanently?")) return;
+  if (!window.confirm("Delete selected transactions permanently?")) return;
 
-    await fetch("http://localhost:5050/transactions/bulk-delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: selectedTxns })
-    });
+  await fetch("http://localhost:5050/transactions/bulk-delete", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify({ ids: selectedTxns })
+  });
 
-    setSelectedTxns([]);
-    setEditMode(false);
-  };
+  const cardId = cards[activeCardIndex]._id;
+  const updatedTxns = await getTransactionsByCard(cardId);
+  setTransactions(updatedTxns);
+
+  const all = await getTransactions();
+  setAllTransactions(all);
+
+  setSelectedTxns([]);
+  setEditMode(false);
+};
+
 
   const buildCardChartData = (cardTxns) => {
   if (!cardTxns || cardTxns.length === 0) return null;
@@ -486,8 +488,6 @@ const logout = () => {
   window.location.replace("/login");
 };
 
-
-
   return (
 
     <div className="container">
@@ -503,12 +503,8 @@ const logout = () => {
     style={{
       padding: "6px 12px",
       borderRadius: 6,
-      display: "inline-block",
-      marginBottom: 12,
-      background:
-        billing.plan === "pro" ? "#d1fae5" : "#fee2e2",
-      color:
-        billing.plan === "pro" ? "#065f46" : "#991b1b",
+      background: isPro ? "#d1fae5" : "#fee2e2",
+      color: isPro ? "#065f46" : "#991b1b",
       fontWeight: "bold"
     }}
   >
@@ -516,41 +512,17 @@ const logout = () => {
   </div>
 )}
 
- {billing?.plan === "free" && (
-  <button
-    type="button"
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      startCheckout();
-    }}
-  >
+{!isPro && (
+  <button onClick={startCheckout}>
     Upgrade to Pro
   </button>
 )}
 
-
-
-
-{billing?.plan === "pro" && (
-  <button
-    style={{
-      marginLeft: 10,
-      background: "#111827",
-      color: "white",
-      padding: "6px 12px",
-      borderRadius: 6,
-      border: "none"
-    }}
-    onClick={async () => {
-      try {
-        const url = await openBillingPortal();
-        window.location.href = url;
-      } catch (err) {
-        alert(err.message);
-      }
-    }}
-  >
+{isPro && (
+  <button onClick={async () => {
+    const url = await openBillingPortal();
+    window.location.href = url;
+  }}>
     Manage Billing
   </button>
 )}
@@ -1151,7 +1123,7 @@ onChange={(e) => {
 
   <h3>Card-wise Expense Summary</h3>
 
-{cards.map(card => {
+{Array.isArray(cards) && cards.length > 0 && cards.map(card => {
   if (card._id !== cards[activeCardIndex]._id) return null;
 
   const cardTxns = transactions.filter(t => t.cardId === card._id);

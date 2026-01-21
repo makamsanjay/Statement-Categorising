@@ -1,10 +1,14 @@
 const BASE_URL = "http://localhost:5050";
 
 /* ============================
-   AUTH FETCH (FIXED)
+   AUTH FETCH (SINGLE SOURCE)
    ============================ */
 const authFetch = (url, options = {}) => {
   const token = localStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("Not authenticated. Please login again.");
+  }
 
   const isFormData = options.body instanceof FormData;
 
@@ -30,12 +34,10 @@ export const previewUpload = async (file) => {
     body: formData,
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || "Preview failed");
-  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Preview failed");
 
-  return res.json();
+  return data;
 };
 
 export const saveConfirmedTransactions = async (transactions) => {
@@ -45,16 +47,12 @@ export const saveConfirmedTransactions = async (transactions) => {
   });
 
   const data = await res.json();
-
   if (!res.ok) {
-    throw new Error(
-      data.message || "Upgrade to Pro to upload more statements"
-    );
+    throw new Error(data.message || "Upgrade to Pro to upload more statements");
   }
 
   return data;
 };
-
 
 /* ============================
    TRANSACTIONS
@@ -79,29 +77,12 @@ export const updateCategory = async (id, category) => {
   return res.json();
 };
 
-export const fetchSummary = async () => {
-  const res = await authFetch(`${BASE_URL}/transactions/summary`);
-  return res.json();
-};
-
 /* ============================
-   BUDGETS / HEALTH
+   HEALTH
    ============================ */
-export const setBudget = async (category, amount, month) => {
-  return authFetch(`${BASE_URL}/budgets`, {
-    method: "POST",
-    body: JSON.stringify({ category, amount, month }),
-  }).then((r) => r.json());
-};
-
-export const fetchBudgetSummary = async (month) => {
-  return authFetch(`${BASE_URL}/budgets/summary?month=${month}`).then((r) =>
-    r.json()
-  );
-};
-
 export const fetchHealthScore = async () => {
   const res = await authFetch(`${BASE_URL}/health`);
+  if (!res.ok) throw new Error("Failed to fetch health score");
   return res.json();
 };
 
@@ -110,6 +91,7 @@ export const fetchHealthScore = async () => {
    ============================ */
 export const getCards = async () => {
   const res = await authFetch(`${BASE_URL}/cards/summary`);
+  if (!res.ok) throw new Error("Failed to load cards");
   return res.json();
 };
 
@@ -119,31 +101,38 @@ export const createCard = async (card) => {
     body: JSON.stringify(card),
   });
 
-  const data = await res.json().catch(() => ({}));
+  const data = await res.json();
 
   if (!res.ok) {
-    // ✅ Handle duplicate card name
     if (res.status === 409) {
-      throw new Error(data.error || "Card with this name already exists");
+      throw new Error(data.error || "Card name already exists");
     }
-
-    // ✅ Handle free plan limit
     if (res.status === 403) {
       throw new Error(data.message || "Upgrade to Pro to add more cards");
     }
-
     throw new Error(data.error || "Failed to create card");
   }
 
   return data;
 };
 
-
 export const deleteCard = async (id) => {
   const res = await authFetch(`${BASE_URL}/cards/delete/${id}`, {
     method: "DELETE",
   });
   return res.json();
+};
+
+export const renameCard = async (cardId, name) => {
+  const res = await authFetch(`${BASE_URL}/cards/${cardId}/rename`, {
+    method: "PUT",
+    body: JSON.stringify({ name }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Rename failed");
+
+  return data;
 };
 
 export const updateCardCurrency = async (cardId, displayCurrency) => {
@@ -168,6 +157,7 @@ export const login = async (email, password) => {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Login failed");
+
   return data;
 };
 
@@ -180,69 +170,38 @@ export const signup = async (email, password) => {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Signup failed");
+
   return data;
 };
 
-export const renameCard = async (cardId, name) => {
+/* ============================
+   BILLING (STRIPE)
+   ============================ */
+export const startCheckout = async () => {
   const res = await authFetch(
-    `http://localhost:5050/cards/${cardId}/rename`,
-    {
-      method: "PUT",
-      body: JSON.stringify({ name })
-    }
+    `${BASE_URL}/billing/create-checkout-session`,
+    { method: "POST" }
   );
 
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Rename failed");
-  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Checkout failed");
 
+  window.location.href = data.url;
+};
+
+export const getBillingStatus = async () => {
+  const res = await authFetch(`${BASE_URL}/billing/status`);
+  if (!res.ok) throw new Error("Failed to fetch billing status");
   return res.json();
 };
 
-export async function startCheckout() {
-  const res = await fetch(
-    "http://localhost:5050/billing/create-checkout-session",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.token}`
-      }
-    }
-  );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || "Checkout failed");
-  }
-  window.location.href = data.url;
-}
-
-
-export async function getBillingStatus() {
-  const res = await fetch("http://localhost:5050/billing/status", {
-    headers: {
-      Authorization: `Bearer ${localStorage.token}`
-    }
-  });
-
-  if (!res.ok) throw new Error("Failed to fetch billing status");
-  return res.json();
-}
-
-export async function openBillingPortal() {
-  const res = await fetch("http://localhost:5050/billing/portal", {
+export const openBillingPortal = async () => {
+  const res = await authFetch(`${BASE_URL}/billing/portal`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${localStorage.token}`
-    }
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error);
-
-  
+  if (!res.ok) throw new Error(data.error || "Failed to open billing portal");
 
   return data.url;
-}
+};
