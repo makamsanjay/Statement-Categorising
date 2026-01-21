@@ -12,6 +12,13 @@ import {
 import { renameCard } from "./api";
 import { fetchHealthScore } from "./api";
 import { updateCardCurrency } from "./api";
+import {
+  startCheckout,
+  getBillingStatus,
+  openBillingPortal
+} from "./api";
+
+
 
 
 import { Pie } from "react-chartjs-2";
@@ -66,6 +73,15 @@ const [budgetAmount, setBudgetAmount] = useState("");
 const formatAmount = (num) => Number(num).toFixed(2);
 
 const [allTransactions, setAllTransactions] = useState([]);
+const [billing, setBilling] = useState(null);
+
+useEffect(() => {
+  getBillingStatus()
+    .then(setBilling)
+    .catch(() => {});
+}, []);
+
+const [showUpgrade, setShowUpgrade] = useState(false);
 
 const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -82,22 +98,8 @@ const [newTxn, setNewTxn] = useState({
   category: "Other"
 });
 
-const refreshAfterMutation = async () => {
-  const updatedCards = await getCards();
-  setCards(updatedCards);
-
-  const cardId = updatedCards[activeCardIndex]?._id;
-  if (cardId) {
-    const txns = await getTransactionsByCard(cardId);
-    setTransactions(txns);
-  }
-
-  const allTxns = await getTransactions();
-  setAllTransactions(allTxns);
-};
 
 const tokenPayload = JSON.parse(atob(localStorage.token.split(".")[1]));
-const userId = tokenPayload.userId;
 
 
 const [cards, setCards] = useState([]);
@@ -487,6 +489,7 @@ const logout = () => {
 
 
   return (
+
     <div className="container">
       <div style={{
   display: "flex",
@@ -494,6 +497,64 @@ const logout = () => {
   alignItems: "center",
   marginBottom: 20
 }}>
+
+{billing && (
+  <div
+    style={{
+      padding: "6px 12px",
+      borderRadius: 6,
+      display: "inline-block",
+      marginBottom: 12,
+      background:
+        billing.plan === "pro" ? "#d1fae5" : "#fee2e2",
+      color:
+        billing.plan === "pro" ? "#065f46" : "#991b1b",
+      fontWeight: "bold"
+    }}
+  >
+    Plan: {billing.plan.toUpperCase()}
+  </div>
+)}
+
+ {billing?.plan === "free" && (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startCheckout();
+    }}
+  >
+    Upgrade to Pro
+  </button>
+)}
+
+
+
+
+{billing?.plan === "pro" && (
+  <button
+    style={{
+      marginLeft: 10,
+      background: "#111827",
+      color: "white",
+      padding: "6px 12px",
+      borderRadius: 6,
+      border: "none"
+    }}
+    onClick={async () => {
+      try {
+        const url = await openBillingPortal();
+        window.location.href = url;
+      } catch (err) {
+        alert(err.message);
+      }
+    }}
+  >
+    Manage Billing
+  </button>
+)}
+
   <h2>Statement Categorizing</h2>
 
   <button
@@ -1173,6 +1234,63 @@ onChange={(e) => {
   </tbody>
 </table>
 </div>
+{showUpgrade && (
+  <div style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "rgba(0,0,0,0.5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 999
+  }}>
+    <div style={{
+      background: "#fff",
+      padding: 24,
+      borderRadius: 8,
+      width: 300,
+      textAlign: "center"
+    }}>
+      <h3>Upgrade to Pro</h3>
+      {billing?.plan === "free" && (
+  <button
+    type="button"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startCheckout();
+    }}
+  >
+    Upgrade to Pro
+  </button>
+)}
+
+      <p>This feature requires a Pro plan.</p>
+
+      <button
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    startCheckout();
+  }}
+>
+  Upgrade to Pro
+</button>
+
+
+      <br /><br />
+
+      <button onClick={() => setShowUpgrade(false)}>
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

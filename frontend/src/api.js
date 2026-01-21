@@ -122,10 +122,17 @@ export const createCard = async (card) => {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(
-      data.message ||
-      "Free plan allows only 1 card. Upgrade to Pro."
-    );
+    // ✅ Handle duplicate card name
+    if (res.status === 409) {
+      throw new Error(data.error || "Card with this name already exists");
+    }
+
+    // ✅ Handle free plan limit
+    if (res.status === 403) {
+      throw new Error(data.message || "Upgrade to Pro to add more cards");
+    }
+
+    throw new Error(data.error || "Failed to create card");
   }
 
   return data;
@@ -194,7 +201,38 @@ export const renameCard = async (cardId, name) => {
 };
 
 export async function startCheckout() {
-  const res = await fetch("http://localhost:5050/billing/create-checkout-session", {
+  const res = await fetch(
+    "http://localhost:5050/billing/create-checkout-session",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${localStorage.token}`
+      }
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || "Checkout failed");
+  }
+  window.location.href = data.url;
+}
+
+
+export async function getBillingStatus() {
+  const res = await fetch("http://localhost:5050/billing/status", {
+    headers: {
+      Authorization: `Bearer ${localStorage.token}`
+    }
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch billing status");
+  return res.json();
+}
+
+export async function openBillingPortal() {
+  const res = await fetch("http://localhost:5050/billing/portal", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${localStorage.token}`
@@ -202,7 +240,9 @@ export async function startCheckout() {
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Checkout failed");
+  if (!res.ok) throw new Error(data.error);
+
+  
 
   return data.url;
 }

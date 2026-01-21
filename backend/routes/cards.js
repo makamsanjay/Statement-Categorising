@@ -60,7 +60,10 @@ router.get("/summary", auth, loadUser, async (req, res) => {
 });
 
 /* ============================
-   2️⃣ CREATE CARD (SAFE + IDEMPOTENT)
+   2️⃣ CREATE CARD (FREE vs PRO)
+   ============================ */
+/* ============================
+   2️⃣ CREATE CARD (FIXED LOGIC ORDER)
    ============================ */
 router.post("/", auth, loadUser, async (req, res) => {
   try {
@@ -68,7 +71,7 @@ router.post("/", auth, loadUser, async (req, res) => {
 
     if (!name || !baseCurrency || !displayCurrency) {
       return res.status(400).json({
-        error: "name, baseCurrency, and displayCurrency are required"
+        error: "Name and currencies are required"
       });
     }
 
@@ -78,32 +81,32 @@ router.post("/", auth, loadUser, async (req, res) => {
       });
     }
 
-    // 🔒 FREE PLAN LIMIT: ONLY 1 CARD TOTAL
+    // ❌ 1️⃣ DUPLICATE NAME CHECK (FIRST)
+    const duplicate = await Card.findOne({
+      userId: req.user._id,
+      name
+    });
+
+    if (duplicate) {
+      return res.status(409).json({
+        error: `A card named "${name}" already exists. Please choose a different name.`
+      });
+    }
+
+    // 🔒 2️⃣ FREE PLAN LIMIT (AFTER DUPLICATE CHECK)
     if (req.user.plan === "free") {
-      const existingCardCount = await Card.countDocuments({
+      const count = await Card.countDocuments({
         userId: req.user._id
       });
 
-      if (existingCardCount >= 1) {
+      if (count >= 1) {
         return res.status(403).json({
-          upgrade: true,
-          message: "Free plan allows only 1 card"
+          message: "Free plan allows only 1 card. Upgrade to Pro."
         });
       }
     }
 
-    // 🛡️ IDEMPOTENCY: prevent double creation
-    const existing = await Card.findOne({
-      userId: req.user._id,
-      name,
-      baseCurrency,
-      displayCurrency
-    });
-
-    if (existing) {
-      return res.json(existing);
-    }
-
+    // ✅ 3️⃣ CREATE CARD
     const card = await Card.create({
       userId: req.user._id,
       name,
@@ -115,9 +118,10 @@ router.post("/", auth, loadUser, async (req, res) => {
     res.json(card);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Failed to create card" });
   }
 });
+
 
 /* ============================
    3️⃣ RENAME CARD
@@ -170,7 +174,7 @@ router.put("/currency/:id", auth, loadUser, async (req, res) => {
 });
 
 /* ============================
-   5️⃣ DELETE CARD (USER SAFE)
+   5️⃣ DELETE CARD
    ============================ */
 router.delete("/delete/:id", auth, loadUser, async (req, res) => {
   try {

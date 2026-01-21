@@ -3,61 +3,51 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-const transactionRoutes = require("./routes/Transactions");
-const uploadRoutes = require("./routes/Upload");
-const BudgetRoutes = require("./routes/budget");
-const HealthScore = require("./routes/health")
-
 const app = express();
 
-// Middlewares
+/* ================================
+   ✅ STRIPE WEBHOOK (MUST BE FIRST)
+   ================================ */
+app.post(
+  "/webhook/stripe",
+  express.raw({ type: "application/json" }),
+  require("./routes/stripeWebhook")
+);
+
+/* ================================
+   ✅ NORMAL MIDDLEWARES (AFTER)
+   ================================ */
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
-
 
 app.use((req, res, next) => {
   console.log(req.method, req.url);
   next();
 });
 
-// Routes
-app.use("/transactions", transactionRoutes);
-app.use("/upload", uploadRoutes);
-
-app.use("/budget", BudgetRoutes);
-
-app.use("/health", HealthScore );
-
-const cardRoutes = require("./routes/cards");
-
-app.use("/cards", cardRoutes);
-
+/* ================================
+   ROUTES
+   ================================ */
+app.use("/auth", require("./routes/auth"));
+app.use("/billing", require("./routes/billing"));
+app.use("/transactions", require("./routes/Transactions"));
+app.use("/upload", require("./routes/Upload"));
+app.use("/budget", require("./routes/budget"));
+app.use("/health", require("./routes/health"));
+app.use("/cards", require("./routes/cards"));
 app.use("/statements", require("./routes/statements"));
 app.use("/analytics", require("./routes/analytics"));
 
-app.use("/auth", require("./routes/auth"));
-
-app.use("/billing", require("./routes/billing"));
-app.use("/webhook/stripe", require("./routes/stripeWebhook"));
-
-
- 
-
-// MongoDB
+/* ================================
+   DATABASE
+   ================================ */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("Mongo error:", err.message));
+  .catch(err => console.error("Mongo error:", err.message));
 
-// Health check
-
-app.get("/", (req, res) => {
-  res.status(200).send("Backend running");
-});
-
+app.get("/", (_, res) => res.send("Backend running"));
 
 const PORT = process.env.PORT || 5050;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));

@@ -35,12 +35,14 @@ const UserSchema = new mongoose.Schema(
       default: "none"
     },
 
-    // 📊 FREE PLAN LIMITS
     uploadsToday: {
       type: Number,
       default: 0
     },
-
+  planExpiresAt: {
+  type: Date,
+  default: null
+},
     lastUploadDate: {
       type: Date,
       default: null
