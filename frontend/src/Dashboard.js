@@ -118,12 +118,15 @@ useEffect(() => {
     return;
   }
 
+  
+
   const cardId = cards[activeCardIndex]?._id;
   if (!cardId) return;
 
 
   getTransactionsByCard(cardId).then(setTransactions);
 }, [cards, activeCardIndex]);
+
 
 useEffect(() => {
   const saved = localStorage.getItem("activeCardIndex");
@@ -302,6 +305,9 @@ setAllTransactions(all);
         : [...prev, id]
     );
   };
+useEffect(() => {
+  getTransactions().then(setAllTransactions);
+}, []);
 
   const toggleSelectAll = (checked) => {
     setSelectedTxns(
@@ -417,12 +423,13 @@ const handleSetBudget = () => {
 
 const mainCategories = {};
 
-transactions.forEach(t => {
+allTransactions.forEach(t => {
   if (t.amount < 0) {
     mainCategories[t.category] =
       (mainCategories[t.category] || 0) + Math.abs(t.amount);
   }
 });
+
 
 const chartData =
   Object.keys(mainCategories).length === 0
@@ -446,7 +453,7 @@ const chartData =
 
 
 const categoryTransactions = selectedCategory
-  ? transactions.filter(
+  ? allTransactions.filter(
       t => t.category === selectedCategory && t.amount < 0
     )
   : [];
