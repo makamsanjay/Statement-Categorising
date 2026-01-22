@@ -1,30 +1,53 @@
 require("dotenv").config();
+const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 
+const app = express();
+
+/* ================================
+   ✅ STRIPE WEBHOOK (MUST BE FIRST)
+   ================================ */
+app.post(
+  "/webhook/stripe",
+  express.raw({ type: "application/json" }),
+  require("./routes/stripeWebhook")
+);
+
+/* ================================
+   ✅ NORMAL MIDDLEWARES (AFTER)
+   ================================ */
+app.use(cors());
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+
+app.use((req, res, next) => {
+  console.log(req.method, req.url);
+  next();
+});
+
+/* ================================
+   ROUTES
+   ================================ */
+app.use("/auth", require("./routes/auth"));
+app.use("/billing", require("./routes/billing"));
+app.use("/transactions", require("./routes/Transactions"));
+app.use("/upload", require("./routes/Upload"));
+app.use("/budget", require("./routes/budget"));
+app.use("/health", require("./routes/health"));
+app.use("/cards", require("./routes/cards"));
+app.use("/statements", require("./routes/statements"));
+app.use("/analytics", require("./routes/analytics"));
+
+/* ================================
+   DATABASE
+   ================================ */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error(err));
+  .catch(err => console.error("Mongo error:", err.message));
 
-const express = require("express");
-const app = express();
+app.get("/", (_, res) => res.send("Backend running"));
 
-app.get("/", (req, res) => {
-  res.send("Backend running");
-});
-
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
-});
-
-const Transaction = require("./models/Transaction");
-
-Transaction.create({
-  date: "2025-01-01",
-  description: "Test Transaction",
-  amount: -100,
-  category: "Food",
-  taxEligible: false
-})
-.then(() => console.log("Test transaction saved"))
-.catch(console.error);
+const PORT = process.env.PORT || 5050;
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));

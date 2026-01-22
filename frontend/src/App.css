@@ -1,38 +1,76 @@
-.App {
-  text-align: center;
+.container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+th {
+  background-color: #f4f4f4;
+}
+
+.health-score-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 8px;
 }
 
-.App-link {
-  color: #61dafb;
+/* small circle i */
+.info-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid #999;
+  font-size: 10px;
+  line-height: 14px;
+  text-align: center;
+  cursor: pointer;
+  color: #555;
+  user-select: none;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* tooltip container */
+.info-tooltip {
+  position: relative;
+  display: inline-block;
 }
+
+/* hidden tooltip */
+.tooltip-box {
+  display: none;
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 260px;
+  background: #1e1e1e;
+  color: #fff;
+  font-size: 12px;
+  padding: 10px;
+  border-radius: 6px;
+  z-index: 100;
+}
+
+/* show on hover */
+.info-tooltip:hover .tooltip-box {
+  display: block;
+}
+
+/* tooltip list */
+.tooltip-box ul {
+  padding-left: 16px;
+  margin: 6px 0 0 0;
+}
+
+.tooltip-box li {
+  margin-bottom: 6px;
+}
+
