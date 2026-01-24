@@ -17,12 +17,23 @@ import {
   getBillingStatus,
   openBillingPortal
 } from "./api";
-
+import Sidebar from "./components/Sidebar";
+import TopBar from "./components/TopBar";
 
 
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
+
+const CARD_COLORS = [
+  "#3b82f6", // blue
+  "#ec4899", // pink
+  "#22c55e", // green
+  "#f59e0b", // amber
+  "#8b5cf6", // purple
+  "#06b6d4"  // cyan
+];
+
 
 const DEFAULT_CATEGORIES = [
   "Food & Dining",
@@ -388,6 +399,13 @@ const handleSetBudget = () => {
   setEditMode(false);
 };
 
+const cardColorMap = {};
+
+cards.forEach((card, index) => {
+  cardColorMap[card._id] =
+    CARD_COLORS[index % CARD_COLORS.length];
+});
+
 
   const buildCardChartData = (cardTxns) => {
   if (!cardTxns || cardTxns.length === 0) return null;
@@ -451,9 +469,21 @@ const chartData =
         ]
       };
 
+const incomeExpenseChartData = {
+  labels: ["Income", "Expense"],
+  datasets: [
+    {
+      data: [totalIncome, totalExpense],
+      backgroundColor: ["#10b981", "#ef4444"],
+      hoverBackgroundColor: ["#059669", "#dc2626"],
+      borderRadius: 10
+    }
+  ]
+};
+
 
 const categoryTransactions = selectedCategory
-  ? allTransactions.filter(
+  ? transactions.filter(
       t => t.category === selectedCategory && t.amount < 0
     )
   : [];
@@ -489,15 +519,63 @@ const categoryCardChartData =
         ]
       };
 
+
       
 const logout = () => {
   localStorage.clear();
   window.location.replace("/login");
 };
 
-  return (
+return(
+<div className="dashboard-layout">
+  <Sidebar />
 
-    <div className="container">
+  <div className="dashboard-main">
+<TopBar
+  isPro={isPro}
+  plan={billing?.plan} 
+  currency={cards[0]?.displayCurrency || "USD"}
+  onChangeCurrency={async (newCurrency) => {
+    await Promise.all(
+      cards.map(card =>
+        updateCardCurrency(card._id, newCurrency)
+      )
+    );
+    const updated = await getCards();
+    setCards(updated);
+  }}
+  onUpgrade={startCheckout}
+  onManageBilling={async () => {
+    const url = await openBillingPortal();
+    window.location.href = url;
+  }}
+  onLogout={logout}
+/>
+
+
+
+    <div className="container dashboard-content">
+
+      {/* INCOME / EXPENSE SUMMARY */}
+<div className="summary-cards">
+  <div className="summary-card income">
+    <div className="summary-title">Total Income</div>
+    <div className="summary-amount">
+      {SYMBOL[cards[0]?.displayCurrency || "USD"]}
+      {formatAmount(totalIncome)}
+    </div>
+  </div>
+
+  <div className="summary-card expense">
+    <div className="summary-title">Total Expense</div>
+    <div className="summary-amount">
+      {SYMBOL[cards[0]?.displayCurrency || "USD"]}
+      {formatAmount(totalExpense)}
+    </div>
+  </div>
+</div>
+
+
       <div style={{
   display: "flex",
   justifyContent: "space-between",
@@ -505,51 +583,128 @@ const logout = () => {
   marginBottom: 20
 }}>
 
-{billing && (
-  <div
-    style={{
-      padding: "6px 12px",
-      borderRadius: 6,
-      background: isPro ? "#d1fae5" : "#fee2e2",
-      color: isPro ? "#065f46" : "#991b1b",
-      fontWeight: "bold"
-    }}
-  >
-    Plan: {billing.plan.toUpperCase()}
+{/* ===== CHARTS ROW ===== */}
+<div className="charts-row">
+
+  {/* LEFT: CATEGORY SPLIT */}
+  <div className="chart-card chart-large">
+    <h3 className="chart-title">Where Your Money Went</h3>
+
+    {chartData ? (
+      <div className="chart-wrapper">
+        <Pie
+  data={chartData}
+  options={{
+    onClick: (_, elements) => {
+      if (!elements.length) return;
+
+      const index = elements[0].index;
+      const category = chartData.labels[index];
+
+      setSelectedCategory(category);
+    },
+    plugins: {
+      legend: {
+        position: "bottom"
+      }
+    }
+  }}
+/>
+      </div>
+    ) : (
+      <p className="chart-empty">No expense data available</p>
+    )}
   </div>
-)}
 
-{!isPro && (
-  <button onClick={startCheckout}>
-    Upgrade to Pro
-  </button>
-)}
+  {/* RIGHT SIDE — CONDITIONAL VIEW */}
+<div className="chart-card chart-small">
+  {!selectedCategory ? (
+    <>
+      <h3 className="chart-title">Income vs Expense</h3>
 
-{isPro && (
-  <button onClick={async () => {
-    const url = await openBillingPortal();
-    window.location.href = url;
-  }}>
-    Manage Billing
-  </button>
-)}
+      <div className="chart-wrapper">
+        <Pie
+          data={incomeExpenseChartData}
+          options={{
+            plugins: {
+              legend: {
+                position: "bottom"
+              }
+            }
+          }}
+        />
+      </div>
+    </>
+  ) : (
+    <>
+      <div className="chart-header">
+        <h3 className="chart-title">
+          {selectedCategory} Details
+        </h3>
 
-  <h2>Statement Categorizing</h2>
+        <button
+          className="chart-close"
+          onClick={() => setSelectedCategory(null)}
+        >
+          ✕
+        </button>
+      </div>
 
-  <button
-    onClick={logout}
-    style={{
-      background: "#ff4d4d",
-      color: "white",
-      border: "none",
-      padding: "8px 14px",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontWeight: "bold"
-    }}
-  >
-    Logout
-  </button>
+      {/* CARD / SUB-CATEGORY SPLIT */}
+      {categoryCardChartData && (
+        <div className="chart-wrapper">
+          <Pie
+            data={categoryCardChartData}
+            options={{
+              plugins: {
+                legend: {
+                  position: "bottom"
+                }
+              }
+            }}
+          />
+        </div>
+      )}
+    </>
+  )}
+</div>
+<div className="txn-list">
+  {categoryTransactions.map(t => {
+    const card = cards.find(c => c._id === t.cardId);
+
+    return (
+      <div
+        key={t._id}
+        className="txn-card"
+        style={{
+          borderLeftColor: card?.color || "#6366f1"
+        }}
+      >
+        <div className="txn-left">
+          <div className="txn-desc">{t.description}</div>
+          <div className="txn-date">{t.date}</div>
+        </div>
+
+        <div className="txn-right">
+          <div className="txn-amount">
+            {SYMBOL[t.currency]}
+            {Math.abs(t.amount).toFixed(2)}
+          </div>
+          <div className="txn-card-name">
+            {card?.name || "Unknown Card"}
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
+
+
+</div>
+
+
+
+
 </div>
 
 
@@ -560,7 +715,7 @@ const logout = () => {
         onChange={(e) => setFiles([...e.target.files])}
       />
 
-      <button type="button" onClick={handleUpload}>
+      <button type="button" id="upload-section" onClick={handleUpload}>
   Upload/Preview
 </button>
 
@@ -692,31 +847,7 @@ onChange={(e) => {
         </>
       )}
 
-      {cards.length > 0 && (
-  <div style={{ marginBottom: 12 }}>
-    <label style={{ fontWeight: "bold" }}>Account Currency:</label>{" "}
-    <select
-  value={cards[0].displayCurrency}
-  onChange={async (e) => {
-    const newCurrency = e.target.value;
-    await Promise.all(
-      cards.map(card =>
-        updateCardCurrency(card._id, newCurrency)
-      )
-    );
 
-    const updated = await getCards();
-    setCards(updated);
-  }}
->
-
-      <option value="USD">USD ($)</option>
-      <option value="INR">INR (₹)</option>
-      <option value="EUR">EUR (€)</option>
-      <option value="GBP">GBP (£)</option>
-    </select>
-  </div>
-)}
 
 {selectedCategory && (
   <div style={{ marginTop: 30, padding: 16, border: "1px solid #ddd" }}>
@@ -1269,7 +1400,8 @@ onChange={(e) => {
     </div>
   </div>
 )}
-
+ </div>
+     </div>
     </div>
   );
 }
