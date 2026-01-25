@@ -93,7 +93,14 @@ const [creatingCard, setCreatingCard] = useState(false);
 
 const [showAddTxn, setShowAddTxn] = useState(false);
 const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState(0);
-const [activeView, setActiveView] = useState("dashboard");
+const [activeView, setActiveView] = useState(() => {
+  return localStorage.getItem("activeView") || "dashboard";
+});
+
+useEffect(() => {
+  localStorage.setItem("activeView", activeView);
+}, [activeView]);
+
 
 
 const [newTxn, setNewTxn] = useState({

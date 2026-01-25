@@ -34,6 +34,13 @@ const SYMBOL = {
   GBP: "£"
 };
 
+const formatCardName = (card) => {
+  if (!card) return "";
+  return card.last4
+    ? `${card.name} (${card.last4})`
+    : card.name;
+};
+
 export default function TransactionsPage() {
   /* ---------------- STATE ---------------- */
 
@@ -186,7 +193,8 @@ export default function TransactionsPage() {
             onClick={() => setActiveCardIndex(i => i - 1)}
           >←</button>
 
-          <strong>{cards[activeCardIndex].name}</strong>
+          <strong>{formatCardName(cards[activeCardIndex])}</strong>
+
 
           <button
             disabled={activeCardIndex === cards.length - 1}
@@ -196,26 +204,114 @@ export default function TransactionsPage() {
       )}
 
       {/* CARD ACTIONS */}
-      <button onClick={async () => {
-        const name = prompt("Card name");
-        if (!name) return;
-        await createCard({ name });
-        setCards(await getCards());
-      }}>+ Add Card</button>
+   <button
+  onClick={async () => {
+    let created = false;
 
-      <button onClick={async () => {
-        const card = cards[activeCardIndex];
-        if (!card) return;
-        await deleteCard(card._id);
-        setCards(await getCards());
-      }}>Delete Card</button>
+    while (!created) {
+      const name = prompt("Card name");
+      if (!name) return;
 
-      <button onClick={async () => {
-        const newName = prompt("New card name");
-        if (!newName) return;
-        await renameCard(cards[activeCardIndex]._id, newName);
+      const last4 = prompt("Last 4 digits of card (optional)");
+
+      if (last4) {
+        if (!/^\d+$/.test(last4)) {
+          alert("Card digits must be numbers only");
+          continue;
+        }
+
+        if (last4.length > 4) {
+          alert("Last 4 digits cannot be more than 4 digits");
+          continue;
+        }
+      }
+
+      try {
+        await createCard({
+          name,
+          last4: last4 || undefined,
+          baseCurrency: cards[0]?.baseCurrency || "USD",
+          displayCurrency: cards[0]?.displayCurrency || "USD"
+        });
+
+        created = true;
         setCards(await getCards());
-      }}>Rename Card</button>
+      } catch (err) {
+        if (
+          err.message &&
+          err.message.toLowerCase().includes("already")
+        ) {
+          alert("Card name already exists. Please choose a different name.");
+          // loop continues → user gets another chance
+        } else {
+          alert(err.message || "Failed to create card");
+          return;
+        }
+      }
+    }
+  }}
+>
+  + Add Card
+</button>
+
+     <button
+  onClick={async () => {
+    const card = cards[activeCardIndex];
+    if (!card) return;
+
+    const displayName = card.last4
+      ? `${card.name} (${card.last4})`
+      : card.name;
+
+    const ok = window.confirm(
+      `"${displayName}" Card and all associated transactions will be permanently deleted from your account.\n\nThis action cannot be undone.\n\nDo you want to continue?`
+    );
+
+    if (!ok) return;
+
+    await deleteCard(card._id);
+    setCards(await getCards());
+    setActiveCardIndex(0);
+  }}
+>
+  Delete Card
+</button>
+
+     <button
+  onClick={async () => {
+    const currentCard = cards[activeCardIndex];
+    if (!currentCard) return;
+
+    while (true) {
+      const newName = prompt("New card name", currentCard.name);
+      if (!newName) return;
+
+      // 🔒 Frontend duplicate check
+      const exists = cards.some(
+        c =>
+          c._id !== currentCard._id &&
+          c.name.trim().toLowerCase() === newName.trim().toLowerCase()
+      );
+
+      if (exists) {
+        alert("A card with this name already exists. Choose a different name.");
+        continue;
+      }
+
+      try {
+        await renameCard(currentCard._id, newName);
+        setCards(await getCards());
+        return;
+      } catch (err) {
+        alert(err.message || "Failed to rename card");
+        return;
+      }
+    }
+  }}
+>
+  Rename Card
+</button>
+
 
       {/* ADD TRANSACTION */}
       <h3>Add Transaction</h3>

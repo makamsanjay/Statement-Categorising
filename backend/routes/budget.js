@@ -79,13 +79,14 @@ router.get("/summary", auth, loadUser, async (req, res) => {
       const spent = spentMap[key] || 0;
 
       return {
-        _id: b._id,
-        category: b.category,
-        cardId: b.cardId,
-        budget: b.amount,
-        spent,
-        over: spent > b.amount
-      };
+  _id: b._id,
+  category: b.category,
+  cardId: b.cardId,
+  budget: b.amount,
+  spent,
+  over: spent > b.amount
+};
+
     });
 
     res.json(summary); // ✅ ARRAY ONLY
