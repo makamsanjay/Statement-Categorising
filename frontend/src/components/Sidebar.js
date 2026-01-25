@@ -1,13 +1,6 @@
 import "./Sidebar.css";
 
-function Sidebar() {
-  const scrollTo = (id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
+function Sidebar({ onNavigate }) {
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
@@ -15,28 +8,39 @@ function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        <button onClick={() => scrollTo("upload-section")}>
-          Upload / Preview
+        <button
+          className="sidebar-item"
+          onClick={() => onNavigate("dashboard")}
+        >
+          Dashboard
         </button>
 
-        <button onClick={() => scrollTo("transactions-section")}>
+        <button
+          className="sidebar-item"
+          onClick={() => onNavigate("transactions")}
+        >
           Transactions
         </button>
 
-        <button onClick={() => scrollTo("analytics-section")}>
-          Analytics
-        </button>
-
-        <button onClick={() => scrollTo("budgets-section")}>
+        <button
+          className="sidebar-item"
+          onClick={() => onNavigate("budget")}
+        >
           Monthly Budgets
         </button>
 
-        <button onClick={() => scrollTo("health-section")}>
-          Health Score
+        <button
+          className="sidebar-item"
+          onClick={() => onNavigate("upload")}
+        >
+          Upload / Preview
         </button>
 
-        <button onClick={() => scrollTo("help-section")}>
-          Help
+        <button
+          className="sidebar-item"
+          onClick={() => onNavigate("health")}
+        >
+          Health Score
         </button>
       </nav>
     </div>

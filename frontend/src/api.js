@@ -205,3 +205,44 @@ export const openBillingPortal = async () => {
 
   return data.url;
 };
+
+/* ============================
+   BUDGETS
+   ============================ */
+
+export const getBudgetSummary = async (month) => {
+  const res = await authFetch(
+    `${BASE_URL}/budget/summary?month=${month}`
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch budget summary");
+  }
+
+  return res.json();
+};
+
+export const saveBudget = async (data) => {
+  const res = await authFetch(`${BASE_URL}/budget`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json.error || "Failed to save budget");
+  }
+
+  return json;
+};
+
+export const deleteBudget = async (id) => {
+  const res = await authFetch(`${BASE_URL}/budget/${id}`, {
+    method: "DELETE"
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to delete budget");
+  }
+};
