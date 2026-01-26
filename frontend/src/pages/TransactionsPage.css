@@ -1,0 +1,467 @@
+/* ================= TRANSACTIONS PAGE ================= */
+
+.tx-page {
+  padding: 20px 8px;
+}
+
+/* ---------- PAGE TITLE ---------- */
+
+.tx-page h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+/* ---------- CARD CAROUSEL ---------- */
+
+.card-carousel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.card-carousel button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.card-carousel button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.card-carousel strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ---------- CARD ACTIONS ---------- */
+
+.card-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.card-actions button {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #111827;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.card-actions button:nth-child(2) {
+  background: #ef4444;
+}
+
+.card-actions button:nth-child(3) {
+  background: #374151;
+}
+
+/* ---------- ADD TRANSACTION ---------- */
+
+.add-txn,
+.txn-chart-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  width: 100%;
+}
+.add-txn h3 {
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.add-txn input,
+.add-txn select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.add-txn button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #10b981;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* ---------- BULK ACTIONS ---------- */
+
+.bulk-actions {
+  margin: 16px 0;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+/* ---------- TABLE ---------- */
+
+.tx-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+}
+
+.tx-table th {
+  background: #f1f5f9;
+  text-align: left;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tx-table td {
+  padding: 12px;
+  font-size: 13px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tx-table tr:last-child td {
+  border-bottom: none;
+}
+
+.tx-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* ---------- AMOUNT COLORS ---------- */
+
+.tx-table td:nth-child(4) {
+  font-weight: 600;
+}
+
+.tx-table td:nth-child(4):has(:not()) {
+  /* noop placeholder for future */
+}
+
+/* ---------- RESPONSIVE ---------- */
+
+@media (max-width: 768px) {
+  .card-actions {
+    flex-direction: column;
+  }
+
+  .add-txn input,
+  .add-txn select {
+    width: 100%;
+    margin-right: 0;
+  }
+}
+
+/* ---------- EDIT / DELETE BUTTON ---------- */
+
+.edit-toggle {
+  margin: 14px 0;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: none;
+  background: #111827;
+  color: #fff;
+  cursor: pointer;
+}
+
+.edit-toggle.cancel {
+  background: #9ca3af;
+}
+
+/* ---------- CARD-WISE PIE CHART ---------- */
+
+/* ---------- AMOUNT COLORS ---------- */
+
+.amt-expense {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.amt-income {
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* ================= EDIT MODE TOGGLE ================= */
+
+.edit-toggle {
+  margin: 20px 0 12px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #111827, #1f2933);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}
+
+.edit-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+}
+
+/* 🔴 CANCEL STATE */
+.edit-toggle.cancel {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  box-shadow: 0 6px 18px rgba(220,38,38,0.35);
+}
+
+.edit-toggle.cancel:hover {
+  box-shadow: 0 10px 26px rgba(220,38,38,0.45);
+}
+
+/* ================= BULK ACTIONS CONTAINER ================= */
+
+.bulk-actions {
+  margin: 18px 0;
+  padding: 16px 18px;
+  background: linear-gradient(180deg, #f9fafb, #f1f5f9);
+  border-radius: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+/* ================= BULK ACTION CONTROLS ================= */
+
+.bulk-actions label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.bulk-actions select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+/* ================= BULK BUTTONS ================= */
+
+.bulk-actions button {
+  padding: 9px 16px;
+  border-radius: 12px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* ✅ UPDATE SELECTED */
+.bulk-actions button:not(.danger) {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(16,185,129,0.35);
+}
+
+.bulk-actions button:not(.danger):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(16,185,129,0.45);
+}
+
+/* 🔥 DELETE SELECTED */
+.bulk-actions button.danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(239,68,68,0.4);
+}
+
+.bulk-actions button.danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(239,68,68,0.55);
+}
+
+/* ================= CHECKBOX POLISH ================= */
+
+.bulk-actions input[type="checkbox"] {
+  accent-color: #ef4444;
+  transform: scale(1.1);
+  margin-right: 6px;
+}
+
+/* ================= TABLE SELECTION FEEDBACK ================= */
+
+/* ===============================
+   TABLE SELECTION FEEDBACK
+   =============================== */
+
+.tx-table tbody tr:has(input[type="checkbox"]:checked) {
+  background: rgba(239, 68, 68, 0.06);
+}
+
+
+/* ===============================
+   TOP ROW LAYOUT (ADD TXN + CHART)
+   =============================== */
+
+/* ===============================
+   CARD BASE STYLES
+   =============================== */
+
+.add-txn{
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* ===============================
+   ADD TRANSACTION CARD
+   =============================== */
+.add-txn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.add-txn h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.add-txn input,
+.add-txn select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.95rem;
+}
+
+.add-txn .txn-type {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.add-txn button {
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-txn .txn-type label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.add-txn .txn-type input {
+  margin: 0;
+}
+
+.add-txn .txn-type label:has(input:checked) {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4338ca;
+  font-weight: 600;
+}
+
+/* ===============================
+   PIE CHART CARD
+   =============================== */
+
+/* ===============================
+   PIE CHART CARD (PERFORMANCE SAFE)
+   =============================== */
+
+
+.txn-chart-card h4 {
+  margin-bottom: 12px;
+}
+
+/* Fixed chart area (NO LAG) */
+.txn-chart-card .chart-wrapper {
+  flex: 1;              /* ✅ fills remaining card space */
+  position: relative;
+  min-height: 280px;    /* safe minimum */
+}
+
+
+.txn-chart-card {
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* ===============================
+   INLINE TYPE TOGGLE (TABLE)
+   =============================== */
+
+.txn-type-inline {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.txn-type-inline label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+}
+
+.txn-type-inline label.active {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4338ca;
+}
+
+.txn-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+  margin-bottom: 32px;
+
+  align-items: stretch; /* ✅ THIS equalizes heights */
+}
+
+
+/* ===============================
+   RESPONSIVE
+   =============================== */
+
+@media (max-width: 900px) {
+  .txn-top-row {
+    grid-template-columns: 1fr;
+  }
+}

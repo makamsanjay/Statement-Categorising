@@ -5,21 +5,20 @@ import {
   updateCategory,
   saveConfirmedTransactions,
   getCards,
-  createCard,
-  deleteCard,
   getTransactionsByCard,
-  renameCard,
   fetchHealthScore,
   updateCardCurrency,
   startCheckout,
   getBillingStatus,
-  openBillingPortal
+  openBillingPortal,
+  createCard
 } from "./api";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import HealthPage from "./pages/HealthPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import BudgetPage from "./pages/BudgetPage";
+import {useRef } from "react";
 
 
 
@@ -85,6 +84,7 @@ useEffect(() => {
 
 const [showUpgrade, setShowUpgrade] = useState(false);
 
+const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState("0");
 
 const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -92,7 +92,6 @@ const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
 const [creatingCard, setCreatingCard] = useState(false);
 
 const [showAddTxn, setShowAddTxn] = useState(false);
-const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState(0);
 const [activeView, setActiveView] = useState(() => {
   return localStorage.getItem("activeView") || "dashboard";
 });
@@ -122,8 +121,13 @@ const [activeCardIndex, setActiveCardIndex] = useState(0);
 
 useEffect(() => {
   const loadCards = async () => {
-    const data = await getCards();
-    setCards(data);
+    try {
+      const data = await getCards();
+      console.log("CARDS LOADED:", data);
+      setCards(data);
+    } catch (e) {
+      console.error("FAILED TO LOAD CARDS", e); 
+    }
   };
   loadCards();
 }, []);
@@ -180,6 +184,9 @@ const totalExpense = transactions
 
 
  const handleUpload = async () => {
+  setPreview([]);
+setShowPreview(false);
+
   if (!files.length) {
     alert("Select file(s)");
     return;
@@ -207,6 +214,13 @@ const totalExpense = transactions
 
   if (pdfPreview.length) {
     setPreview(pdfPreview);
+    if (pdfPreview.length) {
+  if (cards.length > 0) {
+    setSelectedUploadCardIndex(activeCardIndex);
+  }
+  setPreview(pdfPreview);
+  setShowPreview(true);
+}
     setShowPreview(true);
   }
 
@@ -230,20 +244,23 @@ const handleConfirm = async (e) => {
   }
 
 const card = cards?.[selectedUploadCardIndex];
-  if (!card || !card._id) {
-    alert("Please select a card before confirming upload");
-    return;
-  }
+
+if (!card || !card._id) {
+  alert("Please select a card before confirming upload");
+  return;
+}
+
   
 
   const payload = selected.map(t => ({
-    date: t.date,
-    description: t.description,
-    amount: Number(t.amount),
-    category: t.category || "Other",
-    cardId: card._id,
-    currency: card.displayCurrency
-  }));
+  date: t.date,
+  description: t.description,
+  amount: Number(t.amount),
+  category: t.category || "Other",
+  cardId: card._id,
+  currency: card.displayCurrency
+}));
+
 
   try {
     await saveConfirmedTransactions(payload);
@@ -265,12 +282,21 @@ const card = cards?.[selectedUploadCardIndex];
 
   setAllTransactions(await getTransactions());
 
- setPreview([]);
-setShowPreview(false);
 
 setActiveCardIndex(selectedUploadCardIndex);
 setActiveView("transactions");
+
+setFiles([]);
+setPreview([]);
+setShowPreview(false);
+
+if (fileInputRef.current) {
+  fileInputRef.current.value = "";
+}
+
 };
+
+const fileInputRef = useRef(null);
 
 const handleAddTransaction = async () => {
   const { date, description, amount, type, category } = newTxn;
@@ -478,6 +504,7 @@ const categoryTransactions = selectedCategory
   : [];
 
 
+const card = cards[Number(selectedUploadCardIndex)];
 
 const categoryCardSplit = {};
 
@@ -515,6 +542,52 @@ const logout = () => {
   window.location.replace("/login");
 };
 
+const handleAddCard = async () => {
+  const name = prompt("Enter card name");
+  if (!name) return;
+
+  const last4 = prompt("Last 4 digits (optional)");
+  if (last4 && !/^\d{0,4}$/.test(last4)) {
+    alert("Last 4 digits must be up to 4 numbers");
+    return;
+  }
+
+  try {
+    const newCard = await createCard({
+      name,
+      last4: last4 || undefined,
+      baseCurrency: "USD",
+      displayCurrency: "USD"
+    });
+
+    const updatedCards = await getCards();
+    setCards(updatedCards);
+
+    const index = updatedCards.findIndex(
+      c => c._id === newCard._id
+    );
+
+    setSelectedUploadCardIndex(index);
+    setActiveCardIndex(index);
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
+const latestTxns = transactions
+  .slice(0, 5);
+
+const refreshActiveCardTransactions = async () => {
+  if (!cards[activeCardIndex]) return;
+
+  const cardId = cards[activeCardIndex]._id;
+  const updated = await getTransactionsByCard(cardId);
+  setTransactions(updated);
+
+  const all = await getTransactions();
+  setAllTransactions(all);
+};
+
 return (
   <div className="dashboard-layout">
     {/* LEFT SIDEBAR */}
@@ -548,72 +621,133 @@ return (
       <div className="container dashboard-content">
 
         {/* ================= DASHBOARD ================= */}
-        {activeView === "dashboard" && (
+      {/* ================= DASHBOARD ================= */}
+{activeView === "dashboard" && (
+  <>
+    {/* INCOME / EXPENSE */}
+    <div className="summary-cards">
+      <div className="summary-card income">
+        <div className="summary-title">Total Income</div>
+        <div className="summary-amount">
+          {SYMBOL[cards[0]?.displayCurrency || "USD"]}
+          {formatAmount(totalIncome)}
+        </div>
+      </div>
+
+      <div className="summary-card expense">
+        <div className="summary-title">Total Expense</div>
+        <div className="summary-amount">
+          {SYMBOL[cards[0]?.displayCurrency || "USD"]}
+          {formatAmount(totalExpense)}
+        </div>
+      </div>
+    </div>
+
+    {/* CHARTS */}
+    <div className="charts-row">
+      <div className="chart-card chart-large">
+        <h3>Where Your Money Went</h3>
+        {chartData ? (
+          <Pie
+            data={chartData}
+            options={{
+              onClick: (_, elements) => {
+                if (!elements.length) return;
+                const index = elements[0].index;
+                setSelectedCategory(chartData.labels[index]);
+              },
+              plugins: { legend: { position: "bottom" } }
+            }}
+          />
+        ) : (
+          <p>No expense data</p>
+        )}
+      </div>
+
+      <div className="chart-card chart-small">
+        {!selectedCategory ? (
           <>
-            {/* INCOME / EXPENSE */}
-            <div className="summary-cards">
-              <div className="summary-card income">
-                <div className="summary-title">Total Income</div>
-                <div className="summary-amount">
-                  {SYMBOL[cards[0]?.displayCurrency || "USD"]}
-                  {formatAmount(totalIncome)}
-                </div>
-              </div>
-
-              <div className="summary-card expense">
-                <div className="summary-title">Total Expense</div>
-                <div className="summary-amount">
-                  {SYMBOL[cards[0]?.displayCurrency || "USD"]}
-                  {formatAmount(totalExpense)}
-                </div>
-              </div>
+            <h3>Income vs Expense</h3>
+            <Pie
+              data={incomeExpenseChartData}
+              options={{ plugins: { legend: { position: "bottom" } } }}
+            />
+          </>
+        ) : (
+          <>
+            <div className="chart-header">
+              <h3>{selectedCategory} Details</h3>
+              <button onClick={() => setSelectedCategory(null)}>✕</button>
             </div>
-
-            {/* CHARTS */}
-            <div className="charts-row">
-              <div className="chart-card chart-large">
-                <h3>Where Your Money Went</h3>
-                {chartData ? (
-                  <Pie
-                    data={chartData}
-                    options={{
-                      onClick: (_, elements) => {
-                        if (!elements.length) return;
-                        const index = elements[0].index;
-                        setSelectedCategory(chartData.labels[index]);
-                      },
-                      plugins: { legend: { position: "bottom" } }
-                    }}
-                  />
-                ) : (
-                  <p>No expense data</p>
-                )}
-              </div>
-
-              <div className="chart-card chart-small">
-                {!selectedCategory ? (
-                  <>
-                    <h3>Income vs Expense</h3>
-                    <Pie
-                      data={incomeExpenseChartData}
-                      options={{ plugins: { legend: { position: "bottom" } } }}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <div className="chart-header">
-                      <h3>{selectedCategory} Details</h3>
-                      <button onClick={() => setSelectedCategory(null)}>✕</button>
-                    </div>
-                    {categoryCardChartData && (
-                      <Pie data={categoryCardChartData} />
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+            {categoryCardChartData && <Pie data={categoryCardChartData} />}
           </>
         )}
+      </div>
+    </div>
+
+    {/* ================= ACTIVE CARD OVERVIEW ================= */}
+    {cards[activeCardIndex] && (
+      <div className="active-card-overview">
+        <div className="active-card-header">
+          <button
+            className="card-nav-btn"
+            disabled={activeCardIndex === 0}
+            onClick={() => setActiveCardIndex(i => i - 1)}
+          >
+            ←
+          </button>
+
+          <div className="active-card-center">
+            <h3 className="active-card-name">
+              {cards[activeCardIndex].name}
+              {cards[activeCardIndex].last4 && (
+                <span> • {cards[activeCardIndex].last4}</span>
+              )}
+            </h3>
+            <p className="active-card-subtitle">
+              Latest 5 transactions
+            </p>
+          </div>
+
+          <button
+            className="card-nav-btn"
+            disabled={activeCardIndex === cards.length - 1}
+            onClick={() => setActiveCardIndex(i => i + 1)}
+          >
+            →
+          </button>
+        </div>
+
+        {latestTxns.length === 0 ? (
+          <p className="muted">No transactions yet</p>
+        ) : (
+          <div className="active-card-txns">
+            {latestTxns.map(txn => (
+              <div key={txn._id} className="txn-row">
+                <div className="txn-left">
+                  <div className="txn-desc">{txn.description}</div>
+                  <div className="txn-date">{txn.date}</div>
+                </div>
+
+                <div
+                  className={
+                    txn.amount < 0
+                      ? "txn-amount expense"
+                      : "txn-amount income"
+                  }
+                >
+                  {SYMBOL[txn.currency]}
+                  {Math.abs(txn.amount).toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+  </>
+)}
+
 
         {/* ================= HEALTH ================= */}
         {activeView === "health" && (
@@ -621,16 +755,18 @@ return (
         )}
 
         {/* ================= UPLOAD ================= */}
-        {activeView === "upload" && (
-          <div>
-            <h2>Upload & Preview</h2>
+       {activeView === "upload" && (
+  <div>
+    <h2>Upload & Preview</h2>
 
-            <input
-              type="file"
-              multiple
-              accept=".csv,.xls,.xlsx,.pdf"
-              onChange={(e) => setFiles([...e.target.files])}
-            />
+           <input
+  ref={fileInputRef}
+  type="file"
+  multiple
+  accept=".csv,.xls,.xlsx,.pdf"
+  onChange={(e) => setFiles([...e.target.files])}
+/>
+
 
             <button onClick={handleUpload}>
               Upload / Preview
@@ -639,6 +775,55 @@ return (
          {showPreview && (
   <>
     <h3>Preview Transactions</h3>
+
+{/* CARD SELECTION */}
+
+{/* CARD SELECTION */}
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12
+  }}
+>
+  {cards.length > 0 && (
+    <>
+      <label style={{ fontWeight: "bold" }}>
+        Post transactions to:
+      </label>
+
+      <select
+        value={selectedUploadCardIndex}
+        onChange={(e) =>
+          setSelectedUploadCardIndex(Number(e.target.value))
+        }
+      >
+        {cards.map((card, idx) => (
+          <option key={card._id} value={idx}>
+            {card.name}
+            {card.last4 ? ` (${card.last4})` : ""}
+          </option>
+        ))}
+      </select>
+    </>
+  )}
+
+  <button
+    type="button"
+    onClick={handleAddCard}
+    style={{
+      padding: "6px 12px",
+      cursor: "pointer",
+      whiteSpace: "nowrap"
+    }}
+  >
+    ➕ {cards.length === 0 ? "Add Your First Card" : "Add Card"}
+  </button>
+</div>
+
+
+
 
     <table>
       <thead>
@@ -757,29 +942,6 @@ return (
       </tbody>
     </table>
 
-    {/* CARD SELECTION */}
-    {cards.length > 0 && (
-      <div style={{ marginTop: 12 }}>
-        <label style={{ fontWeight: "bold" }}>
-          Post transactions to:
-        </label>
-
-        <select
-          value={selectedUploadCardIndex}
-          onChange={(e) =>
-            setSelectedUploadCardIndex(Number(e.target.value))
-          }
-          style={{ marginLeft: 8 }}
-        >
-          {cards.map((card, idx) => (
-            <option key={card._id} value={idx}>
-              {card.name}
-              {card.last4 ? ` (${card.last4})` : ""}
-            </option>
-          ))}
-        </select>
-      </div>
-    )}
 
     <button onClick={handleConfirm} style={{ marginTop: 12 }}>
       Confirm & Save
@@ -789,11 +951,17 @@ return (
 
           </div>
         )}
+        
 
         {/* ================= TRANSACTIONS ================= */}
         {activeView === "transactions" && (
-          <TransactionsPage />
-        )}
+  <TransactionsPage
+    cards={cards}
+    activeCardIndex={activeCardIndex}
+    onRefresh={refreshActiveCardTransactions}
+  />
+)}
+
 
         {/* ================= BUDGET ================= */}
         {activeView === "budget" && (

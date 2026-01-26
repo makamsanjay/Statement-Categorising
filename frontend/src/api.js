@@ -54,6 +54,27 @@ export const saveConfirmedTransactions = async (transactions) => {
   return data;
 };
 
+export const updateTransaction = async (id, data) => {
+  const res = await fetch(
+    `http://localhost:5050/transactions/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify(data)
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+
+  return res.json();
+};
+
 /* ============================
    TRANSACTIONS
    ============================ */
