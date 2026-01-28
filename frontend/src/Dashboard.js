@@ -19,8 +19,10 @@ import HealthPage from "./pages/HealthPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import BudgetPage from "./pages/BudgetPage";
 import {useRef } from "react";
-import UploadPage from "./pages/UploadPage";
 import "./pages/UploadPage.css";
+import AnalyticsPage from "./pages/Analytics";
+import ProfilePage from "./pages/ProfilePage";
+
 
 
 
@@ -663,10 +665,16 @@ return (
           window.location.href = url;
         }}
         onLogout={logout}
+        onNavigate={setActiveView} 
       />
 
       {/* CONTENT */}
       <div className="container dashboard-content">
+
+{activeView === "profile" && (
+  <ProfilePage onNavigate={setActiveView} />
+)}
+
 
       {/* ================= DASHBOARD ================= */}
 {activeView === "dashboard" && (
@@ -1126,6 +1134,11 @@ return (
     cards={cards}
     allTransactions={allTransactions}
   />
+)}
+
+{/* ================= ANALYTICS ================= */}
+{activeView === "analytics" && (
+  <AnalyticsPage />
 )}
 
 

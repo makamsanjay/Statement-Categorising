@@ -8,7 +8,8 @@ function TopBar({
   onChangeCurrency,
   onUpgrade,
   onManageBilling,
-  onLogout
+  onLogout,
+  onNavigate 
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -78,10 +79,7 @@ function TopBar({
           >
             <button
               className="dropdown-item"
-              onClick={() => {
-                setOpen(false);
-                alert("Personal info coming soon");
-              }}
+              onClick={() => onNavigate("profile")}
             >
               Personal Info
             </button>

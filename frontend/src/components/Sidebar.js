@@ -44,7 +44,7 @@ function Sidebar({ onNavigate }) {
         </button>
         <button
           className="sidebar-item"
-          onClick={() => onNavigate("health")}
+          onClick={() => onNavigate("analytics")}
         >
           Analytics
         </button>

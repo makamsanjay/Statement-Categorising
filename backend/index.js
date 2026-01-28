@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
+const userRoutes = require("./routes/user");
 const app = express();
 
 /* ================================
@@ -38,6 +38,10 @@ app.use("/health", require("./routes/health"));
 app.use("/cards", require("./routes/cards"));
 app.use("/statements", require("./routes/statements"));
 app.use("/analytics", require("./routes/analytics"));
+
+
+app.use("/users", userRoutes);
+
 
 /* ================================
    DATABASE

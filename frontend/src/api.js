@@ -267,3 +267,30 @@ export const deleteBudget = async (id) => {
     throw new Error("Failed to delete budget");
   }
 };
+
+export const getMyProfile = async () => {
+  const res = await fetch("http://localhost:5050/users/me", {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    }
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to load profile");
+  }
+
+  return res.json();
+};
+
+
+export const updateProfile = async (data) => {
+  const res = await fetch("/users/me", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+};
