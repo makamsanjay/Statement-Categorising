@@ -48,6 +48,12 @@ function Sidebar({ onNavigate }) {
         >
           Analytics
         </button>
+        <button
+          className="sidebar-item"
+          onClick={() => onNavigate("help")}
+        >
+          Help
+        </button>
       </nav>
     </div>
   );

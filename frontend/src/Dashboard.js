@@ -22,6 +22,8 @@ import {useRef } from "react";
 import "./pages/UploadPage.css";
 import AnalyticsPage from "./pages/Analytics";
 import ProfilePage from "./pages/ProfilePage";
+import HelpPage from "./pages/HelpPage";
+
 
 
 
@@ -1142,6 +1144,10 @@ return (
 )}
 
 
+{/* ================= HELP ================= */}
+{activeView === "help" && (
+  <HelpPage />
+)}
 
 
       </div>

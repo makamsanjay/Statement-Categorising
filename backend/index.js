@@ -38,6 +38,7 @@ app.use("/health", require("./routes/health"));
 app.use("/cards", require("./routes/cards"));
 app.use("/statements", require("./routes/statements"));
 app.use("/analytics", require("./routes/analytics"));
+app.use("/support", require("./routes/support"));
 
 
 app.use("/users", userRoutes);
