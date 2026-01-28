@@ -42,6 +42,12 @@ function Sidebar({ onNavigate }) {
         >
           Health Score
         </button>
+        <button
+          className="sidebar-item"
+          onClick={() => onNavigate("health")}
+        >
+          Analytics
+        </button>
       </nav>
     </div>
   );

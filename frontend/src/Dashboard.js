@@ -19,6 +19,9 @@ import HealthPage from "./pages/HealthPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import BudgetPage from "./pages/BudgetPage";
 import {useRef } from "react";
+import UploadPage from "./pages/UploadPage";
+import "./pages/UploadPage.css";
+
 
 
 
@@ -834,43 +837,100 @@ return (
         )}
 
         {/* ================= UPLOAD ================= */}
-       {activeView === "upload" && (
-  <div>
+      {activeView === "upload" && (
+  <div className="upload-page">
+
     <h2>Upload & Preview</h2>
 
-           <input
-  ref={fileInputRef}
-  type="file"
-  multiple
-  accept=".csv,.xls,.xlsx,.pdf"
-  onChange={(e) => setFiles([...e.target.files])}
-/>
+    {/* ================= UPLOAD ZONE ================= */}
+ <div className="upload-zone">
+
+  {/* REAL DROP TARGET */}
+ <div
+  className="upload-drop"
+  onClick={() => fileInputRef.current?.click()}
+  onDragOver={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }}
+  onDrop={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFiles(Array.from(e.dataTransfer.files));
+  }}
+>
+  {files.length === 0 ? (
+    /* EMPTY STATE */
+    <>
+      <div className="upload-icon">☁️</div>
+      <h3>Drag & drop files here</h3>
+      <p>
+        or <span>click to browse</span>
+      </p>
+      <div className="upload-hint">
+        Supports PDF, CSV, XLS, XLSX
+      </div>
+    </>
+  ) : (
+    /* FILES SELECTED STATE */
+    <div className="upload-success">
+      <div className="upload-check">✓</div>
+      <h3>{files.length} file{files.length > 1 ? "s" : ""} selected</h3>
+
+     <ul className="upload-file-list">
+  {files.map((file, idx) => (
+    <li key={idx} className="upload-file-item">
+      <span className="upload-file-name">{file.name}</span>
+
+      <button
+        type="button"
+        className="upload-file-remove"
+        onClick={(e) => {
+          e.stopPropagation(); // 🔥 important (don’t reopen file picker)
+          setFiles(prev => prev.filter((_, i) => i !== idx));
+        }}
+        aria-label="Remove file"
+      >
+        ×
+      </button>
+    </li>
+  ))}
+</ul>
+
+      <p className="upload-replace">
+        Click or drop again to replace files
+      </p>
+    </div>
+  )}
+</div>
 
 
-            <button onClick={handleUpload}>
-              Upload / Preview
-            </button>
+  {/* HIDDEN INPUT (CLICK ONLY) */}
+  <input 
+    ref={fileInputRef}
+    type="file"
+    multiple
+    accept=".csv,.xls,.xlsx,.pdf"
+    style={{ display: "none" }}
+    onChange={(e) =>
+      setFiles(Array.from(e.target.files))
+    }
+  />
 
-         {showPreview && (
+  <button className="upload-btn" onClick={handleUpload}>
+    Upload / Preview
+  </button>
+</div>
+
+
+    {/* ================= PREVIEW ================= */}
+{/* ================= PREVIEW ================= */}
+{showPreview && (
   <>
     <h3>Preview Transactions</h3>
 
-{/* CARD SELECTION */}
-
-{/* CARD SELECTION */}
-<div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12
-  }}
->
-  {cards.length > 0 && (
-    <>
-      <label style={{ fontWeight: "bold" }}>
-        Post transactions to:
-      </label>
+    <div className="upload-card-select">
+      <strong>Post transactions to:</strong>
 
       <select
         value={selectedUploadCardIndex}
@@ -885,26 +945,17 @@ return (
           </option>
         ))}
       </select>
-    </>
-  )}
 
-  <button
-    type="button"
-    onClick={handleAddCard}
-    style={{
-      padding: "6px 12px",
-      cursor: "pointer",
-      whiteSpace: "nowrap"
-    }}
-  >
-    ➕ {cards.length === 0 ? "Add Your First Card" : "Add Card"}
-  </button>
-</div>
+      <button
+        type="button"
+        className="upload-add-card"
+        onClick={handleAddCard}
+      >
+        ➕ Add Card
+      </button>
+    </div>
 
-
-
-
-    <table>
+    <table className="preview-table">
       <thead>
         <tr>
           <th>Include</th>
@@ -915,6 +966,7 @@ return (
           <th>Category</th>
         </tr>
       </thead>
+
       <tbody>
         {preview.map((t, i) => (
           <tr key={i}>
@@ -936,11 +988,23 @@ return (
             </td>
 
             {/* DATE */}
-            <td>{t.date}</td>
-
-            {/* DESCRIPTION (EDITABLE) */}
             <td>
               <input
+                type="date"
+                className="preview-input"
+                value={t.date}
+                onChange={(e) => {
+                  const copy = [...preview];
+                  copy[i].date = e.target.value;
+                  setPreview(copy);
+                }}
+              />
+            </td>
+
+            {/* DESCRIPTION */}
+            <td>
+              <input
+                className="preview-input"
                 value={t.description}
                 onChange={(e) => {
                   const copy = [...preview];
@@ -951,42 +1015,58 @@ return (
             </td>
 
             {/* AMOUNT */}
-            <td>{t.amount}</td>
+            <td>
+              <input
+                type="number"
+                className="preview-input"
+                value={Math.abs(t.amount)}
+                onChange={(e) => {
+                  const value = Number(e.target.value) || 0;
+                  const copy = [...preview];
+                  copy[i].amount =
+                    t.amount < 0 ? -value : value;
+                  setPreview(copy);
+                }}
+              />
+            </td>
 
             {/* TYPE */}
             <td>
-              <label>
-                <input
-                  type="radio"
-                  name={`amt-${i}`}
-                  checked={t.amount > 0}
-                  onChange={() => {
-                    const copy = [...preview];
-                    copy[i].amount = fixAmountSign(copy[i].amount, "income");
-                    setPreview(copy);
-                  }}
-                />{" "}
-                Income
-              </label>
+              <div className="preview-type">
+                <label>
+                  <input
+                    type="radio"
+                    name={`amt-${i}`}
+                    checked={t.amount > 0}
+                    onChange={() => {
+                      const copy = [...preview];
+                      copy[i].amount = Math.abs(copy[i].amount);
+                      setPreview(copy);
+                    }}
+                  />
+                  Income
+                </label>
 
-              <label style={{ marginLeft: 10 }}>
-                <input
-                  type="radio"
-                  name={`amt-${i}`}
-                  checked={t.amount < 0}
-                  onChange={() => {
-                    const copy = [...preview];
-                    copy[i].amount = fixAmountSign(copy[i].amount, "expense");
-                    setPreview(copy);
-                  }}
-                />{" "}
-                Expense
-              </label>
+                <label>
+                  <input
+                    type="radio"
+                    name={`amt-${i}`}
+                    checked={t.amount < 0}
+                    onChange={() => {
+                      const copy = [...preview];
+                      copy[i].amount = -Math.abs(copy[i].amount);
+                      setPreview(copy);
+                    }}
+                  />
+                  Expense
+                </label>
+              </div>
             </td>
 
-            {/* CATEGORY + ADD NEW */}
+            {/* CATEGORY */}
             <td>
               <select
+                className="preview-select"
                 value={t.category || "Other"}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -1013,7 +1093,7 @@ return (
                 {categories.map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
-                <option value="__add_new__">➕ Add new category</option>
+                <option value="__add_new__">➕ Add new</option>
               </select>
             </td>
           </tr>
@@ -1021,16 +1101,13 @@ return (
       </tbody>
     </table>
 
-
-    <button onClick={handleConfirm} style={{ marginTop: 12 }}>
+    <button className="upload-confirm-btn" onClick={handleConfirm}>
       Confirm & Save
     </button>
   </>
 )}
-
-          </div>
-        )}
-        
+  </div>
+)}  
 
         {/* ================= TRANSACTIONS ================= */}
         {activeView === "transactions" && (

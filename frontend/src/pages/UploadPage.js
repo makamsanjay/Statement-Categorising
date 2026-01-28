@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { previewUpload, saveConfirmedTransactions } from "../api";
-import "../App.css";
+import "./UploadPage.css";
 
 const DEFAULT_CATEGORIES = [
   "Food & Dining",
@@ -29,6 +29,8 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
   const [showPreview, setShowPreview] = useState(false);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
 
+  const fileInputRef = useRef(null);
+
   /* =========================
      HANDLE UPLOAD / PREVIEW
      ========================= */
@@ -46,7 +48,6 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
         try {
           const data = await previewUpload(file);
 
-          // 🔴 CRITICAL FIX — backend returns { transactions }
           const rows = data.transactions || [];
 
           pdfPreview.push(
@@ -125,17 +126,43 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
     <div className="upload-page">
       <h2>Upload & Preview</h2>
 
-      <input
-        type="file"
-        multiple
-        accept=".csv,.xls,.xlsx,.pdf"
-        onChange={(e) => setFiles([...e.target.files])}
-      />
+      {/* ================= DROP ZONE ================= */}
+      <div className="upload-zone">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".csv,.xls,.xlsx,.pdf"
+          onChange={(e) => setFiles([...e.target.files])}
+        />
 
-      <button type="button" onClick={handleUpload}>
-        Upload / Preview
-      </button>
+        <div
+          className="upload-drop"
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            setFiles([...e.dataTransfer.files]);
+          }}
+        >
+          <div className="upload-icon">☁️</div>
+          <h3>Drag & drop files here</h3>
+          <p>
+            or <span>click to upload</span>
+          </p>
+          <p className="upload-hint">PDF files supported</p>
+        </div>
 
+        <button
+          type="button"
+          className="upload-btn"
+          onClick={handleUpload}
+        >
+          Upload & Preview
+        </button>
+      </div>
+
+      {/* ================= PREVIEW ================= */}
       {showPreview && (
         <>
           <h3>Preview Transactions</h3>
@@ -266,7 +293,11 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
             </tbody>
           </table>
 
-          <button type="button" onClick={handleConfirm}>
+          <button
+            type="button"
+            className="upload-confirm-btn"
+            onClick={handleConfirm}
+          >
             Confirm & Save
           </button>
         </>
