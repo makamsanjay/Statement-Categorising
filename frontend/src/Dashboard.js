@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   previewUpload,
   getTransactions,
@@ -57,7 +57,6 @@ const SYMBOL = {
 
 
 function Dashboard() {
-
   
   const [files, setFiles] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -76,11 +75,15 @@ const formatAmount = (num) => Number(num).toFixed(2);
 const [allTransactions, setAllTransactions] = useState([]);
 const [billing, setBilling] = useState(null);
 
+
+
 useEffect(() => {
   getBillingStatus()
     .then(setBilling)
     .catch(() => {});
 }, []);
+
+
 
 const [showUpgrade, setShowUpgrade] = useState(false);
 
@@ -101,6 +104,27 @@ useEffect(() => {
 }, [activeView]);
 
 
+const [cards, setCards] = useState([]);
+const [activeCardIndex, setActiveCardIndex] = useState(0);
+
+
+  const refreshDashboardData = async (cardIndex = activeCardIndex) => {
+  const all = await getTransactions();
+  setAllTransactions([...all]); 
+
+  if (cards[cardIndex]) {
+    const cardId = cards[cardIndex]._id;
+    const cardTxns = await getTransactionsByCard(cardId);
+    setTransactions([...cardTxns]);
+  }
+};
+
+useEffect(() => {
+  if (cards.length) {
+    refreshDashboardData();
+  }
+}, [cards]);
+
 
 const [newTxn, setNewTxn] = useState({
   date: "",
@@ -116,8 +140,6 @@ const isPro =
 
 
 
-const [cards, setCards] = useState([]);
-const [activeCardIndex, setActiveCardIndex] = useState(0);
 
 useEffect(() => {
   const loadCards = async () => {
@@ -174,13 +196,17 @@ useEffect(() => {
   fetchHealthScore().then(setHealth);
 }, [transactions]);
 
-const totalIncome = transactions
-  .filter(t => t.amount > 0)
-  .reduce((sum, t) => sum + t.amount, 0);
+const { totalIncome, totalExpense } = useMemo(() => {
+  let income = 0;
+  let expense = 0;
 
-const totalExpense = transactions
-  .filter(t => t.amount < 0)
-  .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  allTransactions.forEach(t => {
+    if (t.amount > 0) income += t.amount;
+    if (t.amount < 0) expense += Math.abs(t.amount);
+  });
+
+  return { totalIncome: income, totalExpense: expense };
+}, [allTransactions]);
 
 
  const handleUpload = async () => {
@@ -261,26 +287,21 @@ if (!card || !card._id) {
   currency: card.displayCurrency
 }));
 
+await saveConfirmedTransactions(payload);
 
-  try {
-    await saveConfirmedTransactions(payload);
-  } catch (err) {
-    // ✅ FRIENDLY MESSAGE (NO CRASH)
-    alert(err.message || "Upload failed");
-    return;
-  }
+await refreshDashboardData();
 
-  // ✅ REFRESH UI STATE
-  const updatedCards = await getCards();
-  setCards(updatedCards);
 
-  const newIndex = updatedCards.findIndex(c => c._id === card._id);
-  setActiveCardIndex(newIndex === -1 ? 0 : newIndex);
+const updatedCards = await getCards();
+setCards(updatedCards);
+
+const newIndex = updatedCards.findIndex(c => c._id === card._id);
+setActiveCardIndex(newIndex === -1 ? 0 : newIndex);
+setTransactions(await getTransactionsByCard(card._id));
+
 
   const txns = await getTransactionsByCard(card._id);
   setTransactions(txns);
-
-  setAllTransactions(await getTransactions());
 
 
 setActiveCardIndex(selectedUploadCardIndex);
@@ -295,6 +316,7 @@ if (fileInputRef.current) {
 }
 
 };
+
 
 const fileInputRef = useRef(null);
 
@@ -324,10 +346,24 @@ const handleAddTransaction = async () => {
     currency: card.displayCurrency
   }];
 
-  await saveConfirmedTransactions(payload
-);
+await saveConfirmedTransactions(payload);
+
+await refreshDashboardData();
+
 
 const cardId = cards[activeCardIndex]._id;
+setTransactions(await getTransactionsByCard(cardId));
+
+setNewTxn({
+  date: "",
+  description: "",
+  amount: "",
+  type: "expense",
+  category: "Other"
+});
+
+setShowAddTxn(false);
+
 const updatedTxns = await getTransactionsByCard(cardId);
 setTransactions(updatedTxns);
 
@@ -354,9 +390,6 @@ setAllTransactions(all);
         : [...prev, id]
     );
   };
-useEffect(() => {
-  getTransactions().then(setAllTransactions);
-}, []);
 
   const toggleSelectAll = (checked) => {
     setSelectedTxns(
@@ -383,12 +416,15 @@ useEffect(() => {
       await updateCategory(id, bulkCategory);
     }
 
-    setSelectedTxns([]);
-    setBulkCategory("");
-    setEditMode(false);
-    const cardId = cards[activeCardIndex]._id;
+setSelectedTxns([]);
+setBulkCategory("");
+setEditMode(false);
+
+await refreshDashboardData();
+
+
+const cardId = cards[activeCardIndex]._id;
 setTransactions(await getTransactionsByCard(cardId));
-setAllTransactions(await getTransactions());
 
   };
 
@@ -410,15 +446,21 @@ setAllTransactions(await getTransactions());
     body: JSON.stringify({ ids: selectedTxns })
   });
 
-  const cardId = cards[activeCardIndex]._id;
   const updatedTxns = await getTransactionsByCard(cardId);
   setTransactions(updatedTxns);
 
   const all = await getTransactions();
   setAllTransactions(all);
 
-  setSelectedTxns([]);
-  setEditMode(false);
+ setSelectedTxns([]);
+setEditMode(false);
+
+await refreshDashboardData();
+
+
+const cardId = cards[activeCardIndex]._id;
+setTransactions(await getTransactionsByCard(cardId));
+
 };
 
 
@@ -454,35 +496,37 @@ setAllTransactions(await getTransactions());
   };
 };
 
-const mainCategories = {};
+const chartData = useMemo(() => {
+  if (!allTransactions.length) return null;
 
-allTransactions.forEach(t => {
-  if (t.amount < 0) {
-    mainCategories[t.category] =
-      (mainCategories[t.category] || 0) + Math.abs(t.amount);
-  }
-});
+  const map = {};
 
+  allTransactions.forEach(t => {
+    if (t.amount < 0) {
+      map[t.category] = (map[t.category] || 0) + Math.abs(t.amount);
+    }
+  });
 
-const chartData =
-  Object.keys(mainCategories).length === 0
-    ? null
-    : {
-        labels: Object.keys(mainCategories),
-        datasets: [
-          {
-            data: Object.values(mainCategories),
-            backgroundColor: [
-              "#FF6384",
-              "#36A2EB",
-              "#FFCE56",
-              "#8AFFC1",
-              "#9966FF",
-              "#FF9F40"
-            ]
-          }
+  if (!Object.keys(map).length) return null;
+
+  return {
+    labels: Object.keys(map),
+    datasets: [
+      {
+        data: Object.values(map),
+        backgroundColor: [
+          "#ef4444",
+          "#3b82f6",
+          "#facc15",
+          "#10b981",
+          "#8b5cf6",
+          "#fb923c"
         ]
-      };
+      }
+    ]
+  };
+}, [allTransactions]);
+
 
 const incomeExpenseChartData = {
   labels: ["Income", "Expense"],
@@ -498,7 +542,7 @@ const incomeExpenseChartData = {
 
 
 const categoryTransactions = selectedCategory
-  ? transactions.filter(
+  ? allTransactions.filter(
       t => t.category === selectedCategory && t.amount < 0
     )
   : [];
@@ -560,6 +604,7 @@ const handleAddCard = async () => {
       displayCurrency: "USD"
     });
 
+    
     const updatedCards = await getCards();
     setCards(updatedCards);
 
@@ -620,7 +665,6 @@ return (
       {/* CONTENT */}
       <div className="container dashboard-content">
 
-        {/* ================= DASHBOARD ================= */}
       {/* ================= DASHBOARD ================= */}
 {activeView === "dashboard" && (
   <>
@@ -684,6 +728,41 @@ return (
         )}
       </div>
     </div>
+
+    {selectedCategory && (
+  <div className="subcat-txns">
+    <div className="subcat-txns-header">
+      <h4>{selectedCategory} Transactions</h4>
+      <span>{categoryTransactions.length} items</span>
+    </div>
+
+    {categoryTransactions.length === 0 ? (
+      <div className="subcat-empty">No transactions found</div>
+    ) : (
+      <div className="subcat-txns-list">
+        {categoryTransactions.map(txn => (
+          <div key={txn._id} className="subcat-txn">
+            <div className="subcat-txn-left">
+              <div className="subcat-txn-desc">
+                {txn.description}
+              </div>
+              <div className="subcat-txn-meta">
+                {txn.date} •{" "}
+                {cards.find(c => c._id === txn.cardId)?.name || "Card"}
+              </div>
+            </div>
+
+            <div className="subcat-txn-amount expense">
+              {SYMBOL[txn.currency]}
+              {Math.abs(txn.amount).toFixed(2)}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
 
     {/* ================= ACTIVE CARD OVERVIEW ================= */}
     {cards[activeCardIndex] && (

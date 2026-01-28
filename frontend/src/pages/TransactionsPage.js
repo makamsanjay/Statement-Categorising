@@ -41,7 +41,6 @@ const formatCardName = (card) =>
   card?.last4 ? `${card.name} (${card.last4})` : card?.name || "";
 
 export default function TransactionsPage({ onRefresh }) {
-  /* ---------------- STATE ---------------- */
 const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [cards, setCards] = useState([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -154,9 +153,12 @@ const handleAddCategory = (setter, value) => {
     currency: card.displayCurrency
   }]);
 
-  const refreshed = await getTransactionsByCard(card._id);
-  setTransactions([...refreshed]);
-  setDraftTxns(JSON.parse(JSON.stringify(refreshed)));
+const refreshed = await getTransactionsByCard(card._id);
+setTransactions([...refreshed]);
+setDraftTxns(JSON.parse(JSON.stringify(refreshed)));
+
+onRefresh?.(); //
+
 
   setNewTxn({
     date: "",
@@ -190,8 +192,9 @@ const handleBulkUpdate = async () => {
     cards[activeCardIndex]._id
   );
 
-  setTransactions([...refreshed]);        // 🔥 important
+  setTransactions([...refreshed]);   
   setDraftTxns(JSON.parse(JSON.stringify(refreshed)));
+  onRefresh?.();
 
   setSelectedTxns([]);
   setBulkCategory("");
@@ -220,6 +223,7 @@ const handleBulkUpdate = async () => {
     setDraftTxns(JSON.parse(JSON.stringify(refreshed)));
     setSelectedTxns([]);
     setEditMode(false);
+    onRefresh?.();
   };
 
   /* ---------------- PIE CHART (REAL-TIME FIX) ---------------- */

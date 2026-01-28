@@ -4,7 +4,7 @@ function Sidebar({ onNavigate }) {
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
-        💰 FinTrack
+         FinTrack
       </div>
 
       <nav className="sidebar-nav">
