@@ -1,0 +1,130 @@
+.budget-page {
+  padding: 18px;
+}
+
+.budget-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.budget-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.budget-form select,
+.budget-form input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+.budget-form button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.budget-form button:hover {
+  background: #1d4ed8;
+}
+
+.budget-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.budget-card {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  transition: box-shadow 0.25s ease, transform 0.15s ease;
+}
+
+.budget-card:hover {
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+}
+
+.budget-card.over {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.budget-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.budget-name {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.pin {
+  margin-left: 6px;
+}
+
+.budget-sub {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.budget-amount {
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.over-text {
+  color: #dc2626;
+  margin-left: 4px;
+}
+
+.budget-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.budget-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.icon-btn.danger {
+  color: #dc2626;
+}
+
+.progress-track {
+  width: 140px;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}

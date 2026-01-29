@@ -46,7 +46,10 @@ const UserSchema = new mongoose.Schema(
     lastUploadDate: {
       type: Date,
       default: null
-    }
+    },
+    name: String,
+email: String,
+phone: String,
   },
   { timestamps: true }
 );

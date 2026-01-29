@@ -54,6 +54,27 @@ export const saveConfirmedTransactions = async (transactions) => {
   return data;
 };
 
+export const updateTransaction = async (id, data) => {
+  const res = await fetch(
+    `http://localhost:5050/transactions/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify(data)
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+
+  return res.json();
+};
+
 /* ============================
    TRANSACTIONS
    ============================ */
@@ -145,34 +166,6 @@ export const updateCardCurrency = async (cardId, displayCurrency) => {
   return res.json();
 };
 
-/* ============================
-   AUTH
-   ============================ */
-export const login = async (email, password) => {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Login failed");
-
-  return data;
-};
-
-export const signup = async (email, password) => {
-  const res = await fetch(`${BASE_URL}/auth/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Signup failed");
-
-  return data;
-};
 
 /* ============================
    BILLING (STRIPE)
@@ -204,4 +197,111 @@ export const openBillingPortal = async () => {
   if (!res.ok) throw new Error(data.error || "Failed to open billing portal");
 
   return data.url;
+};
+
+/* ============================
+   BUDGETS
+   ============================ */
+
+export const getBudgetSummary = async (month) => {
+  const res = await authFetch(
+    `${BASE_URL}/budget/summary?month=${month}`
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch budget summary");
+  }
+
+  return res.json();
+};
+
+export const saveBudget = async (data) => {
+  const res = await authFetch(`${BASE_URL}/budget`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json.error || "Failed to save budget");
+  }
+
+  return json;
+};
+
+export const deleteBudget = async (id) => {
+  const res = await authFetch(`${BASE_URL}/budget/${id}`, {
+    method: "DELETE"
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to delete budget");
+  }
+};
+
+export const getMyProfile = async () => {
+  const res = await fetch("http://localhost:5050/users/me", {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    }
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to load profile");
+  }
+
+  return res.json();
+};
+
+
+export const updateProfile = async (data) => {
+  const res = await fetch("/users/me", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+};
+
+
+export const sendSignupOtp = async (email) => {
+  const res = await fetch(`${BASE_URL}/auth/send-signup-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) throw new Error("OTP send failed");
+};
+
+export const verifySignupOtp = async (email, otp) => {
+  const res = await fetch(`${BASE_URL}/auth/verify-signup-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp })
+  });
+  if (!res.ok) throw new Error("OTP verification failed");
+};
+
+export const signup = async ({ name, email, password }) => {
+  const res = await fetch(`${BASE_URL}/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+  if (!res.ok) throw new Error("Signup failed");
+  return res.json();
+};
+
+export const login = async (email, password) => {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+  if (!res.ok) throw new Error("Login failed");
+  return res.json();
 };
