@@ -61,21 +61,30 @@ const txns = await Transaction.find({
 });
 
 router.put("/:id", auth, loadUser, async (req, res) => {
-  const { category } = req.body;
+  const { date, description, amount, category } = req.body;
+
+  const update = {};
+
+  if (date !== undefined) update.date = date;
+  if (description !== undefined) update.description = description;
+  if (amount !== undefined) update.amount = amount;
+  if (category !== undefined) {
+    update.category = category;
+    update.categorySource = "user";
+    update.confidence = 1;
+    update.userOverridden = true;
+  }
 
   const updated = await Transaction.findOneAndUpdate(
     { _id: req.params.id, userId: req.user._id },
-    {
-      category,
-      categorySource: "user",
-      confidence: 1,
-      userOverridden: true
-    },
+    update,
     { new: true }
   );
 
   res.json(updated);
 });
+
+
 
 router.post("/bulk-delete", auth, loadUser, async (req, res) => {
   const { ids } = req.body;

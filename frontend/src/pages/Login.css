@@ -1,0 +1,266 @@
+/* =========================
+   Layout – TRUE 50/50
+========================= */
+
+.auth-container {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+/* =========================
+   LEFT – Card Wall
+========================= */
+
+.card-wall {
+  background: #ffffff;
+  padding: 60px 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Card rows */
+.card-row {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  opacity: 0.85;
+}
+
+/* Direction */
+.card-row.left {
+  animation: scrollLeft linear infinite;
+}
+
+.card-row.right {
+  animation: scrollRight linear infinite;
+}
+
+/* Card images */
+.card-row img {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.9;
+}
+
+/* Animations */
+@keyframes scrollLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scrollRight {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* =========================
+   RIGHT – Login Form
+========================= */
+
+
+.auth-form input:focus {
+  border-color: #6366f1;
+}
+
+/* =========================
+   RIGHT – PREMIUM AUTH FORM
+========================= */
+
+.auth-form {
+  position: relative;
+  z-index: 1;
+
+  max-width: 420px;
+  width: 100%;
+  margin: auto;
+
+  padding: 52px 48px;
+
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 30px 60px rgba(15, 23, 42, 0.12),
+    0 12px 24px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================
+   Title
+========================= */
+
+.auth-form h2 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 32px;
+  color: #020617;
+  position: relative;
+}
+
+.auth-form h2::after {
+  content: "";
+  width: 44px;
+  height: 3px;
+  margin-top: 12px;
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #22c55e);
+}
+
+/* =========================
+   Inputs
+========================= */
+
+.auth-form input {
+  padding: 14px 16px;
+  margin-bottom: 18px;
+
+  font-size: 14.5px;
+  border-radius: 10px;
+
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.auth-form input:focus {
+  background: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+  outline: none;
+}
+
+/* =========================
+   Primary Button
+========================= */
+
+.auth-form button {
+  margin-top: 8px;
+  padding: 14px;
+
+  border-radius: 12px;
+  border: none;
+
+  background: #4f46e5;
+  color: #ffffff;
+
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* =========================
+   Secondary Link
+========================= */
+
+.auth-form p {
+  margin-top: 20px;
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+}
+
+.auth-form p button {
+  background: none;
+  border: none;
+  padding: 0;
+
+  color: #4f46e5;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.auth-form p button:hover {
+  text-decoration: underline;
+}
+
+
+
+.card-row {
+  transform: translateX(calc(-1 * var(--offset, 0px)));
+}
+
+/* =========================
+   RIGHT – Premium Login Panel
+========================= */
+
+.auth-form {
+  background: #ffffff;
+  padding: 48px 44px;
+  border-radius: 16px;
+  box-shadow:
+    0 20px 40px rgba(15, 23, 42, 0.08),
+    0 8px 16px rgba(15, 23, 42, 0.05);
+  max-width: 420px;
+  width: 100%;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Title */
+.auth-form h2 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 28px;
+  color: #020617;
+  letter-spacing: -0.02em;
+}
+
+/* Inputs */
+.auth-form input {
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-form input:focus {
+  background: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+/* =========================
+   REMOVE BLUE CLICK / TAP HIGHLIGHT
+========================= */
+
+.auth-form button,
+.auth-form p button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.auth-form button:focus,
+.auth-form p button:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.auth-form button:active,
+.auth-form p button:active {
+  outline: none;
+}

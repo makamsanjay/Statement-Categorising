@@ -7,11 +7,16 @@ const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
 
 /* ============================
+   0️⃣ GET USER CARDS (RAW)
+   ============================ */
+
+/* ============================
    1️⃣ GET USER CARDS (SUMMARY)
    ============================ */
 router.get("/summary", auth, loadUser, async (req, res) => {
   try {
     const userId = req.user._id;
+
     const cards = await Card.find({ userId });
 
     const result = [];
@@ -21,7 +26,7 @@ router.get("/summary", auth, loadUser, async (req, res) => {
         {
           $match: {
             cardId: card._id,
-            userId
+            userId: userId   // ✅ FIX
           }
         },
         {
@@ -59,9 +64,6 @@ router.get("/summary", auth, loadUser, async (req, res) => {
   }
 });
 
-/* ============================
-   2️⃣ CREATE CARD (FREE vs PRO)
-   ============================ */
 /* ============================
    2️⃣ CREATE CARD (FIXED LOGIC ORDER)
    ============================ */

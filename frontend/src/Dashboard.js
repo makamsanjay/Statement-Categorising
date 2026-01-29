@@ -1,22 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   previewUpload,
   getTransactions,
   updateCategory,
   saveConfirmedTransactions,
   getCards,
-  createCard,
-  deleteCard,
-  getTransactionsByCard
-} from "./api";
-import { renameCard } from "./api";
-import { fetchHealthScore } from "./api";
-import { updateCardCurrency } from "./api";
-import {
+  getTransactionsByCard,
+  fetchHealthScore,
+  updateCardCurrency,
   startCheckout,
   getBillingStatus,
-  openBillingPortal
+  openBillingPortal,
+  createCard
 } from "./api";
+import Sidebar from "./components/Sidebar";
+import TopBar from "./components/TopBar";
+import HealthPage from "./pages/HealthPage";
+import TransactionsPage from "./pages/TransactionsPage";
+import BudgetPage from "./pages/BudgetPage";
+import {useRef } from "react";
+import "./pages/UploadPage.css";
+import AnalyticsPage from "./pages/Analytics";
+import ProfilePage from "./pages/ProfilePage";
+import HelpPage from "./pages/HelpPage";
+
+
+
+
 
 
 
@@ -54,7 +64,6 @@ const SYMBOL = {
 
 
 function Dashboard() {
-
   
   const [files, setFiles] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -65,7 +74,6 @@ function Dashboard() {
   const [editMode, setEditMode] = useState(false);
   const [selectedTxns, setSelectedTxns] = useState([]);
   const [bulkCategory, setBulkCategory] = useState("");
-  const [budgets, setBudgets] = useState({});
 
 const [category, setCategory] = useState("");
 const [budgetAmount, setBudgetAmount] = useState("");
@@ -74,13 +82,19 @@ const formatAmount = (num) => Number(num).toFixed(2);
 const [allTransactions, setAllTransactions] = useState([]);
 const [billing, setBilling] = useState(null);
 
+
+
 useEffect(() => {
   getBillingStatus()
     .then(setBilling)
     .catch(() => {});
 }, []);
 
+
+
 const [showUpgrade, setShowUpgrade] = useState(false);
+
+const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState("0");
 
 const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -88,6 +102,36 @@ const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
 const [creatingCard, setCreatingCard] = useState(false);
 
 const [showAddTxn, setShowAddTxn] = useState(false);
+const [activeView, setActiveView] = useState(() => {
+  return localStorage.getItem("activeView") || "dashboard";
+});
+
+useEffect(() => {
+  localStorage.setItem("activeView", activeView);
+}, [activeView]);
+
+
+const [cards, setCards] = useState([]);
+const [activeCardIndex, setActiveCardIndex] = useState(0);
+
+
+  const refreshDashboardData = async (cardIndex = activeCardIndex) => {
+  const all = await getTransactions();
+  setAllTransactions([...all]); 
+
+  if (cards[cardIndex]) {
+    const cardId = cards[cardIndex]._id;
+    const cardTxns = await getTransactionsByCard(cardId);
+    setTransactions([...cardTxns]);
+  }
+};
+
+useEffect(() => {
+  if (cards.length) {
+    refreshDashboardData();
+  }
+}, [cards]);
+
 
 const [newTxn, setNewTxn] = useState({
   date: "",
@@ -102,13 +146,17 @@ const isPro =
 
 
 
-const [cards, setCards] = useState([]);
-const [activeCardIndex, setActiveCardIndex] = useState(0);
+
 
 useEffect(() => {
   const loadCards = async () => {
-    const data = await getCards();
-    setCards(data);
+    try {
+      const data = await getCards();
+      console.log("CARDS LOADED:", data);
+      setCards(data);
+    } catch (e) {
+      console.error("FAILED TO LOAD CARDS", e); 
+    }
   };
   loadCards();
 }, []);
@@ -130,10 +178,12 @@ useEffect(() => {
 
 useEffect(() => {
   const saved = localStorage.getItem("activeCardIndex");
+
   if (saved !== null) {
     setActiveCardIndex(Number(saved));
   }
 }, []);
+
 
 useEffect(() => {
   localStorage.setItem("activeCardIndex", activeCardIndex);
@@ -153,16 +203,23 @@ useEffect(() => {
   fetchHealthScore().then(setHealth);
 }, [transactions]);
 
-const totalIncome = transactions
-  .filter(t => t.amount > 0)
-  .reduce((sum, t) => sum + t.amount, 0);
+const { totalIncome, totalExpense } = useMemo(() => {
+  let income = 0;
+  let expense = 0;
 
-const totalExpense = transactions
-  .filter(t => t.amount < 0)
-  .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  allTransactions.forEach(t => {
+    if (t.amount > 0) income += t.amount;
+    if (t.amount < 0) expense += Math.abs(t.amount);
+  });
+
+  return { totalIncome: income, totalExpense: expense };
+}, [allTransactions]);
 
 
  const handleUpload = async () => {
+  setPreview([]);
+setShowPreview(false);
+
   if (!files.length) {
     alert("Select file(s)");
     return;
@@ -175,7 +232,9 @@ const totalExpense = transactions
     if (file.type === "application/pdf") {
       try {
         const data = await previewUpload(file);
-        pdfPreview.push(...data.map(t => ({ ...t, selected: true })));
+       pdfPreview.push(
+  ...data.map(t => ({ ...t, selected: true }))
+);
       } catch (err) {
         skippedMessages.push(`${file.name}: ${err.message}`);
       }
@@ -188,6 +247,13 @@ const totalExpense = transactions
 
   if (pdfPreview.length) {
     setPreview(pdfPreview);
+    if (pdfPreview.length) {
+  if (cards.length > 0) {
+    setSelectedUploadCardIndex(activeCardIndex);
+  }
+  setPreview(pdfPreview);
+  setShowPreview(true);
+}
     setShowPreview(true);
   }
 
@@ -210,44 +276,56 @@ const handleConfirm = async (e) => {
     return;
   }
 
-  const card = cards?.[activeCardIndex];
-  if (!card || !card._id) {
-    alert("Please select a card before confirming upload");
-    return;
-  }
+const card = cards?.[selectedUploadCardIndex];
+
+if (!card || !card._id) {
+  alert("Please select a card before confirming upload");
+  return;
+}
+
+  
 
   const payload = selected.map(t => ({
-    date: t.date,
-    description: t.description,
-    amount: Number(t.amount),
-    category: t.category || "Other",
-    cardId: card._id,
-    currency: card.displayCurrency
-  }));
+  date: t.date,
+  description: t.description,
+  amount: Number(t.amount),
+  category: t.category || "Other",
+  cardId: card._id,
+  currency: card.displayCurrency
+}));
 
-  try {
-    await saveConfirmedTransactions(payload);
-  } catch (err) {
-    // ✅ FRIENDLY MESSAGE (NO CRASH)
-    alert(err.message || "Upload failed");
-    return;
-  }
+await saveConfirmedTransactions(payload);
 
-  // ✅ REFRESH UI STATE
-  const updatedCards = await getCards();
-  setCards(updatedCards);
+await refreshDashboardData();
 
-  const newIndex = updatedCards.findIndex(c => c._id === card._id);
-  setActiveCardIndex(newIndex === -1 ? 0 : newIndex);
+
+const updatedCards = await getCards();
+setCards(updatedCards);
+
+const newIndex = updatedCards.findIndex(c => c._id === card._id);
+setActiveCardIndex(newIndex === -1 ? 0 : newIndex);
+setTransactions(await getTransactionsByCard(card._id));
+
 
   const txns = await getTransactionsByCard(card._id);
   setTransactions(txns);
 
-  setAllTransactions(await getTransactions());
 
-  setPreview([]);
-  setShowPreview(false);
+setActiveCardIndex(selectedUploadCardIndex);
+setActiveView("transactions");
+
+setFiles([]);
+setPreview([]);
+setShowPreview(false);
+
+if (fileInputRef.current) {
+  fileInputRef.current.value = "";
+}
+
 };
+
+
+const fileInputRef = useRef(null);
 
 const handleAddTransaction = async () => {
   const { date, description, amount, type, category } = newTxn;
@@ -275,10 +353,24 @@ const handleAddTransaction = async () => {
     currency: card.displayCurrency
   }];
 
-  await saveConfirmedTransactions(payload
-);
+await saveConfirmedTransactions(payload);
+
+await refreshDashboardData();
+
 
 const cardId = cards[activeCardIndex]._id;
+setTransactions(await getTransactionsByCard(cardId));
+
+setNewTxn({
+  date: "",
+  description: "",
+  amount: "",
+  type: "expense",
+  category: "Other"
+});
+
+setShowAddTxn(false);
+
 const updatedTxns = await getTransactionsByCard(cardId);
 setTransactions(updatedTxns);
 
@@ -305,15 +397,21 @@ setAllTransactions(all);
         : [...prev, id]
     );
   };
-useEffect(() => {
-  getTransactions().then(setAllTransactions);
-}, []);
 
   const toggleSelectAll = (checked) => {
     setSelectedTxns(
       checked ? transactions.map(t => t._id) : []
     );
   };
+
+
+useEffect(() => {
+  if (cards.length > 0) {
+    setSelectedUploadCardIndex(activeCardIndex);
+  }
+}, [cards, activeCardIndex]);
+
+
 
   const handleBulkUpdate = async () => {
     if (!bulkCategory || !selectedTxns.length) {
@@ -325,43 +423,21 @@ useEffect(() => {
       await updateCategory(id, bulkCategory);
     }
 
-    setSelectedTxns([]);
-    setBulkCategory("");
-    setEditMode(false);
-    const cardId = cards[activeCardIndex]._id;
+setSelectedTxns([]);
+setBulkCategory("");
+setEditMode(false);
+
+await refreshDashboardData();
+
+
+const cardId = cards[activeCardIndex]._id;
 setTransactions(await getTransactionsByCard(cardId));
-setAllTransactions(await getTransactions());
 
   };
 
 
-  const budgetSummary = Object.entries(budgets).map(([cat, budget]) => {
-  const spent = transactions
-    .filter(t => t.category === cat && t.amount < 0)
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-  return {
-    category: cat,
-    spent,
-    budget,
-    over: spent > budget
-  };
-});
 
-const handleSetBudget = () => {
-  if (!category || !budgetAmount) {
-    alert("Select category and budget");
-    return;
-  }
-
-  setBudgets(prev => ({
-    ...prev,
-    [category]: Number(budgetAmount)
-  }));
-
-  setCategory("");
-  setBudgetAmount("");
-};
 
  const handleBulkDelete = async () => {
   if (!selectedTxns.length) return;
@@ -377,15 +453,21 @@ const handleSetBudget = () => {
     body: JSON.stringify({ ids: selectedTxns })
   });
 
-  const cardId = cards[activeCardIndex]._id;
   const updatedTxns = await getTransactionsByCard(cardId);
   setTransactions(updatedTxns);
 
   const all = await getTransactions();
   setAllTransactions(all);
 
-  setSelectedTxns([]);
-  setEditMode(false);
+ setSelectedTxns([]);
+setEditMode(false);
+
+await refreshDashboardData();
+
+
+const cardId = cards[activeCardIndex]._id;
+setTransactions(await getTransactionsByCard(cardId));
+
 };
 
 
@@ -421,35 +503,49 @@ const handleSetBudget = () => {
   };
 };
 
-const mainCategories = {};
+const chartData = useMemo(() => {
+  if (!allTransactions.length) return null;
 
-allTransactions.forEach(t => {
-  if (t.amount < 0) {
-    mainCategories[t.category] =
-      (mainCategories[t.category] || 0) + Math.abs(t.amount);
-  }
-});
+  const map = {};
 
+  allTransactions.forEach(t => {
+    if (t.amount < 0) {
+      map[t.category] = (map[t.category] || 0) + Math.abs(t.amount);
+    }
+  });
 
-const chartData =
-  Object.keys(mainCategories).length === 0
-    ? null
-    : {
-        labels: Object.keys(mainCategories),
-        datasets: [
-          {
-            data: Object.values(mainCategories),
-            backgroundColor: [
-              "#FF6384",
-              "#36A2EB",
-              "#FFCE56",
-              "#8AFFC1",
-              "#9966FF",
-              "#FF9F40"
-            ]
-          }
+  if (!Object.keys(map).length) return null;
+
+  return {
+    labels: Object.keys(map),
+    datasets: [
+      {
+        data: Object.values(map),
+        backgroundColor: [
+          "#ef4444",
+          "#3b82f6",
+          "#facc15",
+          "#10b981",
+          "#8b5cf6",
+          "#fb923c"
         ]
-      };
+      }
+    ]
+  };
+}, [allTransactions]);
+
+
+const incomeExpenseChartData = {
+  labels: ["Income", "Expense"],
+  datasets: [
+    {
+      data: [totalIncome, totalExpense],
+      backgroundColor: ["#10b981", "#ef4444"],
+      hoverBackgroundColor: ["#059669", "#dc2626"],
+      borderRadius: 10
+    }
+  ]
+};
 
 
 const categoryTransactions = selectedCategory
@@ -459,6 +555,7 @@ const categoryTransactions = selectedCategory
   : [];
 
 
+const card = cards[Number(selectedUploadCardIndex)];
 
 const categoryCardSplit = {};
 
@@ -489,789 +586,574 @@ const categoryCardChartData =
         ]
       };
 
+
       
 const logout = () => {
   localStorage.clear();
   window.location.replace("/login");
 };
 
-  return (
+const handleAddCard = async () => {
+  const name = prompt("Enter card name");
+  if (!name) return;
 
-    <div className="container">
-      <div style={{
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginBottom: 20
-}}>
-
-{billing && (
-  <div
-    style={{
-      padding: "6px 12px",
-      borderRadius: 6,
-      background: isPro ? "#d1fae5" : "#fee2e2",
-      color: isPro ? "#065f46" : "#991b1b",
-      fontWeight: "bold"
-    }}
-  >
-    Plan: {billing.plan.toUpperCase()}
-  </div>
-)}
-
-{!isPro && (
-  <button onClick={startCheckout}>
-    Upgrade to Pro
-  </button>
-)}
-
-{isPro && (
-  <button onClick={async () => {
-    const url = await openBillingPortal();
-    window.location.href = url;
-  }}>
-    Manage Billing
-  </button>
-)}
-
-  <h2>Statement Categorizing</h2>
-
-  <button
-    onClick={logout}
-    style={{
-      background: "#ff4d4d",
-      color: "white",
-      border: "none",
-      padding: "8px 14px",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontWeight: "bold"
-    }}
-  >
-    Logout
-  </button>
-</div>
-
-
-      <input
-        type="file"
-        multiple
-        accept=".csv,.xls,.xlsx,.pdf"
-        onChange={(e) => setFiles([...e.target.files])}
-      />
-
-      <button type="button" onClick={handleUpload}>
-  Upload/Preview
-</button>
-
-
-      {showPreview && (
-        <>
-          <h3>Preview Transactions</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Include</th>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Type</th>
-                <th>Category</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.map((t, i) => (
-                <tr key={i}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={t.selected}
-                      onChange={() => {
-  setPreview(prev =>
-    prev.map((txn, idx) =>
-      idx === i ? { ...txn, selected: !txn.selected } : txn
-    )
-  );
-}}
-
-                    />
-                  </td>
-                  <td>{t.date}</td>
-                  <td>
-      <input
-  value={t.description}
-onChange={(e) => {
-  const value = e.target.value;
-
-  if (value === "__add_new__") {
-    const newCat = prompt("Enter new category name");
-    if (!newCat) return;
-
-    if (!categories.includes(newCat)) {
-      setCategories(prev => [...prev, newCat]);
-    }
-
-    setCategory(newCat);
+  const last4 = prompt("Last 4 digits (optional)");
+  if (last4 && !/^\d{0,4}$/.test(last4)) {
+    alert("Last 4 digits must be up to 4 numbers");
     return;
   }
 
-  setCategory(value);
-}}
+  try {
+    const newCard = await createCard({
+      name,
+      last4: last4 || undefined,
+      baseCurrency: "USD",
+      displayCurrency: "USD"
+    });
 
-/>
-                  </td>
-                  <td>{t.amount}</td>
-                  <td>
-                    <label>
-                      <input
-                        type="radio"
-                        name={`amt-${i}`}
-                        checked={t.amount > 0}
-                        onChange={() => {
-                          const copy = [...preview];
-                          copy[i].amount = fixAmountSign(copy[i].amount, "income");
-                          setPreview(copy);
-                        }}
-                      /> Income
-                    </label>
-                    <label style={{ marginLeft: 10 }}>
-                      <input
-                        type="radio"
-                        name={`amt-${i}`}
-                        checked={t.amount < 0}
-                        onChange={() => {
-                          const copy = [...preview];
-                          copy[i].amount = fixAmountSign(copy[i].amount, "expense");
-                          setPreview(copy);
-                        }}
-                      /> Expense
-                    </label>
-                  </td>
-                  <td>
-                    <select
-                      value={t.category}
-                      onChange={(e) => {
-  const value = e.target.value;
-
-  if (value === "__add_new__") {
-    const newCat = prompt("Enter new category name");
-    if (!newCat) return;
-
-    if (!categories.includes(newCat)) {
-      setCategories(prev => [...prev, newCat]);
-    }
-
-    const copy = [...preview];
-    copy[i].category = newCat;
-    setPreview(copy);
-    return;
-  }
-
-  const copy = [...preview];
-  copy[i].category = value;
-  setPreview(copy);
-}}
-
-                    >
-                      {categories.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                      <option value="__add_new__"> Add new category</option>
-
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <button type="button" onClick={handleConfirm}>
-  Confirm & Save
-</button>
-
-        </>
-      )}
-
-      {cards.length > 0 && (
-  <div style={{ marginBottom: 12 }}>
-    <label style={{ fontWeight: "bold" }}>Account Currency:</label>{" "}
-    <select
-  value={cards[0].displayCurrency}
-  onChange={async (e) => {
-    const newCurrency = e.target.value;
-    await Promise.all(
-      cards.map(card =>
-        updateCardCurrency(card._id, newCurrency)
-      )
-    );
-
-    const updated = await getCards();
-    setCards(updated);
-  }}
->
-
-      <option value="USD">USD ($)</option>
-      <option value="INR">INR (₹)</option>
-      <option value="EUR">EUR (€)</option>
-      <option value="GBP">GBP (£)</option>
-    </select>
-  </div>
-)}
-
-{selectedCategory && (
-  <div style={{ marginTop: 30, padding: 16, border: "1px solid #ddd" }}>
-    <h3>{selectedCategory} — Card-wise Split</h3>
-
-    {categoryCardChartData && (
-      <div style={{ width: 400 }}>
-        <Pie data={categoryCardChartData} />
-      </div>
-    )}
-
-    <h4>Transactions</h4>
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Description</th>
-          <th>Card</th>
-          <th>Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {categoryTransactions.map(t => {
-          const card = cards.find(c => c._id === t.cardId);
-          return (
-            <tr key={t._id}>
-              <td>{t.date}</td>
-              <td>{t.description}</td>
-              <td>{card?.name}</td>
-              <td>
-                {SYMBOL[t.currency]}
-                {formatAmount(Math.abs(t.amount))}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-
-    <button onClick={() => setSelectedCategory(null)}>
-      Close
-    </button>
-  </div>
-)}
-
-<h3>Monthly Budgets</h3>
-
-<div style={{ marginBottom: 10 }}>
-  <select
-    value={category}
-    onChange={(e) => setCategory(e.target.value)}
-  >
-    <option value="">Select category</option>
-{categories.map(c => (
-
-      <option key={c} value={c}>{c}</option>
-    ))}
-    <option value="__add_new__"> Add new category</option>
-  </select>
-
-  <input
-    type="number"
-    placeholder="Budget amount"
-    value={budgetAmount}
-    onChange={(e) => setBudgetAmount(e.target.value)}
-    style={{ marginLeft: 8 }}
-  />
-
-  <button onClick={handleSetBudget} style={{ marginLeft: 8 }}>
-    Set Budget
-  </button>
-</div>
-
-{budgetSummary.map(b => (
-  <div key={b.category} style={{ marginBottom: 6 }}>
-    <b>{b.category}</b> — ${b.spent} / ${b.budget}
-    {b.over && <span style={{ color: "red" }}> This is Over budget</span>}
-  </div>
-))}
-
-
-{health && (
-  <div className="health-score-header">
-  <h3>expense health score</h3>
-
-  <div className="info-tooltip">
-    <span className="info-icon">i</span>
-
-    <div className="tooltip-box">
-      <strong>calculation</strong>
-      <ul>
-        <li><b>savings rate (40%)</b> = (income − expenses) / income</li>
-        <li><b>category balance (25%)</b> = spending distribution</li>
-        <li><b>expense volatility (20%)</b> = monthly stability</li>
-        <li><b>unusual spending (15%)</b> = anomaly penalty</li>
-      </ul>
-    </div>
-  </div>
-
-
-    <div style={{
-      fontSize: "48px",
-      fontWeight: "bold",
-      color:
-        health.score >= 75 ? "green" :
-        health.score >= 50 ? "orange" : "red"
-    }}>
-      {health.score} / 100
-
-    </div>
-
-    <ul>
-  {health.insights?.map(i => (
-    <li key={i}>{i}</li>
-  ))}
-</ul>
-
-  </div>
-)}
-
-
-{cards.length > 0 && (
-  <div className="card-carousel">
-    <button
-      disabled={activeCardIndex === 0}
-      onClick={() => setActiveCardIndex(i => i - 1)}
-    >
-      ←
-    </button>
-
-    <strong>
-      {cards[activeCardIndex].name}
-      {cards[activeCardIndex].last4 && ` (${cards[activeCardIndex].last4})`}
-    </strong>
-
-    <button
-      disabled={activeCardIndex === cards.length - 1}
-      onClick={() => setActiveCardIndex(i => i + 1)}
-    >
-      →
-    </button>
-  </div>
-)}
-
-{cards.length > 0 && (
-  <div style={{ marginTop: 12 }}>
-    <button onClick={() => setShowAddTxn(v => !v)}>
-      {showAddTxn ? "Cancel" : " Add Transaction"}
-    </button>
-
-    {showAddTxn && (
-      <div style={{
-        marginTop: 12,
-        padding: 12,
-        border: "1px solid #ccc",
-        borderRadius: 6,
-        maxWidth: 400
-      }}>
-        <h4>Add transaction to {cards[activeCardIndex].name}</h4>
-
-        <input
-          type="date"
-          value={newTxn.date}
-          onChange={e => setNewTxn({ ...newTxn, date: e.target.value })}
-        />
-
-        <input
-          type="text"
-          placeholder="Description"
-          value={newTxn.description}
-          onChange={e => setNewTxn({ ...newTxn, description: e.target.value })}
-        />
-
-        <input
-          type="number"
-          placeholder="Amount"
-          value={newTxn.amount}
-          onChange={e => setNewTxn({ ...newTxn, amount: e.target.value })}
-        />
-
-        <div>
-          <label>
-            <input
-              type="radio"
-              checked={newTxn.type === "expense"}
-              onChange={() => setNewTxn({ ...newTxn, type: "expense" })}
-            /> Expense
-          </label>
-
-          <label style={{ marginLeft: 10 }}>
-            <input
-              type="radio"
-              checked={newTxn.type === "income"}
-              onChange={() => setNewTxn({ ...newTxn, type: "income" })}
-            /> Income
-          </label>
-        </div>
-
-        <select
-          value={newTxn.category}
-          onChange={e => {
-            const value = e.target.value;
-
-            if (value === "__add_new__") {
-              const newCat = prompt("Enter new category name");
-              if (!newCat) return;
-
-              if (!categories.includes(newCat)) {
-                setCategories(prev => [...prev, newCat]);
-              }
-
-              setNewTxn({ ...newTxn, category: newCat });
-              return;
-            }
-
-            setNewTxn({ ...newTxn, category: value });
-          }}
-        >
-          {categories.map(c => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-          <option value="__add_new__">➕ Add new category</option>
-        </select>
-
-        <button onClick={handleAddTransaction} style={{ marginTop: 10 }}>
-          Save Transaction
-        </button>
-      </div>
-    )}
-  </div>
-)}
-
-
-<button
-  type="button"
-  disabled={creatingCard}
-  onClick={async () => {
-    if (creatingCard) return;
-
-    setCreatingCard(true);
-    try {
-      let name = prompt("Card name");
-      if (!name) return;
-
-      let last4 = "";
-
-      while (true) {
-        last4 = prompt("Last 4 digits (optional, exactly 4 numbers)");
-        if (last4 === null || last4 === "") break;
-        if (/^\d{4}$/.test(last4)) break;
-        alert("Please enter EXACTLY 4 digits");
-      }
-
-      const accountCurrency = cards[0]?.displayCurrency || "USD";
-
-      await createCard({
-        name,
-        last4: last4 || undefined,
-        baseCurrency: accountCurrency,
-        displayCurrency: accountCurrency
-      });
-
-      const updated = await getCards();
-      setCards(updated);
-      setActiveCardIndex(updated.length - 1);
-    } catch (err) {
-      alert(err.message || "Failed to create card");
-    } finally {
-      setCreatingCard(false);
-    }
-  }}
->
-  {creatingCard ? "Creating..." : "+ add card"}
-</button>
-
-
-<button
-  onClick={async () => {
-    const card = cards[activeCardIndex];
-    if (!card) return;
-
-    const ok = window.confirm(
-      `Delete card "${card.name}"?\nAll associated transactions will be permanently deleted.`
-    );
-
-    if (!ok) return;
-
-    await deleteCard(card._id);
-
+    
     const updatedCards = await getCards();
     setCards(updatedCards);
 
-    if (updatedCards.length === 0) {
-      setActiveCardIndex(0);
-      setTransactions([]);
-      setAllTransactions([]);
-    } else {
-      const newIndex = Math.max(0, activeCardIndex - 1);
-      setActiveCardIndex(newIndex);
+    const index = updatedCards.findIndex(
+      c => c._id === newCard._id
+    );
 
-      const cardId = updatedCards[newIndex]._id;
-      const txns = await getTransactionsByCard(cardId);
-      setTransactions(txns);
-    }
-  }}
->
-  delete card
-</button>
+    setSelectedUploadCardIndex(index);
+    setActiveCardIndex(index);
+  } catch (err) {
+    alert(err.message);
+  }
+};
 
+const latestTxns = transactions
+  .slice(0, 5);
 
+const refreshActiveCardTransactions = async () => {
+  if (!cards[activeCardIndex]) return;
 
-<button
-  onClick={async () => {
-    const newName = prompt("New card name");
-    if (!newName) return;
+  const cardId = cards[activeCardIndex]._id;
+  const updated = await getTransactionsByCard(cardId);
+  setTransactions(updated);
 
-    await renameCard(cards[activeCardIndex]._id, newName);
+  const all = await getTransactions();
+  setAllTransactions(all);
+};
 
-    const updated = await getCards();
-    setCards(updated);
-  }}
->
-  Rename card
-</button>
+return (
+  <div className="dashboard-layout">
+    {/* LEFT SIDEBAR */}
+    <Sidebar onNavigate={setActiveView} />
 
-   <div>
-  <h3>Financial Summary</h3>
-
-  <p>
-    <b>Total Income:</b>{" "}
-    {SYMBOL[cards[0]?.displayCurrency || "USD"]}
-    {formatAmount(totalIncome)}
-  </p>
-
-  <p>
-    <b>Total Expense:</b>{" "}
-    {SYMBOL[cards[0]?.displayCurrency || "USD"]}
-    {formatAmount(totalExpense)}
-  </p>
-
-  {chartData && (
-    <div style={{ width: 450, height: 450 }}>
-      <Pie
-        data={chartData}
-        options={{
-          onClick: (_, elements) => {
-            if (!elements.length) return;
-            const index = elements[0].index;
-            const category = chartData.labels[index];
-            setSelectedCategory(category);
-          }
+    {/* RIGHT MAIN AREA */}
+    <div className="dashboard-main">
+      {/* TOP BAR */}
+      <TopBar
+        isPro={isPro}
+        plan={billing?.plan}
+        currency={cards[0]?.displayCurrency || "USD"}
+        onChangeCurrency={async (newCurrency) => {
+          await Promise.all(
+            cards.map(card =>
+              updateCardCurrency(card._id, newCurrency)
+            )
+          );
+          const updated = await getCards();
+          setCards(updated);
         }}
+        onUpgrade={startCheckout}
+        onManageBilling={async () => {
+          const url = await openBillingPortal();
+          window.location.href = url;
+        }}
+        onLogout={logout}
+        onNavigate={setActiveView} 
       />
-    </div>
-  )}
 
-  <h3>Transactions</h3>
+      {/* CONTENT */}
+      <div className="container dashboard-content">
 
-  <button
-    onClick={() => {
-      setEditMode(!editMode);
-      setSelectedTxns([]);
-    }}
-  >
-    {editMode ? "Cancel" : "Update / Delete"}
-  </button>
-
-  {editMode && (
-    <>
-      <div>
-        <input
-          type="checkbox"
-          checked={selectedTxns.length === transactions.length}
-          onChange={(e) => toggleSelectAll(e.target.checked)}
-        />{" "}
-        Select All
-      </div>
-
-      <select
-  value={bulkCategory}
-  onChange={(e) => {
-    const value = e.target.value;
-
-    if (value === "__add_new__") {
-      const newCat = prompt("Enter new category name");
-      if (!newCat) return;
-
-      if (!categories.includes(newCat)) {
-        setCategories(prev => [...prev, newCat]);
-      }
-
-      setBulkCategory(newCat);
-      return;
-    }
-
-    setBulkCategory(value);
-  }}
->
-
-        <option value="">Select category</option>
-        {categories.map(c => (
-          <option key={c} value={c}>{c}</option>
-        ))}
-        <option value="__add_new__"> Add new category</option>
-      </select>
-
-      <button onClick={handleBulkUpdate}>Update Selected</button>
-      <button onClick={handleBulkDelete}>Delete Selected</button>
-    </>
-  )}
-
-  <h3>Card-wise Expense Summary</h3>
-
-{Array.isArray(cards) && cards.length > 0 && cards.map(card => {
-  if (card._id !== cards[activeCardIndex]._id) return null;
-
-  const cardTxns = transactions.filter(t => t.cardId === card._id);
-
-  const cardIncome = cardTxns
-    .filter(t => t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const cardExpense = cardTxns
-    .filter(t => t.amount < 0)
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-  const cardChartData = buildCardChartData(cardTxns);
-
-
-  return (
-    <div key={card._id} style={{ marginTop: 30 }}>
-      <h4>
-        {card.name}
-        {card.last4 && ` (${card.last4})`} — {card.displayCurrency}
-      </h4>
-
-      <p>
-        <b>Income:</b>{" "}
-        {SYMBOL[card.displayCurrency]}
-        {formatAmount(cardIncome)}
-      </p>
-<p>
-        <b>Expense:</b>{" "}
-        {SYMBOL[card.displayCurrency]}
-        {formatAmount(cardExpense)}
-      </p>
-
-      {!cardChartData ? (
-        <p style={{ color: "#888" }}>
-          Add transactions to see summary graph
-        </p>
-      ) : (
-        <div style={{ width: 400, height: 400 }}>
-          <Pie data={cardChartData} />
-        </div>
-      )}
-    </div>
-  );
-})}
-
-
-
-      <table>
-  <thead>
-    <tr>
-      {editMode && <th>Select</th>}
-      <th>Date</th>
-      <th>Description</th>
-      <th>Amount</th>
-      <th>Category</th>
-    </tr>
-  </thead>
-  <tbody>
-    {transactions.map(t => (
-      <tr key={t._id}>
-        {editMode && (
-          <td>
-            <input
-              type="checkbox"
-              checked={selectedTxns.includes(t._id)}
-              onChange={() => toggleTxnSelection(t._id)}
-            />
-          </td>
-        )}
-        <td>{t.date}</td>
-        <td>{t.description}</td>
-        <td>
-          {SYMBOL[t.currency]}
-          {formatAmount(t.amount)}
-        </td>
-        <td>{t.category}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-</div>
-{showUpgrade && (
-  <div style={{
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: "rgba(0,0,0,0.5)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 999
-  }}>
-    <div style={{
-      background: "#fff",
-      padding: 24,
-      borderRadius: 8,
-      width: 300,
-      textAlign: "center"
-    }}>
-      <h3>Upgrade to Pro</h3>
-      {billing?.plan === "free" && (
-  <button
-    type="button"
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      startCheckout();
-    }}
-  >
-    Upgrade to Pro
-  </button>
+{activeView === "profile" && (
+  <ProfilePage onNavigate={setActiveView} />
 )}
 
-      <p>This feature requires a Pro plan.</p>
 
-      <button
-  type="button"
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    startCheckout();
-  }}
->
-  Upgrade to Pro
-</button>
+      {/* ================= DASHBOARD ================= */}
+{activeView === "dashboard" && (
+  <>
+    {/* INCOME / EXPENSE */}
+    <div className="summary-cards">
+      <div className="summary-card income">
+        <div className="summary-title">Total Income</div>
+        <div className="summary-amount">
+          {SYMBOL[cards[0]?.displayCurrency || "USD"]}
+          {formatAmount(totalIncome)}
+        </div>
+      </div>
 
-
-      <br /><br />
-
-      <button onClick={() => setShowUpgrade(false)}>
-        Cancel
-      </button>
+      <div className="summary-card expense">
+        <div className="summary-title">Total Expense</div>
+        <div className="summary-amount">
+          {SYMBOL[cards[0]?.displayCurrency || "USD"]}
+          {formatAmount(totalExpense)}
+        </div>
+      </div>
     </div>
+
+    {/* CHARTS */}
+    <div className="charts-row">
+      <div className="chart-card chart-large">
+        <h3>Where Your Money Went</h3>
+        {chartData ? (
+          <Pie
+            data={chartData}
+            options={{
+              onClick: (_, elements) => {
+                if (!elements.length) return;
+                const index = elements[0].index;
+                setSelectedCategory(chartData.labels[index]);
+              },
+              plugins: { legend: { position: "bottom" } }
+            }}
+          />
+        ) : (
+          <p>No expense data</p>
+        )}
+      </div>
+
+      <div className="chart-card chart-small">
+        {!selectedCategory ? (
+          <>
+            <h3>Income vs Expense</h3>
+            <Pie
+              data={incomeExpenseChartData}
+              options={{ plugins: { legend: { position: "bottom" } } }}
+            />
+          </>
+        ) : (
+          <>
+            <div className="chart-header">
+              <h3>{selectedCategory} Details</h3>
+              <button onClick={() => setSelectedCategory(null)}>✕</button>
+            </div>
+            {categoryCardChartData && <Pie data={categoryCardChartData} />}
+          </>
+        )}
+      </div>
+    </div>
+
+    {selectedCategory && (
+  <div className="subcat-txns">
+    <div className="subcat-txns-header">
+      <h4>{selectedCategory} Transactions</h4>
+      <span>{categoryTransactions.length} items</span>
+    </div>
+
+    {categoryTransactions.length === 0 ? (
+      <div className="subcat-empty">No transactions found</div>
+    ) : (
+      <div className="subcat-txns-list">
+        {categoryTransactions.map(txn => (
+          <div key={txn._id} className="subcat-txn">
+            <div className="subcat-txn-left">
+              <div className="subcat-txn-desc">
+                {txn.description}
+              </div>
+              <div className="subcat-txn-meta">
+                {txn.date} •{" "}
+                {cards.find(c => c._id === txn.cardId)?.name || "Card"}
+              </div>
+            </div>
+
+            <div className="subcat-txn-amount expense">
+              {SYMBOL[txn.currency]}
+              {Math.abs(txn.amount).toFixed(2)}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
   </div>
 )}
 
+
+    {/* ================= ACTIVE CARD OVERVIEW ================= */}
+    {cards[activeCardIndex] && (
+      <div className="active-card-overview">
+        <div className="active-card-header">
+          <button
+            className="card-nav-btn"
+            disabled={activeCardIndex === 0}
+            onClick={() => setActiveCardIndex(i => i - 1)}
+          >
+            ←
+          </button>
+
+          <div className="active-card-center">
+            <h3 className="active-card-name">
+              {cards[activeCardIndex].name}
+              {cards[activeCardIndex].last4 && (
+                <span> • {cards[activeCardIndex].last4}</span>
+              )}
+            </h3>
+            <p className="active-card-subtitle">
+              Latest 5 transactions
+            </p>
+          </div>
+
+          <button
+            className="card-nav-btn"
+            disabled={activeCardIndex === cards.length - 1}
+            onClick={() => setActiveCardIndex(i => i + 1)}
+          >
+            →
+          </button>
+        </div>
+
+        {latestTxns.length === 0 ? (
+          <p className="muted">No transactions yet</p>
+        ) : (
+          <div className="active-card-txns">
+            {latestTxns.map(txn => (
+              <div key={txn._id} className="txn-row">
+                <div className="txn-left">
+                  <div className="txn-desc">{txn.description}</div>
+                  <div className="txn-date">{txn.date}</div>
+                </div>
+
+                <div
+                  className={
+                    txn.amount < 0
+                      ? "txn-amount expense"
+                      : "txn-amount income"
+                  }
+                >
+                  {SYMBOL[txn.currency]}
+                  {Math.abs(txn.amount).toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+  </>
+)}
+
+
+        {/* ================= HEALTH ================= */}
+        {activeView === "health" && (
+          <HealthPage health={health} />
+        )}
+
+        {/* ================= UPLOAD ================= */}
+      {activeView === "upload" && (
+  <div className="upload-page">
+
+    <h2>Upload & Preview</h2>
+
+    {/* ================= UPLOAD ZONE ================= */}
+ <div className="upload-zone">
+
+  {/* REAL DROP TARGET */}
+ <div
+  className="upload-drop"
+  onClick={() => fileInputRef.current?.click()}
+  onDragOver={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }}
+  onDrop={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFiles(Array.from(e.dataTransfer.files));
+  }}
+>
+  {files.length === 0 ? (
+    /* EMPTY STATE */
+    <>
+      <div className="upload-icon">☁️</div>
+      <h3>Drag & drop files here</h3>
+      <p>
+        or <span>click to browse</span>
+      </p>
+      <div className="upload-hint">
+        Supports PDF, CSV, XLS, XLSX
+      </div>
+    </>
+  ) : (
+    /* FILES SELECTED STATE */
+    <div className="upload-success">
+      <div className="upload-check">✓</div>
+      <h3>{files.length} file{files.length > 1 ? "s" : ""} selected</h3>
+
+     <ul className="upload-file-list">
+  {files.map((file, idx) => (
+    <li key={idx} className="upload-file-item">
+      <span className="upload-file-name">{file.name}</span>
+
+      <button
+        type="button"
+        className="upload-file-remove"
+        onClick={(e) => {
+          e.stopPropagation(); // 🔥 important (don’t reopen file picker)
+          setFiles(prev => prev.filter((_, i) => i !== idx));
+        }}
+        aria-label="Remove file"
+      >
+        ×
+      </button>
+    </li>
+  ))}
+</ul>
+
+      <p className="upload-replace">
+        Click or drop again to replace files
+      </p>
     </div>
-  );
+  )}
+</div>
+
+
+  {/* HIDDEN INPUT (CLICK ONLY) */}
+  <input 
+    ref={fileInputRef}
+    type="file"
+    multiple
+    accept=".csv,.xls,.xlsx,.pdf"
+    style={{ display: "none" }}
+    onChange={(e) =>
+      setFiles(Array.from(e.target.files))
+    }
+  />
+
+  <button className="upload-btn" onClick={handleUpload}>
+    Upload / Preview
+  </button>
+</div>
+
+
+    {/* ================= PREVIEW ================= */}
+{/* ================= PREVIEW ================= */}
+{showPreview && (
+  <>
+    <h3>Preview Transactions</h3>
+
+    <div className="upload-card-select">
+      <strong>Post transactions to:</strong>
+
+      <select
+        value={selectedUploadCardIndex}
+        onChange={(e) =>
+          setSelectedUploadCardIndex(Number(e.target.value))
+        }
+      >
+        {cards.map((card, idx) => (
+          <option key={card._id} value={idx}>
+            {card.name}
+            {card.last4 ? ` (${card.last4})` : ""}
+          </option>
+        ))}
+      </select>
+
+      <button
+        type="button"
+        className="upload-add-card"
+        onClick={handleAddCard}
+      >
+        ➕ Add Card
+      </button>
+    </div>
+
+    <table className="preview-table">
+      <thead>
+        <tr>
+          <th>Include</th>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Amount</th>
+          <th>Type</th>
+          <th>Category</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {preview.map((t, i) => (
+          <tr key={i}>
+            {/* INCLUDE */}
+            <td>
+              <input
+                type="checkbox"
+                checked={t.selected}
+                onChange={() =>
+                  setPreview(prev =>
+                    prev.map((txn, idx) =>
+                      idx === i
+                        ? { ...txn, selected: !txn.selected }
+                        : txn
+                    )
+                  )
+                }
+              />
+            </td>
+
+            {/* DATE */}
+            <td>
+              <input
+                type="date"
+                className="preview-input"
+                value={t.date}
+                onChange={(e) => {
+                  const copy = [...preview];
+                  copy[i].date = e.target.value;
+                  setPreview(copy);
+                }}
+              />
+            </td>
+
+            {/* DESCRIPTION */}
+            <td>
+              <input
+                className="preview-input"
+                value={t.description}
+                onChange={(e) => {
+                  const copy = [...preview];
+                  copy[i].description = e.target.value;
+                  setPreview(copy);
+                }}
+              />
+            </td>
+
+            {/* AMOUNT */}
+            <td>
+              <input
+                type="number"
+                className="preview-input"
+                value={Math.abs(t.amount)}
+                onChange={(e) => {
+                  const value = Number(e.target.value) || 0;
+                  const copy = [...preview];
+                  copy[i].amount =
+                    t.amount < 0 ? -value : value;
+                  setPreview(copy);
+                }}
+              />
+            </td>
+
+            {/* TYPE */}
+            <td>
+              <div className="preview-type">
+                <label>
+                  <input
+                    type="radio"
+                    name={`amt-${i}`}
+                    checked={t.amount > 0}
+                    onChange={() => {
+                      const copy = [...preview];
+                      copy[i].amount = Math.abs(copy[i].amount);
+                      setPreview(copy);
+                    }}
+                  />
+                  Income
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    name={`amt-${i}`}
+                    checked={t.amount < 0}
+                    onChange={() => {
+                      const copy = [...preview];
+                      copy[i].amount = -Math.abs(copy[i].amount);
+                      setPreview(copy);
+                    }}
+                  />
+                  Expense
+                </label>
+              </div>
+            </td>
+
+            {/* CATEGORY */}
+            <td>
+              <select
+                className="preview-select"
+                value={t.category || "Other"}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  if (value === "__add_new__") {
+                    const newCat = prompt("Enter new category name");
+                    if (!newCat) return;
+
+                    if (!categories.includes(newCat)) {
+                      setCategories(prev => [...prev, newCat]);
+                    }
+
+                    const copy = [...preview];
+                    copy[i].category = newCat;
+                    setPreview(copy);
+                    return;
+                  }
+
+                  const copy = [...preview];
+                  copy[i].category = value;
+                  setPreview(copy);
+                }}
+              >
+                {categories.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+                <option value="__add_new__">➕ Add new</option>
+              </select>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <button className="upload-confirm-btn" onClick={handleConfirm}>
+      Confirm & Save
+    </button>
+  </>
+)}
+  </div>
+)}  
+
+        {/* ================= TRANSACTIONS ================= */}
+        {activeView === "transactions" && (
+  <TransactionsPage
+    cards={cards}
+    activeCardIndex={activeCardIndex}
+    onRefresh={refreshActiveCardTransactions}
+  />
+)}
+
+
+        {/* ================= BUDGET ================= */}
+        {activeView === "budget" && (
+  <BudgetPage
+    categories={categories}
+    cards={cards}
+    allTransactions={allTransactions}
+  />
+)}
+
+{/* ================= ANALYTICS ================= */}
+{activeView === "analytics" && (
+  <AnalyticsPage />
+)}
+
+
+{/* ================= HELP ================= */}
+{activeView === "help" && (
+  <HelpPage />
+)}
+
+
+      </div>
+    </div>
+  </div>
+);
 }
 
 export default Dashboard;
