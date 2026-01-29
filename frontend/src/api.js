@@ -166,34 +166,6 @@ export const updateCardCurrency = async (cardId, displayCurrency) => {
   return res.json();
 };
 
-/* ============================
-   AUTH
-   ============================ */
-export const login = async (email, password) => {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Login failed");
-
-  return data;
-};
-
-export const signup = async (email, password) => {
-  const res = await fetch(`${BASE_URL}/auth/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Signup failed");
-
-  return data;
-};
 
 /* ============================
    BILLING (STRIPE)
@@ -292,5 +264,44 @@ export const updateProfile = async (data) => {
     },
     body: JSON.stringify(data)
   });
+  return res.json();
+};
+
+
+export const sendSignupOtp = async (email) => {
+  const res = await fetch(`${BASE_URL}/auth/send-signup-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) throw new Error("OTP send failed");
+};
+
+export const verifySignupOtp = async (email, otp) => {
+  const res = await fetch(`${BASE_URL}/auth/verify-signup-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp })
+  });
+  if (!res.ok) throw new Error("OTP verification failed");
+};
+
+export const signup = async ({ name, email, password }) => {
+  const res = await fetch(`${BASE_URL}/auth/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+  if (!res.ok) throw new Error("Signup failed");
+  return res.json();
+};
+
+export const login = async (email, password) => {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+  if (!res.ok) throw new Error("Login failed");
   return res.json();
 };
