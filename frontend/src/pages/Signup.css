@@ -1,259 +1,31 @@
-/* ========== LAYOUT ========== */
+/* =========================
+   PAGE TRANSITION
+========================= */
 
-.auth-container {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  background: #f8fafc;
-  font-family: Inter, system-ui, sans-serif;
-}
-
-/* Smooth page transition */
 .auth-transition {
   animation: slideIn 0.4s ease;
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(30px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-/* ========== LEFT SIDE ========== */
-
-.signup-left {
-  background: linear-gradient(135deg, #0f172a, #020617);
-  color: white;
-  padding: 80px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 24px;
-}
-
-.tip-card {
-  background: rgba(255,255,255,0.08);
-  padding: 24px;
-  border-radius: 16px;
-  backdrop-filter: blur(8px);
-}
-
-.tip-card h3 {
-  margin-bottom: 6px;
-  font-size: 18px;
-}
-
-.tip-card p {
-  font-size: 14px;
-  opacity: 0.85;
-}
-
-/* ========== RIGHT SIDE ========== */
-
-.auth-form {
-  background: white;
-  padding: 64px;
-  max-width: 440px;
-  margin: auto;
-  border-radius: 20px;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.08);
-}
-
-.auth-form h2 {
-  font-size: 28px;
-  margin-bottom: 32px;
-}
-
-/* Inputs */
-.auth-form input {
-  width: 100%;
-  padding: 14px 16px;
-  margin-bottom: 14px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  font-size: 14px;
-}
-
-/* Email verify */
-.email-field {
-  position: relative;
-}
-
-.verify-btn {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: transparent;
-  border: 1px solid #6366f1;
-  color: #6366f1;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.verify-btn:hover {
-  background: #6366f1;
-  color: white;
-}
-
-/* OTP */
-.otp-actions {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  margin-bottom: 16px;
-}
-
-.otp-actions span {
-  color: #6366f1;
-  cursor: pointer;
-}
-
-
-
-/* Buttons */
-.primary-btn {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  color: white;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  margin-top: 10px;
-}
-
-
-.link-btn {
-  background: none;
-  border: none;
-  padding: 0;
-
-  color: #4f46e5;
-  font-size: 13px;
-  font-weight: 500;
-
-  cursor: pointer;
-}
-
-/* Minimal hover – text only */
-.link-btn:hover {
-  text-decoration: underline;
-}
-
-/* No focus ring weirdness */
-.link-btn:focus {
-  outline: none;
-}
-
-/* Email block */
-.email-block {
-  margin-bottom: 14px;
-}
-
-.verify-below {
-  margin-top: 8px;
-  padding: 10px 14px;
-  font-size: 13px;
-  border-radius: 10px;
-  border: 1px solid #6366f1;
-  background: #eef2ff;
-  color: #4338ca;
-  cursor: pointer;
-}
-
-.verify-below:hover {
-  background: #e0e7ff;
-}
-
-/* Verified text */
-.email-verified {
-  margin-top: 6px;
-  font-size: 13px;
-  color: #16a34a;
-}
-
-/* Primary button – remove weird hover */
-.primary-btn.simple {
-  width: 100%;
-  padding: 14px;
-  background: #4f46e5;
-  color: white;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-}
-
-.primary-btn.simple:hover {
-  background: #4f46e5; /* no animation */
-  box-shadow: none;
-  transform: none;
-}
-
-/* =========================
-   Password Rules – Clean & Compact
-========================= */
-
-.password-rules.compact {
-  margin: 6px 0 18px;
-  padding: 12px 14px;
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 18px;
-  row-gap: 8px;
-
-  font-size: 12.5px;
-  line-height: 1.3;
-}
-
-/* Individual rule */
-.password-rules.compact li {
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  white-space: nowrap;
-}
-
-/* Default (not satisfied) */
-.password-rules.compact li.bad {
-  color: #94a3b8;
-}
-
-/* Satisfied */
-.password-rules.compact li.ok {
-  color: #16a34a;
-  font-weight: 500;
-}
-
-/* Icons */
-.password-rules.compact li::before {
-  content: "•";
-  font-size: 14px;
-  line-height: 1;
-  color: currentColor;
-}
-
-/* Subtle attach effect to inputs */
-.password-rules.compact {
-  animation: passwordRulesIn 0.2s ease;
-}
-
-@keyframes passwordRulesIn {
   from {
     opacity: 0;
-    transform: translateY(-4px);
+    transform: translateX(30px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
+}
+
+/* =========================
+   LAYOUT (50 : 50 SPLIT)
+========================= */
+
+.auth-container {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: Inter, system-ui, sans-serif;
 }
 
 /* =========================
@@ -263,21 +35,21 @@
 .signup-left {
   position: relative;
   overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 80px;
+
   background: radial-gradient(
     circle at top left,
     #0f172a,
     #020617 60%
   );
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80px;
 }
 
-/* =========================
-   Floating Orbs (Depth)
-========================= */
+/* Floating orbs */
 
 .bg-orb {
   position: absolute;
@@ -315,19 +87,17 @@
 
 @keyframes floatOrb {
   0% {
-    transform: translateY(0) translateX(0);
+    transform: translate(0, 0);
   }
   50% {
-    transform: translateY(-40px) translateX(20px);
+    transform: translate(20px, -40px);
   }
   100% {
-    transform: translateY(0) translateX(0);
+    transform: translate(0, 0);
   }
 }
 
-/* =========================
-   Tip Card – Glass Effect
-========================= */
+/* Tip card */
 
 .tip-card.glass {
   position: relative;
@@ -337,9 +107,10 @@
   padding: 32px 36px;
 
   background: rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+
+  border-radius: 20px;
 
   box-shadow:
     0 30px 60px rgba(0, 0, 0, 0.35),
@@ -348,7 +119,6 @@
   animation: cardIn 0.5s ease;
 }
 
-/* Text */
 .tip-card h3 {
   font-size: 22px;
   font-weight: 600;
@@ -363,7 +133,6 @@
   color: rgba(248, 250, 252, 0.85);
 }
 
-/* Entry animation */
 @keyframes cardIn {
   from {
     opacity: 0;
@@ -373,4 +142,296 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* =========================
+   RIGHT SIDE – FORM FRAME
+========================= */
+
+.auth-form-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(99, 102, 241, 0.08),
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(14, 165, 233, 0.06),
+      transparent 60%
+    );
+}
+
+/* Background depth layer */
+
+.auth-form-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 30% 20%,
+      rgba(99, 102, 241, 0.12),
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at 70% 80%,
+      rgba(14, 165, 233, 0.10),
+      transparent 60%
+    );
+
+  pointer-events: none;
+}
+
+/* =========================
+   FORM PANEL
+========================= */
+
+.auth-form {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+  max-width: 460px;
+
+  padding: 56px 52px;
+
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-radius: 26px;
+
+  box-shadow:
+    0 40px 80px rgba(2, 6, 23, 0.12),
+    0 18px 36px rgba(2, 6, 23, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  animation: formIn 0.45s ease;
+}
+
+/* Internal accent */
+
+.auth-form::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  border-radius: 26px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.10),
+    transparent 40%
+  );
+
+  z-index: -1;
+}
+
+/* Title */
+
+.auth-form h2 {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 36px;
+  color: #020617;
+  position: relative;
+}
+
+.auth-form h2::after {
+  content: "";
+  display: block;
+  width: 48px;
+  height: 3px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #22c55e);
+}
+
+/* Inputs */
+
+.auth-form input {
+  width: 100%;
+  padding: 15px 16px;
+  margin-bottom: 16px;
+
+  font-size: 14.5px;
+  border-radius: 12px;
+
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+
+  transition: background 0.15s ease, border 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-form input:focus {
+  background: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+  outline: none;
+}
+
+/* Email verify */
+
+.email-block {
+  margin-bottom: 14px;
+}
+
+.verify-below {
+  margin-top: 8px;
+  padding: 10px 14px;
+
+  font-size: 13px;
+  border-radius: 10px;
+
+  border: 1px solid #6366f1;
+  background: #eef2ff;
+  color: #4338ca;
+
+  cursor: pointer;
+}
+
+.verify-below:hover {
+  background: #e0e7ff;
+}
+
+.email-verified {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #16a34a;
+}
+
+/* OTP */
+
+.otp-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.otp-actions span {
+  color: #6366f1;
+  cursor: pointer;
+}
+
+/* Password rules */
+
+.password-rules.compact {
+  margin: 6px 0 18px;
+  padding: 12px 14px;
+
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 18px;
+
+  font-size: 12.5px;
+}
+
+.password-rules.compact li {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.password-rules.compact li.bad {
+  color: #94a3b8;
+}
+
+.password-rules.compact li.ok {
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.password-rules.compact li::before {
+  content: "•";
+  color: currentColor;
+}
+
+/* Primary button */
+
+.primary-btn.simple {
+  width: 100%;
+  padding: 15px;
+
+  border-radius: 14px;
+  border: none;
+
+  background: #4f46e5;
+  color: #ffffff;
+
+  font-size: 14.5px;
+  font-weight: 600;
+
+  margin-top: 10px;
+}
+
+.primary-btn.simple:active {
+  background: #4338ca;
+}
+
+/* Footer link */
+
+.auth-form p {
+  margin-top: 22px;
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+
+  color: #4f46e5;
+  font-size: 13px;
+  font-weight: 500;
+
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+/* Entry animation */
+
+@keyframes formIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================
+   FORM ERROR MESSAGE
+========================= */
+
+.form-error {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+
+  border-radius: 10px;
+  font-size: 13px;
 }

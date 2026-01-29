@@ -72,47 +72,111 @@
    RIGHT – Login Form
 ========================= */
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  max-width: 380px;
-  width: 100%;
-  margin: auto;
-}
-
-.auth-form h2 {
-  font-size: 26px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #020617;
-}
-
-.auth-form input {
-  padding: 12px 14px;
-  margin-bottom: 14px;
-  font-size: 14px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  outline: none;
-}
 
 .auth-form input:focus {
   border-color: #6366f1;
 }
 
-.auth-form button {
-  padding: 12px;
-  border-radius: 8px;
-  border: none;
-  background: #4f46e5;
-  color: #ffffff;
-  font-size: 14px;
-  cursor: pointer;
+/* =========================
+   RIGHT – PREMIUM AUTH FORM
+========================= */
+
+.auth-form {
+  position: relative;
+  z-index: 1;
+
+  max-width: 420px;
+  width: 100%;
+  margin: auto;
+
+  padding: 52px 48px;
+
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 30px 60px rgba(15, 23, 42, 0.12),
+    0 12px 24px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  display: flex;
+  flex-direction: column;
 }
 
+/* =========================
+   Title
+========================= */
+
+.auth-form h2 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 32px;
+  color: #020617;
+  position: relative;
+}
+
+.auth-form h2::after {
+  content: "";
+  width: 44px;
+  height: 3px;
+  margin-top: 12px;
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #22c55e);
+}
+
+/* =========================
+   Inputs
+========================= */
+
+.auth-form input {
+  padding: 14px 16px;
+  margin-bottom: 18px;
+
+  font-size: 14.5px;
+  border-radius: 10px;
+
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.auth-form input:focus {
+  background: #ffffff;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+  outline: none;
+}
+
+/* =========================
+   Primary Button
+========================= */
+
+.auth-form button {
+  margin-top: 8px;
+  padding: 14px;
+
+  border-radius: 12px;
+  border: none;
+
+  background: #4f46e5;
+  color: #ffffff;
+
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* =========================
+   Secondary Link
+========================= */
+
 .auth-form p {
-  margin-top: 14px;
+  margin-top: 20px;
   font-size: 13px;
   color: #64748b;
   text-align: center;
@@ -121,10 +185,18 @@
 .auth-form p button {
   background: none;
   border: none;
+  padding: 0;
+
   color: #4f46e5;
   font-weight: 500;
   cursor: pointer;
 }
+
+.auth-form p button:hover {
+  text-decoration: underline;
+}
+
+
 
 .card-row {
   transform: translateX(calc(-1 * var(--offset, 0px)));
@@ -173,36 +245,22 @@
   border-color: #6366f1;
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
 }
-
 /* =========================
-   Secondary Auth Link (Login ↔ Signup)
+   REMOVE BLUE CLICK / TAP HIGHLIGHT
 ========================= */
 
-.auth-form p {
-  margin-top: 18px;
-  font-size: 13px;
-  color: #64748b;
-  text-align: center;
-}
-
+.auth-form button,
 .auth-form p button {
-  background: none;
-  border: none;
-  padding: 0;
-
-  color: #4f46e5;
-  font-size: 13px;
-  font-weight: 500;
-
-  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Minimal hover – text only */
-.auth-form p button:hover {
-  text-decoration: underline;
-}
-
-/* No weird focus styles */
+.auth-form button:focus,
 .auth-form p button:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.auth-form button:active,
+.auth-form p button:active {
   outline: none;
 }

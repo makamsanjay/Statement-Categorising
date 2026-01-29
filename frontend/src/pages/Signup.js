@@ -44,7 +44,6 @@ function Signup() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [emailFocused, setEmailFocused] = useState(false);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -55,6 +54,9 @@ function Signup() {
 
   const [showPasswordRules, setShowPasswordRules] = useState(false);
   const [activeTip, setActiveTip] = useState(0);
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   /* Rotate tips */
   useEffect(() => {
@@ -81,24 +83,79 @@ function Signup() {
     Object.values(passwordRules).every(Boolean) && passwordsMatch;
 
   /* OTP */
-  const sendOtp = async () => {
+ const sendOtp = async () => {
+  if (!email) {
+    setError("Please enter your email first");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError("");
     await sendSignupOtp(email);
     setShowOtpInput(true);
-  };
+  } catch (err) {
+    setError(err.message || "Failed to send OTP");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const verifyOtp = async () => {
+const verifyOtp = async () => {
+  if (!otp) {
+    setError("Please enter the OTP");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError("");
     await verifySignupOtp(email, otp);
     setEmailVerified(true);
     setShowOtpInput(false);
-  };
+  } catch (err) {
+    setError(err.message || "Invalid OTP");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   /* Signup */
-  const handleSignup = async () => {
-    if (!emailVerified || !isPasswordValid) return;
+ const handleSignup = async () => {
+  if (!emailVerified) {
+    setError("Please verify your email before creating an account");
+    return;
+  }
+
+  if (!isPasswordValid) {
+    setError("Password requirements not met");
+    return;
+  }
+
+  if (!name.trim()) {
+    setError("Please enter your name");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError("");
+
     const res = await signup({ name, email, password });
+
     localStorage.setItem("token", res.token);
     window.location.href = "/";
-  };
+  } catch (err) {
+    // 👇 backend message wins
+    setError(
+      err.message ||
+      "An account with this email already exists"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="auth-container auth-transition">
@@ -118,6 +175,7 @@ function Signup() {
 
 
       {/* RIGHT */}
+      <div className="auth-form-wrapper">
       <div className="auth-form">
         <h2>Create account</h2>
 
@@ -129,30 +187,28 @@ function Signup() {
 
         {/* Email */}
         <div className="email-block">
-          <input
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            onFocus={() => setEmailFocused(true)}
-            onBlur={() => {
-              if (!emailVerified && !showOtpInput) {
-                setEmailFocused(false);
-              }
-            }}
-            disabled={emailVerified}
-          />
+    <input
+  placeholder="Email"
+  value={email}
+  onChange={e => {
+    setEmail(e.target.value);
+    setError("");
+  }}
+  disabled={emailVerified}
+/>
+
+
 
           {/* Verify appears ONLY on focus */}
-          {emailFocused && !emailVerified && (
-            <button
-              type="button"
-              className="verify-below"
-              onClick={sendOtp}
-            >
-              Verify email
-            </button>
-          )}
-
+          {email && !emailVerified && !showOtpInput && (
+  <button
+    type="button"
+    className="verify-below"
+    onClick={sendOtp}
+  >
+    Verify email
+  </button>
+)}
           {emailVerified && (
             <div className="email-verified">Verified ✓</div>
           )}
@@ -199,9 +255,20 @@ function Signup() {
           </ul>
         )}
 
-        <button className="primary-btn simple" onClick={handleSignup}>
-          Create Account
-        </button>
+      <button
+  className="primary-btn simple"
+  onClick={handleSignup}
+  disabled={loading}
+>
+  {loading ? "Creating account..." : "Create Account"}
+</button>
+
+{error && (
+  <div className="form-error">
+    {error}
+  </div>
+)}
+
 
         <p>
           Already have an account?{" "}
@@ -210,7 +277,8 @@ function Signup() {
           </button>
         </p>
       </div>
-    </div>
+      </div>
+      </div>
   );
 }
 

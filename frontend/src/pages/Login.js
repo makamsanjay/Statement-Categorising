@@ -20,7 +20,6 @@ const cardImages = [
   "https://upload.wikimedia.org/wikipedia/commons/1/12/ICICI_Bank_Logo.svg"
 ];
 
-// Fisher–Yates shuffle (real shuffle)
 const shuffle = (arr) => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -68,7 +67,7 @@ function Login() {
   }, []);
 
   return (
-    <div className="auth-container">
+    <div className="auth-transition auth-container">
       {/* LEFT SIDE */}
       <div className="card-wall">
         {rows.map((row, i) => (
