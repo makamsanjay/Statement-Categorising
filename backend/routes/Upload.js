@@ -13,6 +13,11 @@ const categorize = require("../utils/categorize");
 const { aiCategorize } = require("../ai/aiCategorize");
 const AICategoryCache = require("../models/AICategoryCache");
 const normalizeMerchant = require("../utils/normalizeMerchant");
+const { scanFile } = require("../utils/virusScan");
+const { parseTransactions } = require("../services/statementParser");
+const { parseTransactionsFromAIRows } =
+  require("../services/statementPostProcessor");
+
 
 const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
@@ -95,6 +100,7 @@ async function parsePDF(filePath) {
   const pdf = await pdfParse(buffer);
   let text = pdf.text;
 
+  // OCR fallback
   if (!text || text.trim().length < 50) {
     const ocr = await Tesseract.recognize(filePath, "eng");
     text = ocr.data.text;
@@ -104,8 +110,12 @@ async function parsePDF(filePath) {
     throw new Error("Unable to extract text from PDF");
   }
 
-  return aiExtractTransactions(text);
+  // ✅ DETERMINISTIC parsing (NO AI)
+const aiRows = await aiExtractTransactions(text);
+return parseTransactionsFromAIRows(aiRows, text);
+
 }
+
 
 /* =========================
    CATEGORY RESOLUTION
@@ -139,6 +149,7 @@ async function resolveCategory(description) {
 /* =========================
    PDF PREVIEW (NO LIMIT COUNT)
 ========================= */
+
 router.post(
   "/preview",
   auth,
@@ -149,26 +160,52 @@ router.post(
       const preview = [];
 
       for (const file of req.files) {
-        if (!file.originalname.toLowerCase().endsWith(".pdf")) continue;
+        try {
+          // 🔐 STEP 1: Virus scan (BLOCK FIRST)
+          await scanFile(file.path);
 
-        const rows = await parsePDF(file.path);
-        for (const row of rows) {
-          const result = await resolveCategory(row.description);
+          // ⛔ Only PDFs allowed for preview
+          if (!file.originalname.toLowerCase().endsWith(".pdf")) {
+            fs.unlinkSync(file.path);
+            continue;
+          }
 
-          preview.push({
-            id: crypto.randomUUID(),
-            ...row,
-            category: result.category,
-            confidence: result.confidence,
-            selected: true
+          // 📄 STEP 2: Parse PDF (safe now)
+          const rows = await parsePDF(file.path);
+
+for (const row of rows) {
+  const result = await resolveCategory(row.description);
+
+  preview.push({
+    id: crypto.randomUUID(),
+    ...row,
+    category: result.category,
+    confidence: result.confidence,
+    selected: true
+  });
+}
+
+
+          // 🧹 cleanup
+          fs.unlinkSync(file.path);
+
+        } catch (fileErr) {
+          // 🔥 always cleanup on failure
+          if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+
+          // stop immediately on infected file
+          return res.status(400).json({
+            error: fileErr.message || "File blocked for security reasons"
           });
         }
-
-        fs.unlinkSync(file.path);
       }
 
       res.json(preview);
+
     } catch (err) {
+      console.error("Preview failed:", err);
       res.status(400).json({ error: err.message });
     }
   }
