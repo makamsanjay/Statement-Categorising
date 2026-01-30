@@ -4,9 +4,9 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-async function aiExtractTransactions(rawText) {
+async function aiExtractTransactions(rawText, model = "gpt-4o-mini") {
   const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+    model,
     temperature: 0,
     messages: [
       {
@@ -50,52 +50,18 @@ A valid amount MUST:
 - NOT contain more than 2 decimal places
 - NOT be longer than 10 characters including decimals
 
-If the number looks like an ID, reference number, or concatenation, SKIP the transaction.
-
 3. Amount rules (CRITICAL):
-   - EVERY amount MUST include a sign (+ or -)
-   - Card purchases, payments to card, withdrawals, fees = NEGATIVE
-   - Zelle received, salary, deposits, credits = POSITIVE
-   - If the statement explicitly shows a minus sign, YOU MUST KEEP IT.
-Otherwise, determine the sign ONLY from transaction semantics.
-   - NEVER output an unsigned amount
-   - NEVER output a balance amount
-   - If the transaction text contains ANY of the following keywords, it MUST be POSITIVE (+):
-"credit", "deposit", "salary", "payroll", "ppd", "zelle payment from", "received", "recd", "real time payment credit", "rtp credit"
-
-Only mark NEGATIVE (-) if the text contains:
-"card purchase", "payment to", "withdrawal", "debit", "fee"
-
-- Balance-after-transaction lines (running balances) MUST NEVER be extracted as transactions.
-Only extract lines where the amount represents money MOVING IN or OUT.
-
-The transaction amount is NEVER equal to the ending balance.
+- EVERY amount MUST include a sign (+ or -)
+- Card purchases, payments, withdrawals, fees = NEGATIVE
+- Zelle received, salary, deposits, credits = POSITIVE
+- NEVER output an unsigned amount
+- NEVER output a balance amount
 
 4. Date rules:
-   - If a transaction shows MM/DD, infer the YEAR from the statement date range
-   - The statement date range ALWAYS determines the year
-   - NEVER guess a year outside the statement range
-   - Output date MUST be normalized to YYYY-MM-DD
-5. Description rules:
-   - Use merchant name or transaction description only
-   - Remove card numbers, reference IDs, page numbers, rewards text, legal text
-   - Keep description concise but meaningful
-6. STRICT EXCLUSIONS (DO NOT OUTPUT THESE):
-   - Statement headers
-   - Account summaries
-   - “New Balance”, “Minimum Payment”, “Credit Limit”
-   - Rewards, points, cashback, APR, interest tables
-   - Fees summaries or totals
-   - Page numbers or legal disclosures
-7. If a line does NOT clearly represent a real transaction, SKIP IT.
-8. If amount or date is unclear, SKIP IT.
-9. NEVER merge multiple transactions into one line.
+- Infer year ONLY from statement date range
+- Output YYYY-MM-DD only
 
-EXAMPLE (VALID OUTPUT):
-2025-04-13,TARGET ROCHESTER NY,-18.78
-2025-04-17,MICHAEL KORS WATERLOO NY,-976.57
-2025-05-06,TARGET ROCHESTER NY,-52.65
-2025-05-02,COSTCO WHSE ROCHESTER NY,-135.39
+5. If a line does NOT clearly represent a real transaction, SKIP IT.
 
 STATEMENT TEXT:
 ${rawText}
@@ -105,38 +71,37 @@ ${rawText}
   });
 
   let content = response.choices[0].message.content.trim();
-
-  // Remove accidental markdown fences
   content = content.replace(/```/g, "").trim();
 
-  const lines = content.split("\n");
-  const transactions = [];
+ const lines = content.split("\n");
+const transactions = [];
 
-  for (const line of lines) {
-    const parts = line.split(",");
+for (const line of lines) {
+  const lastCommaIndex = line.lastIndexOf(",");
 
-    if (parts.length < 3) continue;
+  if (lastCommaIndex === -1) continue;
 
-    const date = parts[0].trim();
-    const amount = Number(parts[parts.length - 1]);
-    const description = parts.slice(1, -1).join(",").trim();
+  const firstCommaIndex = line.indexOf(",");
 
-    if (!date || !description || Number.isNaN(amount)) continue;
+  if (firstCommaIndex === -1 || firstCommaIndex === lastCommaIndex) continue;
 
-    transactions.push({
-      date,
-      description,
-      amount
-    });
-  }
+  const date = line.slice(0, firstCommaIndex).trim();
+  const description = line
+    .slice(firstCommaIndex + 1, lastCommaIndex)
+    .trim();
 
-  if (!transactions.length) {
-    console.warn("AI returned no transactions");
-    return [];
-  }
+  const rawAmount = line.slice(lastCommaIndex + 1).trim();
+  const amount = Number(rawAmount.replace(/,/g, ""));
 
+  if (!date || !description || Number.isNaN(amount)) continue;
+
+  transactions.push({
+    date,
+    description,
+    amount
+  });
+}
   return transactions;
 }
 
 module.exports = { aiExtractTransactions };
-

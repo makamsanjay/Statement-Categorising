@@ -15,6 +15,7 @@ const { aiCategorize } = require("../ai/aiCategorize");
 const AICategoryCache = require("../models/AICategoryCache");
 const normalizeMerchant = require("../utils/normalizeMerchant");
 const { scanFile } = require("../utils/virusScan");
+const { shouldEscalateModel } = require("../utils/shouldEscalateModel");
 
 const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
@@ -90,12 +91,40 @@ function parseExcel(filePath) {
   return XLSX.utils.sheet_to_json(sheet);
 }
 
+
+function diffTransactions(primary, secondary) {
+  const makeKey = t =>
+    `${t.date}|${t.description.toLowerCase().slice(0, 40)}`;
+
+  const primaryMap = new Map(primary.map(t => [makeKey(t), t]));
+  const secondaryMap = new Map(secondary.map(t => [makeKey(t), t]));
+
+  const missingInSecondary = [];
+  const mismatchedAmounts = [];
+
+  for (const [key, p] of primaryMap) {
+    const s = secondaryMap.get(key);
+
+    if (!s) {
+      missingInSecondary.push(p);
+    } else if (Math.abs(p.amount - s.amount) > 0.01) {
+      mismatchedAmounts.push({
+        date: p.date,
+        description: p.description,
+        miniAmount: p.amount,
+        strongAmount: s.amount
+      });
+    }
+  }
+
+  return { missingInSecondary, mismatchedAmounts };
+}
+
 async function parsePDF(filePath) {
   const buffer = fs.readFileSync(filePath);
   const pdf = await pdfParse(buffer);
   let text = pdf.text;
 
-  // OCR fallback (WORKING VERSION)
   if (!text || text.trim().length < 50) {
     const ocr = await Tesseract.recognize(filePath, "eng");
     text = ocr.data.text;
@@ -105,7 +134,67 @@ async function parsePDF(filePath) {
     throw new Error("Unable to extract text from PDF");
   }
 
-  return aiExtractTransactions(text);
+  // 🟢 First pass: cheap model
+  console.log("🤖 Using model: gpt-4o-mini (initial pass)");
+  const miniRows = await aiExtractTransactions(text, "gpt-4o-mini");
+
+  if (!Array.isArray(miniRows) || miniRows.length === 0) {
+    console.log("⚠️ Mini returned no rows, trying gpt-4o");
+    const strongOnly = await aiExtractTransactions(text, "gpt-4o");
+    return Array.isArray(strongOnly) ? strongOnly : [];
+  }
+
+  const escalate = shouldEscalateModel(text, miniRows);
+
+  console.log(
+    escalate
+      ? "🚨 Escalation triggered — trying gpt-4o"
+      : "✅ Staying on gpt-4o-mini"
+  );
+
+  if (!escalate) {
+    return miniRows;
+  }
+
+  // 🔵 Second pass: stronger model
+  console.log("🤖 Using model: gpt-4o (fallback pass)");
+  const strongRows = await aiExtractTransactions(text, "gpt-4o");
+
+  if (!Array.isArray(strongRows) || strongRows.length === 0) {
+    console.log(
+      `🛑 gpt-4o returned 0 rows, keeping mini (${miniRows.length})`
+    );
+    return miniRows;
+  }
+
+  // 🔍 Compare results (DIAGNOSTICS ONLY)
+  const diff = diffTransactions(miniRows, strongRows);
+
+  if (diff.missingInSecondary.length > 0) {
+    console.warn(
+      `⚠️ ${diff.missingInSecondary.length} transactions missing in gpt-4o`
+    );
+  }
+
+  if (diff.mismatchedAmounts.length > 0) {
+    console.warn(
+      "⚠️ Amount mismatches (sample):",
+      diff.mismatchedAmounts.slice(0, 5)
+    );
+  }
+
+  // 🔒 Safety rule: only replace if NOT losing rows
+  if (strongRows.length >= miniRows.length) {
+    console.log(
+      `🔁 Using gpt-4o results (${strongRows.length} rows)`
+    );
+    return strongRows;
+  }
+
+  console.log(
+    `🛑 Keeping mini results (${miniRows.length}), fallback returned ${strongRows.length}`
+  );
+  return miniRows;
 }
 
 /* =========================
@@ -166,12 +255,73 @@ router.post(
           // 📄 Parse PDF
           const rows = await parsePDF(file.path);
 
-          for (const row of rows) {
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
             const result = await resolveCategory(row.description);
+
+            let amount = Number(row.amount);
+
+            const isExpense =
+              /payment to|card purchase|purchase|withdrawal|web pmts|fee|pos|atm/i.test(
+                row.description
+              );
+
+            const isIncome =
+              /zelle|salary|deposit|credit|refund|reimbursement|interest|real time payment/i.test(
+                row.description
+              );
+
+            // 🔴 EXPENSES (already correct)
+            if (isExpense) {
+              amount = -Math.abs(amount);
+            }
+
+            // 🟢 INCOME (normalize sign)
+            if (isIncome) {
+              amount = Math.abs(amount);
+            }
+
+            // 🚨 REALIGNMENT SAFETY NET
+            // Fix cases where amount is shifted, zero, or absurd
+            if (
+              !Number.isFinite(amount) ||
+              amount === 0 ||
+              Math.abs(amount) > 100000
+            ) {
+              const candidates = [];
+
+              if (
+                rows[i - 1] &&
+                Number.isFinite(rows[i - 1].amount) &&
+                Math.abs(rows[i - 1].amount) > 0 &&
+                Math.abs(rows[i - 1].amount) < 100000
+              ) {
+                candidates.push(Math.abs(rows[i - 1].amount));
+              }
+
+              if (
+                rows[i + 1] &&
+                Number.isFinite(rows[i + 1].amount) &&
+                Math.abs(rows[i + 1].amount) > 0 &&
+                Math.abs(rows[i + 1].amount) < 100000
+              ) {
+                candidates.push(Math.abs(rows[i + 1].amount));
+              }
+
+              // If exactly ONE valid neighbor exists → use it
+              if (candidates.length === 1) {
+                amount = candidates[0];
+                if (isExpense) amount = -amount;
+              }
+            }
+
+            // 🔢 Normalize
+            amount = Number(amount.toFixed(2));
 
             preview.push({
               id: crypto.randomUUID(),
               ...row,
+              amount,
               category: result.category,
               confidence: result.confidence,
               selected: true
@@ -198,6 +348,7 @@ router.post(
     }
   }
 );
+
 
 /* =========================
    CONFIRM & SAVE
