@@ -9,15 +9,12 @@ const crypto = require("crypto");
 
 const { aiExtractTransactions } = require("../ai/aiExtractTransactions");
 const Transaction = require("../models/Transaction");
+
 const categorize = require("../utils/categorize");
 const { aiCategorize } = require("../ai/aiCategorize");
 const AICategoryCache = require("../models/AICategoryCache");
 const normalizeMerchant = require("../utils/normalizeMerchant");
 const { scanFile } = require("../utils/virusScan");
-const { parseTransactions } = require("../services/statementParser");
-const { parseTransactionsFromAIRows } =
-  require("../services/statementPostProcessor");
-
 
 const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
@@ -49,10 +46,8 @@ const upload = multer({
 
 /* =========================
    FREE PLAN UPLOAD LIMIT
-   (COUNT ONLY ON CONFIRM)
 ========================= */
 function canUploadToday(user) {
-  // default values (VERY IMPORTANT)
   if (typeof user.uploadsToday !== "number") {
     user.uploadsToday = 0;
   }
@@ -100,7 +95,7 @@ async function parsePDF(filePath) {
   const pdf = await pdfParse(buffer);
   let text = pdf.text;
 
-  // OCR fallback
+  // OCR fallback (WORKING VERSION)
   if (!text || text.trim().length < 50) {
     const ocr = await Tesseract.recognize(filePath, "eng");
     text = ocr.data.text;
@@ -110,12 +105,8 @@ async function parsePDF(filePath) {
     throw new Error("Unable to extract text from PDF");
   }
 
-  // ✅ DETERMINISTIC parsing (NO AI)
-const aiRows = await aiExtractTransactions(text);
-return parseTransactionsFromAIRows(aiRows, text);
-
+  return aiExtractTransactions(text);
 }
-
 
 /* =========================
    CATEGORY RESOLUTION
@@ -131,9 +122,12 @@ async function resolveCategory(description) {
     const merchantKey = normalizeMerchant(description);
     const cached = await AICategoryCache.findOne({ merchantKey });
 
-    if (cached) return { ...cached.toObject(), source: "ai-cache" };
+    if (cached) {
+      return { ...cached.toObject(), source: "ai-cache" };
+    }
 
-    const aiCategory = await aiCategorize(description) || "Other";
+    const aiCategory = (await aiCategorize(description)) || "Other";
+
     await AICategoryCache.create({
       merchantKey,
       category: aiCategory,
@@ -149,7 +143,6 @@ async function resolveCategory(description) {
 /* =========================
    PDF PREVIEW (NO LIMIT COUNT)
 ========================= */
-
 router.post(
   "/preview",
   auth,
@@ -161,41 +154,37 @@ router.post(
 
       for (const file of req.files) {
         try {
-          // 🔐 STEP 1: Virus scan (BLOCK FIRST)
+          // 🔐 Virus scan
           await scanFile(file.path);
 
-          // ⛔ Only PDFs allowed for preview
+          // Only PDFs allowed for preview
           if (!file.originalname.toLowerCase().endsWith(".pdf")) {
             fs.unlinkSync(file.path);
             continue;
           }
 
-          // 📄 STEP 2: Parse PDF (safe now)
+          // 📄 Parse PDF
           const rows = await parsePDF(file.path);
 
-for (const row of rows) {
-  const result = await resolveCategory(row.description);
+          for (const row of rows) {
+            const result = await resolveCategory(row.description);
 
-  preview.push({
-    id: crypto.randomUUID(),
-    ...row,
-    category: result.category,
-    confidence: result.confidence,
-    selected: true
-  });
-}
-
+            preview.push({
+              id: crypto.randomUUID(),
+              ...row,
+              category: result.category,
+              confidence: result.confidence,
+              selected: true
+            });
+          }
 
           // 🧹 cleanup
           fs.unlinkSync(file.path);
-
         } catch (fileErr) {
-          // 🔥 always cleanup on failure
           if (fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
           }
 
-          // stop immediately on infected file
           return res.status(400).json({
             error: fileErr.message || "File blocked for security reasons"
           });
@@ -203,7 +192,6 @@ for (const row of rows) {
       }
 
       res.json(preview);
-
     } catch (err) {
       console.error("Preview failed:", err);
       res.status(400).json({ error: err.message });
@@ -211,9 +199,11 @@ for (const row of rows) {
   }
 );
 
+/* =========================
+   CONFIRM & SAVE
+========================= */
 router.post("/confirm", auth, loadUser, async (req, res) => {
   try {
-    // 🔒 check limit FIRST
     if (!canUploadToday(req.user)) {
       return res.status(403).json({
         upgrade: true,
@@ -221,7 +211,6 @@ router.post("/confirm", auth, loadUser, async (req, res) => {
       });
     }
 
-    // ✅ define cleaned BEFORE using it
     const cleaned = (req.body.transactions || []).filter(
       t =>
         t &&
@@ -252,7 +241,6 @@ router.post("/confirm", auth, loadUser, async (req, res) => {
 
     await Transaction.insertMany(deduped, { ordered: false });
 
-    // ✅ safe increment
     req.user.uploadsToday = (req.user.uploadsToday || 0) + 1;
     req.user.lastUploadDate = new Date();
     await req.user.save();
