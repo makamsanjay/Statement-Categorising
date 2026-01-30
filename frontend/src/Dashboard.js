@@ -24,12 +24,6 @@ import AnalyticsPage from "./pages/Analytics";
 import ProfilePage from "./pages/ProfilePage";
 import HelpPage from "./pages/HelpPage";
 
-
-
-
-
-
-
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
@@ -81,6 +75,13 @@ const formatAmount = (num) => Number(num).toFixed(2);
 
 const [allTransactions, setAllTransactions] = useState([]);
 const [billing, setBilling] = useState(null);
+
+const [error, setError] = useState("");
+const [scanning, setScanning] = useState(false);
+const [scanStatus, setScanStatus] = useState({});
+const [scanStarted, setScanStarted] = useState(false);
+const [infoMessage, setInfoMessage] = useState("");
+
 
 
 
@@ -217,53 +218,101 @@ const { totalIncome, totalExpense } = useMemo(() => {
 
 
  const handleUpload = async () => {
+  // 🔄 reset UI state
+  setScanStarted(true);
+  setScanStatus({});
+  setError("");
+  setInfoMessage("");
   setPreview([]);
-setShowPreview(false);
+  setShowPreview(false);
 
   if (!files.length) {
-    alert("Select file(s)");
+    setError("Please select at least one file to upload.");
+    setScanStarted(false);
     return;
   }
 
-  let pdfPreview = [];
-  let skippedMessages = [];
+  setScanning(true);
+
+  const pdfPreview = [];
+  const statusMap = {};
 
   for (const file of files) {
-    if (file.type === "application/pdf") {
-      try {
-        const data = await previewUpload(file);
-       pdfPreview.push(
-  ...data.map(t => ({ ...t, selected: true }))
-);
-      } catch (err) {
-        skippedMessages.push(`${file.name}: ${err.message}`);
-      }
-    } else {
-      skippedMessages.push(
-        `${file.name}: Only PDF uploads are supported for preview`
-      );
+    statusMap[file.name] = { status: "scanning" };
+    setScanStatus({ ...statusMap });
+
+   const isPDF = file.type === "application/pdf";
+const isCSV = file.name.toLowerCase().endsWith(".csv");
+const isExcel =
+  file.name.toLowerCase().endsWith(".xls") ||
+  file.name.toLowerCase().endsWith(".xlsx");
+
+if (!isPDF && !isCSV && !isExcel) {
+  statusMap[file.name] = {
+    status: "failed",
+    message: "Unsupported file type"
+  };
+  setScanStatus({ ...statusMap });
+  continue;
+}
+
+try {
+  const data = await previewUpload(file);
+
+  if (isPDF) {
+    if (!Array.isArray(data) || data.length === 0) {
+      statusMap[file.name] = {
+        status: "failed",
+        message: "No transactions found in this PDF"
+      };
+      setScanStatus({ ...statusMap });
+      continue;
     }
+
+    pdfPreview.push(
+      ...data.map(t => ({ ...t, selected: true }))
+    );
+
+    statusMap[file.name] = { status: "success" };
+  } else {
+    // CSV / Excel → valid but no preview
+    statusMap[file.name] = {
+      status: "success",
+      message: "File verified — will be processed on save"
+    };
   }
 
-  if (pdfPreview.length) {
-    setPreview(pdfPreview);
-    if (pdfPreview.length) {
+  setScanStatus({ ...statusMap });
+
+} catch (err) {
+  statusMap[file.name] = {
+    status: "failed",
+    message:
+      err.message ||
+      "File could not be processed due to security or parsing issues"
+  };
+  setScanStatus({ ...statusMap });
+}
+  }
+  setScanning(false);
+
+  if (pdfPreview.length === 0) {
+  setInfoMessage(
+    "No previewable transactions were found. " +
+    "PDFs can be previewed before saving, while CSV and Excel files " +
+    "will be securely processed when you confirm the upload."
+  );
+    return;
+  }
+
+  // ✅ SUCCESS PATH
+  setPreview(pdfPreview);
+
   if (cards.length > 0) {
     setSelectedUploadCardIndex(activeCardIndex);
   }
-  setPreview(pdfPreview);
+
   setShowPreview(true);
-}
-    setShowPreview(true);
-  }
-
-  if (skippedMessages.length) {
-    alert(
-      "Some files were skipped:\n\n" +
-        skippedMessages.map(m => `• ${m}`).join("\n")
-    );
-  }
-
   setFiles([]);
 };
 
@@ -867,6 +916,9 @@ return (
     e.preventDefault();
     e.stopPropagation();
     setFiles(Array.from(e.dataTransfer.files));
+    setScanStatus({});
+    setError("");
+  setScanStarted(false);
   }}
 >
   {files.length === 0 ? (
@@ -907,6 +959,20 @@ return (
   ))}
 </ul>
 
+{scanStarted && Object.keys(scanStatus).length > 0 && (
+  <ul className="upload-scan-status">
+    {Object.entries(scanStatus).map(([name, info]) => (
+      <li key={name} className={info.status}>
+        <strong>{name}</strong>
+        {info.status === "scanning" && " — scanning…"}
+        {info.status === "success" && " — safe ✓"}
+        {info.status === "failed" && ` — ${info.message}`}
+      </li>
+    ))}
+  </ul>
+)}
+
+
       <p className="upload-replace">
         Click or drop again to replace files
       </p>
@@ -922,15 +988,43 @@ return (
     multiple
     accept=".csv,.xls,.xlsx,.pdf"
     style={{ display: "none" }}
-    onChange={(e) =>
-      setFiles(Array.from(e.target.files))
-    }
+    onChange={(e) => {
+  setFiles(Array.from(e.target.files));
+  setScanStatus({});
+  setError("");
+  setScanStarted(false);
+}}
+
   />
 
-  <button className="upload-btn" onClick={handleUpload}>
-    Upload / Preview
-  </button>
+  <button
+  className="upload-btn"
+  onClick={handleUpload}
+  disabled={scanning}
+>
+  {scanning ? "Scanning…" : "Upload / Preview"}
+</button>
 </div>
+
+{/* 🔍 Scanning indicator */}
+  {scanning && (
+    <div className="upload-scanning">
+      🔍 Scanning files for viruses…
+    </div>
+  )}
+  
+{infoMessage && (
+  <div className="upload-info">
+    ℹ️ {infoMessage}
+  </div>
+)}
+
+  {/* 🔐 Security error */}
+  {error && (
+    <div className="upload-error security">
+      🛑 {error}
+    </div>
+  )}
 
 
     {/* ================= PREVIEW ================= */}

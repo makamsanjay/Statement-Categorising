@@ -597,3 +597,58 @@ th {
   color: #9ca3af;
 }
 
+/* Global security error */
+.upload-error.security {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 14px;
+}
+
+/* Scanning indicator */
+.upload-scanning {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #0f766e;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Per-file scan results */
+.upload-scan-status {
+  margin-top: 12px;
+  padding-left: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.upload-scan-status li {
+  margin-bottom: 6px;
+}
+
+.upload-scan-status li.scanning {
+  color: #0f172a;
+}
+
+.upload-scan-status li.success {
+  color: #16a34a;
+}
+
+.upload-scan-status li.failed {
+  color: #dc2626;
+}
+
+.upload-info {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 14px;
+}
+

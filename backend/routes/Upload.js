@@ -13,6 +13,7 @@ const categorize = require("../utils/categorize");
 const { aiCategorize } = require("../ai/aiCategorize");
 const AICategoryCache = require("../models/AICategoryCache");
 const normalizeMerchant = require("../utils/normalizeMerchant");
+const { scanFile } = require("../utils/virusScan");
 
 const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
@@ -104,7 +105,11 @@ async function parsePDF(filePath) {
     throw new Error("Unable to extract text from PDF");
   }
 
-  return aiExtractTransactions(text);
+  return {
+  rows: await aiExtractTransactions(text),
+  rawText: text
+};
+
 }
 
 /* =========================
@@ -139,36 +144,105 @@ async function resolveCategory(description) {
 /* =========================
    PDF PREVIEW (NO LIMIT COUNT)
 ========================= */
+
 router.post(
   "/preview",
   auth,
   loadUser,
-  upload.array("file", 10),
+  upload.any(),
   async (req, res) => {
     try {
       const preview = [];
 
       for (const file of req.files) {
-        if (!file.originalname.toLowerCase().endsWith(".pdf")) continue;
+        try {
+          // 🔐 Virus scan
+          await scanFile(file.path);
 
-        const rows = await parsePDF(file.path);
-        for (const row of rows) {
-          const result = await resolveCategory(row.description);
+          // Only PDFs allowed
+          if (!file.originalname.toLowerCase().endsWith(".pdf")) {
+            fs.unlinkSync(file.path);
+            continue;
+          }
 
-          preview.push({
-            id: crypto.randomUUID(),
-            ...row,
-            category: result.category,
-            confidence: result.confidence,
-            selected: true
+          // 📄 Parse PDF (OCR → AI → rows)
+          const { rows, rawText } = await parsePDF(file.path);
+
+
+          for (const row of rows) {
+  const result = await resolveCategory(row.description);
+
+  let amount = Number(row.amount);
+
+  const isDebit =
+    /payment to|card purchase|purchase|withdrawal|web pmts|fee|pos|atm/i.test(
+      row.description
+    );
+
+  const isCredit =
+    /zelle|salary|deposit|credit|refund|reimbursement|interest|real time payment/i.test(
+      row.description
+    );
+
+  // 🔴 DEBITS: trust AI, force negative
+  if (isDebit) {
+    amount = -Math.abs(amount);
+  }
+
+  // 🟢 CREDITS: recompute from raw text (CRITICAL FIX)
+  else if (isCredit) {
+    // find all positive amounts near this description
+    const escapedDesc = row.description.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(
+      `${escapedDesc}[\\s\\S]{0,80}?([0-9,]+\\.\\d{2})(?:\\s+([0-9,]+\\.\\d{2}))?`,
+      "i"
+    );
+
+    const match = rawText.match(regex);
+
+    if (match) {
+      const nums = match
+        .slice(1)
+        .filter(Boolean)
+        .map(n => Number(n.replace(/,/g, "")));
+
+      // CREDIT RULE: smallest positive number is the transaction
+      amount = Math.min(...nums.filter(n => n > 0));
+    }
+
+    amount = Math.abs(amount);
+  }
+
+  // Normalize decimals
+  amount = Number(amount.toFixed(2));
+
+  preview.push({
+    id: crypto.randomUUID(),
+    ...row,
+    amount,
+    category: result.category,
+    confidence: result.confidence,
+    selected: true
+  });
+}
+
+          // Cleanup file
+          fs.unlinkSync(file.path);
+
+        } catch (fileErr) {
+          if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+          return res.status(400).json({
+            error: fileErr.message || "File blocked for security reasons"
           });
         }
-
-        fs.unlinkSync(file.path);
       }
 
       res.json(preview);
+
     } catch (err) {
+      console.error("Preview failed:", err);
       res.status(400).json({ error: err.message });
     }
   }
