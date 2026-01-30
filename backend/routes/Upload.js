@@ -147,14 +147,13 @@ router.post(
   "/preview",
   auth,
   loadUser,
-  upload.any(),
+  upload.array("file", 10),
   async (req, res) => {
     try {
       const preview = [];
 
       for (const file of req.files) {
         try {
-          // 🔐 Virus scan
           // 🔐 Virus scan
           await scanFile(file.path);
 
@@ -186,7 +185,6 @@ router.post(
             fs.unlinkSync(file.path);
           }
 
-          // stop immediately on infected file
           return res.status(400).json({
             error: fileErr.message || "File blocked for security reasons"
           });
