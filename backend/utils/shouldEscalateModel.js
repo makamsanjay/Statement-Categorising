@@ -1,41 +1,40 @@
 function shouldEscalateModel(text, rows) {
-  // Rule 1: Ledger-style keywords + heavy currency density
-  const currencyCount = (text.match(/\d+\.\d{2}/g) || []).length;
-  const looksLedger =
-    /ending balance|new balance|account summary|account activity/i.test(text) &&
-    currencyCount > 50;
-
-  if (looksLedger) return true;
-
-  let fourDigitCount = 0;
+  let invalidAmountCount = 0;
 
   for (const r of rows) {
-    // Rule 2: ANY zero amount
-    if (r.amount === 0) return true;
+    const amt = r.amount;
 
-    // Rule 3: absurd values
-    if (!Number.isFinite(r.amount) || Math.abs(r.amount) > 100000) {
-      return true;
+    // 1️⃣ Zero amount is always invalid
+    if (amt === 0) {
+      invalidAmountCount++;
+      continue;
     }
 
-    // Rule 4: count 4+ digit values
-    if (Math.abs(r.amount) >= 1000) {
-      fourDigitCount++;
+    // 2️⃣ Amount too small but looks like credit/debit
+    if (
+      Math.abs(amt) < 1 &&
+      /zelle|salary|deposit|payment|purchase|credit|debit/i.test(
+        r.description
+      )
+    ) {
+      invalidAmountCount++;
+      continue;
     }
 
-    // Rule 5: description too numeric-heavy (IDs + balances)
-    const numericTokens =
-      r.description.match(/\d+/g)?.length || 0;
+    // 3️⃣ Impossible magnitude (ID leakage)
+    if (Math.abs(amt) > 100000) {
+      invalidAmountCount++;
+      continue;
+    }
 
-    if (numericTokens > 5) {
-      return true;
+    // 4️⃣ Decimal corruption (more than 2 decimals)
+    if (!Number.isInteger(amt * 100)) {
+      invalidAmountCount++;
     }
   }
 
-  // Rule 6: 5 or more transactions with 4+ digit amounts
-  if (fourDigitCount >= 5) return true;
-
-  return false;
+  // 🔥 Escalate ONLY if clearly broken
+  return invalidAmountCount >= 2;
 }
 
 module.exports = { shouldEscalateModel };
