@@ -14,10 +14,6 @@ const { aiCategorize } = require("../ai/aiCategorize");
 const AICategoryCache = require("../models/AICategoryCache");
 const normalizeMerchant = require("../utils/normalizeMerchant");
 const { scanFile } = require("../utils/virusScan");
-const { parseTransactions } = require("../services/statementParser");
-const { parseTransactionsFromAIRows } =
-  require("../services/statementPostProcessor");
-
 
 const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
@@ -100,7 +96,6 @@ async function parsePDF(filePath) {
   const pdf = await pdfParse(buffer);
   let text = pdf.text;
 
-  // OCR fallback
   if (!text || text.trim().length < 50) {
     const ocr = await Tesseract.recognize(filePath, "eng");
     text = ocr.data.text;
@@ -110,12 +105,8 @@ async function parsePDF(filePath) {
     throw new Error("Unable to extract text from PDF");
   }
 
-  // ✅ DETERMINISTIC parsing (NO AI)
-const aiRows = await aiExtractTransactions(text);
-return parseTransactionsFromAIRows(aiRows, text);
-
+  return aiExtractTransactions(text);
 }
-
 
 /* =========================
    CATEGORY RESOLUTION
@@ -154,7 +145,7 @@ router.post(
   "/preview",
   auth,
   loadUser,
-  upload.array("file", 10),
+  upload.any(),
   async (req, res) => {
     try {
       const preview = [];
@@ -173,18 +164,17 @@ router.post(
           // 📄 STEP 2: Parse PDF (safe now)
           const rows = await parsePDF(file.path);
 
-for (const row of rows) {
-  const result = await resolveCategory(row.description);
+          for (const row of rows) {
+            const result = await resolveCategory(row.description);
 
-  preview.push({
-    id: crypto.randomUUID(),
-    ...row,
-    category: result.category,
-    confidence: result.confidence,
-    selected: true
-  });
-}
-
+            preview.push({
+              id: crypto.randomUUID(),
+              ...row,
+              category: result.category,
+              confidence: result.confidence,
+              selected: true
+            });
+          }
 
           // 🧹 cleanup
           fs.unlinkSync(file.path);

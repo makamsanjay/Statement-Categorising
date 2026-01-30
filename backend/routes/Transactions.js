@@ -26,15 +26,12 @@ router.get("/summary", auth, loadUser, async (req, res) => {
 
     const filter = { userId };
 
-   const { from, to } = req.query;
-
-if (from && to) {
-  filter.date = {
-    $gte: new Date(from),
-    $lte: new Date(to)
-  };
-}
-
+    if (from && to) {
+      filter.date = {
+        $gte: new Date(from),
+        $lte: new Date(to)
+      };
+    }
 
  const cards = await Card.find({ userId }).select("_id");
 const cardIds = cards.map(c => c._id);

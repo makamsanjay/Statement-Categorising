@@ -69,9 +69,9 @@ ${rawText}
   }
 
   if (!transactions.length) {
-    console.error("AI RAW OUTPUT:", content);
-    throw new Error("AI returned no valid transactions");
-  }
+  console.warn("AI returned no transactions");
+  return [];
+}
 
   return transactions;
 }
