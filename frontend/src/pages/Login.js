@@ -2,7 +2,16 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api";
 import "./Login.css";
+import {
+  sendForgotPasswordOTP,
+  verifyForgotPasswordOTP,
+  resetPassword
+} from "../api";
 
+
+/* =========================
+   CARD WALL (UNCHANGED)
+========================= */
 const cardImages = [
   "https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg",
   "https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg",
@@ -29,31 +38,124 @@ const shuffle = (arr) => {
   return a;
 };
 
+const isValidEmail = (email) => {
+  // generic email validation
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+// OPTIONAL: if you want ONLY gmail
+const isGmail = (email) => {
+  return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
+};
+
+/* =========================
+   LOGIN COMPONENT
+========================= */
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    try {
-      const res = await login(email, password);
-      localStorage.setItem("token", res.token);
-      window.dispatchEvent(new Event("storage"));
-      navigate("/");
-    } catch (err) {
-      alert(err.message || "Login failed");
-    }
-  };
+  /* ===== LOGIN STATE ===== */
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  // Pre-generate rows ONCE (important)
+  /* ===== FORGOT PASSWORD STATE ===== */
+  const [mode, setMode] = useState("login"); // login | forgot | otp | reset
+  const [fpEmail, setFpEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+
+  /* ===== LOGIN HANDLER (UNCHANGED) ===== */
+ const handleLogin = async () => {
+  if (!isValidEmail(email)) {
+    alert("Please enter a valid email address");
+    return;
+  }
+
+  try {
+    const res = await login(email, password);
+    localStorage.setItem("token", res.token);
+    window.dispatchEvent(new Event("storage"));
+    navigate("/");
+  } catch (err) {
+    alert(err.message || "Login failed");
+  }
+};
+
+const handleSendOTP = async () => {
+  if (!fpEmail) {
+    setError("Please enter your email");
+    return;
+  }
+
+  if (!isValidEmail(fpEmail)) {
+    setError("Please enter a valid email address");
+    return;
+  }
+
+  try {
+    setError("");
+    await sendForgotPasswordOTP(fpEmail);
+    setMode("otp");
+  } catch (err) {
+    setError(err.message || "No account found with this email");
+  }
+};
+
+
+
+const handleVerifyOTP = async () => {
+  if (!otp || otp.length < 4) {
+    setError("Invalid OTP");
+    return;
+  }
+
+  try {
+    setError("");
+    await verifyForgotPasswordOTP(fpEmail, otp);
+    setMode("reset");
+  } catch (err) {
+    setError(err.message);
+  }
+};
+
+
+
+  const handleResetPassword = async () => {
+  if (newPassword.length < 8) {
+    setError("Password must be at least 8 characters");
+    return;
+  }
+
+  if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+    setError("Password must contain 1 uppercase letter and 1 number");
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    setError("Passwords do not match");
+    return;
+  }
+
+  try {
+    setError("");
+    await resetPassword(fpEmail, newPassword, confirmPassword);
+    alert("Password reset successful. Please login.");
+    setMode("login");
+  } catch (err) {
+    setError(err.message);
+  }
+};
+
+
+  /* =========================
+     CARD WALL (UNCHANGED)
+  ========================= */
   const rows = useMemo(() => {
     return Array.from({ length: 9 }).map(() => {
       const shuffled = shuffle(cardImages);
-
-      // Random slice length (6–10 logos)
       const sliceLength = 6 + Math.floor(Math.random() * 5);
-
-      // Random offset
       const offset = Math.floor(Math.random() * shuffled.length);
 
       const rowSet = [
@@ -61,11 +163,13 @@ function Login() {
         ...shuffled.slice(0, offset)
       ].slice(0, sliceLength);
 
-      // Duplicate differently per row
       return [...rowSet, ...shuffle(rowSet)];
     });
   }, []);
 
+  /* =========================
+     RENDER
+  ========================= */
   return (
     <div className="auth-transition auth-container">
       {/* LEFT SIDE */}
@@ -77,14 +181,7 @@ function Login() {
             style={{ animationDuration: `${22 + i * 4}s` }}
           >
             {row.map((src, idx) => (
-              <img
-                key={idx}
-                src={src}
-                alt="card-logo"
-                style={{
-                  height: `${38 + (idx % 3) * 3}px`
-                }}
-              />
+              <img key={idx} src={src} alt="card-logo" />
             ))}
           </div>
         ))}
@@ -92,29 +189,138 @@ function Login() {
 
       {/* RIGHT SIDE */}
       <div className="auth-form">
-        <h2>Welcome back</h2>
+        {mode === "login" && (
+          <>
+            <h2>Welcome back</h2>
 
-        <input
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+            <input
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
-        <button onClick={handleLogin}>Login</button>
+            <button onClick={handleLogin}>Login</button>
 
-        <p>
-          Don’t have an account?{" "}
-          <button type="button" onClick={() => navigate("/signup")}>
-            Sign up
-          </button>
-        </p>
+<p
+  className="forgot-link center"
+  onClick={() => {
+    setMode("forgot");
+    setFpEmail("");
+    setError("");
+  }}
+>
+  Forgot password?
+</p>
+
+
+            <p>
+              Don’t have an account?{" "}
+              <button type="button" onClick={() => navigate("/signup")}>
+                Sign up
+              </button>
+            </p>
+          </>
+        )}
+
+        {mode === "forgot" && (
+          <>
+            <h2>Reset Password</h2>
+
+            <input
+              placeholder="Enter your email"
+              value={fpEmail}
+              onChange={(e) => setFpEmail(e.target.value)}
+            />
+
+            {error && <p className="auth-error">{error}</p>}
+
+            <button onClick={handleSendOTP}>Send OTP</button>
+
+            <p className="link-btn" onClick={() => setMode("login")}>
+              Back to login
+            </p>
+          </>
+        )}
+
+       {mode === "otp" && (
+  <>
+    <h2>Verify OTP</h2>
+
+    <input
+      placeholder="Enter OTP"
+      value={otp}
+      onChange={(e) => setOtp(e.target.value)}
+    />
+
+    {error && <p className="auth-error">{error}</p>}
+
+    <button onClick={handleVerifyOTP}>Verify</button>
+
+    {/* RESEND OTP */}
+    <p
+      className="link-text"
+      onClick={async () => {
+        try {
+          setError("");
+          await sendForgotPasswordOTP(fpEmail);
+        } catch (err) {
+          setError(err.message || "Failed to resend OTP");
+        }
+      }}
+    >
+      Resend OTP
+    </p>
+
+    {/* BACK TO LOGIN */}
+    <p
+      className="link-text muted"
+      onClick={() => {
+        setMode("login");
+        setOtp("");
+        setFpEmail("");
+        setError("");
+      }}
+    >
+      Back to login
+    </p>
+  </>
+)}
+        {mode === "reset" && (
+          <>
+            <h2>Set New Password</h2>
+
+            <input
+              type="password"
+              placeholder="New password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+
+            <input
+              type="password"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+
+            <p className="password-hint">
+              Min 8 chars, 1 uppercase, 1 number
+            </p>
+
+            {error && <p className="auth-error">{error}</p>}
+
+            <button onClick={handleResetPassword}>
+              Reset Password
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

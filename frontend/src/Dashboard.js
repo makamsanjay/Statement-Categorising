@@ -689,6 +689,25 @@ const refreshActiveCardTransactions = async () => {
   setAllTransactions(all);
 };
 
+const handleAddPreviewTxn = () => {
+  const today = new Date().toISOString().slice(0, 10);
+
+  setPreview(prev => [
+    {
+      id: crypto.randomUUID?.() || Date.now(),
+      selected: true,
+      date: today,
+      description: "",
+      amount: -0,          // default expense
+      category: "Other",
+      confidence: 1,
+      source: "manual"
+    },
+    ...prev
+  ]);
+};
+
+
 return (
   <div className="dashboard-layout">
     {/* LEFT SIDEBAR */}
@@ -1012,7 +1031,7 @@ return (
       🔍 Scanning files for viruses…
     </div>
   )}
-  
+
 {infoMessage && (
   <div className="upload-info">
     ℹ️ {infoMessage}
@@ -1032,6 +1051,24 @@ return (
 {showPreview && (
   <>
     <h3>Preview Transactions</h3>
+
+    <div class="preview-notice">
+  <div class="preview-notice-icon">ℹ️</div>
+
+  <div class="preview-notice-content">
+    <strong>Please review transactions before confirming</strong>
+    <p>
+      Some bank statements (especially Chase ledger type) may format transactions in a way
+      that can cause small extraction mistakes — most commonly in
+      <span class="highlight"> income / credit transactions</span>.
+      We recommend skimming once before confirming.
+    </p>
+    <p class="muted">
+      You can edit or correct any transaction later after saving.
+    </p>
+  </div>
+</div>
+
 
     <div className="upload-card-select">
       <strong>Post transactions to:</strong>
@@ -1057,6 +1094,15 @@ return (
       >
         ➕ Add Card
       </button>
+
+      <button
+    type="button"
+    className="upload-add-txn"
+    onClick={handleAddPreviewTxn}
+  >
+    ➕ Add Transaction
+  </button>
+
     </div>
 
     <table className="preview-table">
