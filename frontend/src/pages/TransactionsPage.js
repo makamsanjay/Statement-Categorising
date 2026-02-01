@@ -12,6 +12,8 @@ import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./TransactionsPage.css";
 import ExportModal from "../components/ExportModal";
+import OriginalCardEditor from "../components/OriginalCardEditor";
+
 
 
 const DEFAULT_CATEGORIES = [
@@ -313,9 +315,20 @@ const derivedCategories = useMemo(() => {
 
       {/* ================= CARD HEADER ================= */}
 <div className="card-header-bar">
-  <div className="card-title">
-    
-  </div>
+<div className="card-title">
+  {cards[activeCardIndex] && (
+    <OriginalCardEditor
+      card={cards[activeCardIndex]}
+      onSaved={(updatedCard) => {
+        setCards(prev =>
+          prev.map(c =>
+            c._id === updatedCard._id ? updatedCard : c
+          )
+        );
+      }}
+    />
+  )}
+</div>
 
   <div className="card-actions">
     <button

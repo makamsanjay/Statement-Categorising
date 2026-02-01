@@ -13,7 +13,16 @@ const CardSchema = new mongoose.Schema(
       maxlength: 4
     },
 
-    // 🧠 AI-detected original card names
+    /* ✅ OFFICIAL CARD NAME (USER PROVIDED) */
+    originalCard: {
+      type: {
+        issuer: { type: String, trim: true },
+        product: { type: String, trim: true }
+      },
+      default: null
+    },
+
+    /* optional future AI use */
     originalNames: {
       type: [String],
       default: []
@@ -48,9 +57,7 @@ const CardSchema = new mongoose.Schema(
       index: true
     }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Card", CardSchema);

@@ -4,9 +4,9 @@ const loadUser = require("../middleware/loadUser");
 
 const { aiSuggestCards } = require("../ai/aiSuggestCards");
 const CardSuggestion = require("../models/CardSuggestion");
+const Card = require("../models/Card");
 const calculateCashback = require("../utils/calculateCashback");
 const currencyToCountry = require("../utils/currencyToCountry");
-const BASE_CASHBACK = require("../utils/cardCashbackRates");
 
 const router = express.Router();
 
@@ -33,22 +33,84 @@ router.post("/", auth, loadUser, async (req, res) => {
     const userId = req.user._id;
     const country = currencyToCountry(currency);
 
-    /* ---------- AI PICK (NO MATH) ---------- */
-    const aiResult = await aiSuggestCards({
-      category,
-      country
+    /* ======================================================
+       BUILD USER CARD CONTEXT (FOR AI COMPARISON)
+       ====================================================== */
+    let userCards = [];
+let allowComparison = false;
+
+/* ---------- SINGLE CARD MODE ---------- */
+if (scope === "single" && cardId) {
+  const card = await Card.findOne({ _id: cardId, userId });
+
+  if (card?.originalCard?.issuer && card?.originalCard?.product) {
+    userCards.push({
+      issuer: card.originalCard.issuer,
+      product: card.originalCard.product,
+      scope: "single"
     });
+    allowComparison = true;
+  }
+}
+
+/* ---------- ALL CARDS MODE ---------- */
+if (scope === "all") {
+  const cards = await Card.find({
+    userId,
+    originalCard: { $ne: null }
+  });
+
+  const validCards = cards.filter(
+    c => c.originalCard?.issuer && c.originalCard?.product
+  );
+
+  if (validCards.length > 0) {
+    userCards = validCards.map(c => ({
+      issuer: c.originalCard.issuer,
+      product: c.originalCard.product,
+      scope: "all"
+    }));
+    allowComparison = true;
+  }
+
+      userCards = cards
+        .filter(
+          c =>
+            c.originalCard?.issuer &&
+            c.originalCard?.product
+        )
+        .map(c => ({
+          issuer: c.originalCard.issuer,
+          product: c.originalCard.product,
+          scope: "all"
+        }));
+    }
+
+    /* ======================================================
+       AI PICK (NO MATH, PURE LOGIC)
+       ====================================================== */
+const aiResult = await aiSuggestCards({
+  category,
+  country,
+  currency,
+  totalSpent,
+  scope,
+  userCards,
+  allowComparison
+});
 
     if (!aiResult || !Array.isArray(aiResult.cards)) {
       throw new Error("AI returned invalid result");
     }
 
-    /* ---------- ENRICH + CALCULATE ---------- */
+    /* ======================================================
+       ENRICH + CALCULATE (AI CONTROLS RATES)
+       ====================================================== */
     const cards = aiResult.cards.map(card => {
-      const rate = BASE_CASHBACK[card.name] ?? 1.5; // hard fallback
+      const rate = Number(card.cashbackRate) || 0;
 
       const savings =
-        totalSpent > 0
+        totalSpent > 0 && rate > 0
           ? calculateCashback(totalSpent, rate)
           : 0;
 
@@ -65,13 +127,16 @@ router.post("/", auth, loadUser, async (req, res) => {
     });
 
     const summary =
-      totalSpent > 0
+      aiResult.summary ||
+      (totalSpent > 0
         ? `You spent ${currency} ${totalSpent.toFixed(
             2
-          )} on ${category}. Using the best card below could have earned you up to ${cards[0].estimatedSavings}.`
-        : `You haven’t spent on ${category} yet. These are the best cards to use next time.`;
+          )} on ${category}.`
+        : `You haven’t spent on ${category} yet.`);
 
-    /* ---------- SAVE / OVERWRITE ---------- */
+    /* ======================================================
+       SAVE / OVERWRITE (HISTORY SAFE)
+       ====================================================== */
     const saved = await CardSuggestion.findOneAndUpdate(
       {
         userId,
@@ -105,7 +170,10 @@ router.post("/", auth, loadUser, async (req, res) => {
   }
 });
 
-
+/* ======================================================
+   GET /ai/card-suggestions
+   ➜ Load history
+   ====================================================== */
 router.get("/", auth, loadUser, async (req, res) => {
   try {
     const suggestions = await CardSuggestion.find({
@@ -121,10 +189,9 @@ router.get("/", auth, loadUser, async (req, res) => {
   }
 });
 
-
-/**
- * DELETE /ai/card-suggestions/:id
- */
+/* ======================================================
+   DELETE /ai/card-suggestions/:id
+   ====================================================== */
 router.delete("/:id", auth, loadUser, async (req, res) => {
   try {
     await CardSuggestion.deleteOne({

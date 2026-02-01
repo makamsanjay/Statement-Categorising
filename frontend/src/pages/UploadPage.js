@@ -167,6 +167,14 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
         <>
           <h3>Preview Transactions</h3>
 
+          {cards?.[activeCardIndex] && (
+  <OriginalCardEditor
+    card={cards[activeCardIndex]}
+    onSaved={() => {}}
+  />
+)}
+
+
           <table>
             <thead>
               <tr>

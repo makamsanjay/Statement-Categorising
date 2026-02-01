@@ -420,3 +420,37 @@ export async function deleteCardSuggestion(id) {
   }
 }
 
+export async function updateOriginalCardName(cardId, payload) {
+  const res = await fetch(
+    `http://localhost:5050/cards/${cardId}/original-card`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to save original card");
+  }
+
+  return res.json();
+}
+
+export const deleteOriginalCardName = async (cardId) => {
+  const res = await fetch(
+    `http://localhost:5050/cards/${cardId}/original-name`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
+  return res.json();
+};

@@ -31,7 +31,7 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
       .then(data => {
         setHistory(data);
         if (data.length > 0) {
-          setSelectedSuggestion(data[0]); // latest first
+          setSelectedSuggestion(data[0]);
         }
       })
       .catch(() => {});
@@ -45,6 +45,52 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
     getCards().then(setCards);
     getTransactions().then(setAllTransactions);
   }, [isPro]);
+
+  /* ================= HELPERS ================= */
+
+  const getHistoryCardLabel = suggestion => {
+    if (suggestion.scope !== "single" || !suggestion.cardId) {
+      return "All cards";
+    }
+
+    const card = cards.find(
+      c => String(c._id) === String(suggestion.cardId)
+    );
+
+    return card
+      ? `${card.name}${card.last4 ? ` (${card.last4})` : ""}`
+      : "Selected card";
+  };
+
+  const getSpendContextText = suggestion => {
+  if (!suggestion || !suggestion.totalSpent || suggestion.totalSpent <= 0) {
+    return null;
+  }
+
+  const amount = `${suggestion.currency} ${suggestion.totalSpent.toFixed(2)}`;
+  const category = suggestion.category;
+
+  // ✅ ALL CARDS
+  if (suggestion.scope === "all") {
+    return `You spent ${amount} on ${category} across all your cards.`;
+  }
+
+  // ✅ SINGLE CARD
+  if (suggestion.scope === "single" && suggestion.cardId) {
+    const card = cards.find(
+      c => String(c._id) === String(suggestion.cardId)
+    );
+
+    const cardName = card
+      ? `${card.name}${card.last4 ? ` (${card.last4})` : ""}`
+      : "this card";
+
+    return `You spent ${amount} on ${category} using ${cardName}.`;
+  }
+
+  return null;
+};
+
 
   /* ================= DERIVED DATA ================= */
 
@@ -198,6 +244,43 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
         {error && <div className="error-box">{error}</div>}
       </div>
 
+      {/* -------- RESULTS -------- */}
+      {selectedSuggestion && (
+        <div className="suggestion-results">
+          <div className="results-header">
+            <h3>Results</h3>
+            <button
+              className="close-btn"
+              onClick={() => setSelectedSuggestion(null)}
+            >
+              ✕
+            </button>
+          </div>
+
+          {getSpendContextText(selectedSuggestion) && (
+  <p className="summary">
+    {getSpendContextText(selectedSuggestion)}
+  </p>
+)}
+
+{selectedSuggestion.summary && (
+  <p className="summary muted">
+    {selectedSuggestion.summary}
+  </p>
+)}
+
+
+          {typeof selectedSuggestion.summary === "string" &&
+            selectedSuggestion.summary.toLowerCase().includes("already") && (
+              <div>
+                
+              </div>
+            )}
+
+          <CardGroup cards={selectedSuggestion.cards || []} />
+        </div>
+      )}
+
       {/* -------- HISTORY -------- */}
       <div className="suggestion-history">
         <h4>History</h4>
@@ -217,6 +300,9 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
             <div>
               <strong>{item.category}</strong>
               <div className="muted small">
+                {getHistoryCardLabel(item)}
+              </div>
+              <div className="muted small">
                 {item.totalSpent > 0
                   ? `${item.currency} ${item.totalSpent.toFixed(2)} spent`
                   : "No spend yet"}
@@ -234,20 +320,11 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
                 }
               }}
             >
-              🗑️
+              ×
             </button>
           </div>
         ))}
       </div>
-
-      {/* -------- RESULTS -------- */}
-      {selectedSuggestion && (
-        <div className="suggestion-results">
-          <h3>Results</h3>
-          <p className="summary">{selectedSuggestion.summary}</p>
-          <CardGroup cards={selectedSuggestion.cards} />
-        </div>
-      )}
     </div>
   );
 }
@@ -255,7 +332,9 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
 /* ================= COMPONENTS ================= */
 
 function CardGroup({ cards }) {
-  if (!Array.isArray(cards) || cards.length === 0) return null;
+  if (!Array.isArray(cards) || cards.length === 0) {
+    return null;
+  }
 
   return (
     <div className="card-grid">
@@ -277,11 +356,13 @@ function CardGroup({ cards }) {
             Estimated savings: <strong>{c.estimatedSavings}</strong>
           </div>
 
-          {c.rotation?.active && (
-            <div className="rotation-note">
-              🔄 {c.rotation.note} • until {c.rotation.validUntil}
-            </div>
-          )}
+          {c.rotation &&
+            c.rotation.active &&
+            c.rotation.validUntil && (
+              <div className="rotation-note">
+                {c.rotation.note} • until {c.rotation.validUntil}
+              </div>
+            )}
 
           <p>{c.reason}</p>
         </div>
