@@ -4,7 +4,6 @@ const csv = require("csv-parser");
 const fs = require("fs");
 const XLSX = require("xlsx");
 const pdfParse = require("pdf-parse");
-const Tesseract = require("tesseract.js");
 const crypto = require("crypto");
 
 const { aiExtractTransactions } = require("../ai/aiExtractTransactions");
@@ -85,20 +84,18 @@ function parseExcel(filePath) {
 }
 
 /* =========================
-   PDF PARSER (UNCHANGED)
+   PDF PARSER (SAFE)
 ========================= */
 async function parsePDF(filePath) {
   const buffer = fs.readFileSync(filePath);
   const pdf = await pdfParse(buffer);
-  let text = pdf.text;
+  const text = pdf.text;
 
+  // ❌ DO NOT OCR PDFs (causes crash)
   if (!text || text.trim().length < 50) {
-    const ocr = await Tesseract.recognize(filePath, "eng");
-    text = ocr.data.text;
-  }
-
-  if (!text || text.trim().length < 50) {
-    throw new Error("Unable to extract text from PDF");
+    throw new Error(
+      "This PDF does not contain extractable text. Scanned PDFs are not supported."
+    );
   }
 
   console.log("🤖 Using model: gpt-4o-mini (initial pass)");
@@ -204,10 +201,19 @@ router.post(
           fs.unlinkSync(file.path);
         } catch (fileErr) {
           if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-          return res.status(400).json({
-            error: fileErr.message || "File blocked for security reasons"
-          });
+          console.warn(
+            "Skipping file:",
+            file.originalname,
+            fileErr.message
+          );
+          continue; // ✅ do not kill whole request
         }
+      }
+
+      if (!preview.length) {
+        return res.status(400).json({
+          error: "No valid transactions found in uploaded files"
+        });
       }
 
       res.json({ transactions: preview });

@@ -32,10 +32,24 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
   const fileInputRef = useRef(null);
 
   /* =========================
+     HARD RESET FILE INPUT
+     ========================= */
+  const resetFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setFiles([]);
+  };
+
+  /* =========================
      HANDLE UPLOAD / PREVIEW
      ========================= */
   const handleUpload = async () => {
-    if (!files.length) {
+    const inputFiles = fileInputRef.current?.files
+      ? Array.from(fileInputRef.current.files)
+      : [];
+
+    if (!inputFiles.length) {
       alert("Select file(s)");
       return;
     }
@@ -43,11 +57,10 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
     let pdfPreview = [];
     let skippedMessages = [];
 
-    for (const file of files) {
+    for (const file of inputFiles) {
       if (file.type === "application/pdf") {
         try {
           const data = await previewUpload(file);
-
           const rows = data.transactions || [];
 
           pdfPreview.push(
@@ -78,7 +91,8 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
       );
     }
 
-    setFiles([]);
+    // ✅ FULL RESET AFTER PREVIEW
+    resetFileInput();
   };
 
   /* =========================
@@ -115,8 +129,10 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
 
     await refreshData();
 
+    // ✅ FULL RESET AFTER SAVE
     setPreview([]);
     setShowPreview(false);
+    resetFileInput();
   };
 
   /* =========================
@@ -133,7 +149,10 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
           type="file"
           multiple
           accept=".csv,.xls,.xlsx,.pdf"
-          onChange={(e) => setFiles([...e.target.files])}
+          onChange={(e) => {
+            const selectedFiles = Array.from(e.target.files || []);
+            setFiles(selectedFiles);
+          }}
         />
 
         <div
@@ -142,7 +161,12 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
-            setFiles([...e.dataTransfer.files]);
+            const droppedFiles = Array.from(e.dataTransfer.files || []);
+            setFiles(droppedFiles);
+
+            if (fileInputRef.current) {
+              fileInputRef.current.files = e.dataTransfer.files;
+            }
           }}
         >
           <div className="upload-icon">☁️</div>
@@ -168,12 +192,11 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
           <h3>Preview Transactions</h3>
 
           {cards?.[activeCardIndex] && (
-  <OriginalCardEditor
-    card={cards[activeCardIndex]}
-    onSaved={() => {}}
-  />
-)}
-
+            <OriginalCardEditor
+              card={cards[activeCardIndex]}
+              onSaved={() => {}}
+            />
+          )}
 
           <table>
             <thead>
@@ -190,7 +213,6 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
             <tbody>
               {preview.map((t, i) => (
                 <tr key={i}>
-                  {/* INCLUDE */}
                   <td>
                     <input
                       type="checkbox"
@@ -207,10 +229,8 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
                     />
                   </td>
 
-                  {/* DATE */}
                   <td>{t.date}</td>
 
-                  {/* DESCRIPTION */}
                   <td>
                     <input
                       value={t.description}
@@ -222,10 +242,8 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
                     />
                   </td>
 
-                  {/* AMOUNT */}
                   <td>{t.amount}</td>
 
-                  {/* TYPE */}
                   <td>
                     <label>
                       <input
@@ -262,7 +280,6 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
                     </label>
                   </td>
 
-                  {/* CATEGORY */}
                   <td>
                     <select
                       value={t.category || "Other"}
