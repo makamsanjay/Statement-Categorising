@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCards, getTransactions, getCardSuggestions } from "../api";
+import {
+  getCards,
+  getTransactions,
+  getCardSuggestions,
+  getSavedCardSuggestions,
+  deleteCardSuggestion
+} from "../api";
 import "./card-suggestions.css";
 
 export default function CardSuggestionsPage({ isPro, onUpgrade }) {
@@ -12,9 +18,26 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState(null);
 
-  /* ---------------- LOAD DATA ---------------- */
+  const [history, setHistory] = useState([]);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+
+  /* ================= LOAD HISTORY ================= */
+
+  useEffect(() => {
+    if (!isPro) return;
+
+    getSavedCardSuggestions()
+      .then(data => {
+        setHistory(data);
+        if (data.length > 0) {
+          setSelectedSuggestion(data[0]); // latest first
+        }
+      })
+      .catch(() => {});
+  }, [isPro]);
+
+  /* ================= LOAD DATA ================= */
 
   useEffect(() => {
     if (!isPro) return;
@@ -23,7 +46,7 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
     getTransactions().then(setAllTransactions);
   }, [isPro]);
 
-  /* ---------------- DERIVED DATA ---------------- */
+  /* ================= DERIVED DATA ================= */
 
   const categories = useMemo(() => {
     const set = new Set();
@@ -57,32 +80,43 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
     cards[0]?.displayCurrency ||
     "USD";
 
-  /* ---------------- ACTION ---------------- */
+  /* ================= ACTION ================= */
 
-const handleGetSuggestions = async () => {
-  setLoading(true);
-  setError(null);
+  const handleGetSuggestions = async () => {
+    setLoading(true);
+    setError("");
 
-  try {
-    const data = await getCardSuggestions({
-      category,
-      scope,
-      cardId: scope === "single" ? cardId : null,
-      totalSpent,
-      currency
-    });
+    try {
+      const data = await getCardSuggestions({
+        category,
+        scope,
+        cardId: scope === "single" ? cardId : null,
+        totalSpent,
+        currency
+      });
 
-    console.log("🔥 RAW AI RESPONSE:", data); // ← ADD THIS
-    setResult(data);
-  } catch (e) {
-    setError(e.message);
-  } finally {
-    setLoading(false);
-  }
-};
+      setSelectedSuggestion(data);
 
+      setHistory(prev => {
+        const filtered = prev.filter(
+          h =>
+            !(
+              h.category === data.category &&
+              h.scope === data.scope &&
+              String(h.cardId) === String(data.cardId)
+            )
+        );
+        return [data, ...filtered];
+      });
 
-  /* ---------------- FREE GATE ---------------- */
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ================= FREE GATE ================= */
 
   if (!isPro) {
     return (
@@ -103,14 +137,14 @@ const handleGetSuggestions = async () => {
     );
   }
 
-  /* ---------------- UI ---------------- */
+  /* ================= UI ================= */
 
   return (
     <div className="card-suggestions-page">
       <h2>Card Suggestions</h2>
 
+      {/* -------- INPUT BOX -------- */}
       <div className="card-suggestion-box">
-
         <div className="row">
           <label>Category</label>
           <select value={category} onChange={e => setCategory(e.target.value)}>
@@ -164,77 +198,99 @@ const handleGetSuggestions = async () => {
         {error && <div className="error-box">{error}</div>}
       </div>
 
-      {/* ---------------- RESULTS ---------------- */}
+      {/* -------- HISTORY -------- */}
+      <div className="suggestion-history">
+        <h4>History</h4>
 
-      {result && (
+        {history.length === 0 && (
+          <div className="muted">No saved suggestions yet</div>
+        )}
+
+        {history.map(item => (
+          <div
+            key={item._id}
+            className={`history-item ${
+              selectedSuggestion?._id === item._id ? "active" : ""
+            }`}
+            onClick={() => setSelectedSuggestion(item)}
+          >
+            <div>
+              <strong>{item.category}</strong>
+              <div className="muted small">
+                {item.totalSpent > 0
+                  ? `${item.currency} ${item.totalSpent.toFixed(2)} spent`
+                  : "No spend yet"}
+              </div>
+            </div>
+
+            <button
+              className="delete-btn"
+              onClick={async e => {
+                e.stopPropagation();
+                await deleteCardSuggestion(item._id);
+                setHistory(h => h.filter(x => x._id !== item._id));
+                if (selectedSuggestion?._id === item._id) {
+                  setSelectedSuggestion(null);
+                }
+              }}
+            >
+              🗑️
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* -------- RESULTS -------- */}
+      {selectedSuggestion && (
         <div className="suggestion-results">
           <h3>Results</h3>
-
-          <p className="summary">
-            {totalSpent > 0
-              ? result.summary
-              : `You haven’t spent anything on ${category} yet.
-                 Use these cards next time for maximum cashback.`}
-          </p>
-
-          <CardGroup cards={result.cards} />
+          <p className="summary">{selectedSuggestion.summary}</p>
+          <CardGroup cards={selectedSuggestion.cards} />
         </div>
       )}
     </div>
   );
 }
 
-/* ---------------- COMPONENTS ---------------- */
-function CardGroup({ title, cards }) {
-  if (!Array.isArray(cards) || cards.length === 0) {
-    return (
-      <>
-        <h4>{title}</h4>
-        <div className="empty-state">
-          No card recommendations available.
-        </div>
-      </>
-    );
-  }
+/* ================= COMPONENTS ================= */
+
+function CardGroup({ cards }) {
+  if (!Array.isArray(cards) || cards.length === 0) return null;
 
   return (
-    <>
-      <h4>{title}</h4>
-     <div className="card-grid">
-  {cards.map((c, i) => (
-    <div key={i} className="suggestion-card">
-      <h5>{c.name}</h5>
+    <div className="card-grid">
+      {cards.map((c, i) => (
+        <div key={i} className="suggestion-card">
+          <h5>{c.name}</h5>
 
-      <div className="card-meta">
-        {c.cardType === "paid"
-          ? `Annual Fee: USD ${c.annualFee}`
-          : "No Annual Fee"}
-      </div>
+          <div className="card-meta">
+            {c.cardType === "paid"
+              ? `Annual Fee: USD ${c.annualFee}`
+              : "No Annual Fee"}
+          </div>
 
-      <div className="rate">
-        Cashback: {c.cashbackRate}
-      </div>
+          <div className="rate">
+            Cashback: {c.cashbackRate}
+          </div>
 
-      <div className="savings">
-        Estimated savings: <strong>{c.estimatedSavings}</strong>
-      </div>
+          <div className="savings">
+            Estimated savings: <strong>{c.estimatedSavings}</strong>
+          </div>
 
-      {c.rotation && (
-        <div className="rotation-note">
-          🔄 {c.rotation.quarter} • Valid until {c.rotation.validUntil}
+          {c.rotation?.active && (
+            <div className="rotation-note">
+              🔄 {c.rotation.note} • until {c.rotation.validUntil}
+            </div>
+          )}
+
+          <p>{c.reason}</p>
         </div>
-      )}
-
-      <p>{c.reason}</p>
+      ))}
     </div>
-  ))}
-</div>
-    </>
   );
 }
 
-
-/* ---------- LOCKED FAKE LAYOUT ---------- */
+/* ================= LOCKED UI ================= */
 
 function FakeLayout() {
   return (

@@ -386,3 +386,37 @@ export async function getCardSuggestions(payload) {
 
   return data;
 }
+
+export async function getSavedCardSuggestions() {
+  const res = await fetch(
+    "http://localhost:5050/ai/card-suggestions",
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to load suggestions");
+  }
+
+  return res.json();
+}
+
+export async function deleteCardSuggestion(id) {
+  const res = await fetch(
+    `http://localhost:5050/ai/card-suggestions/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to delete suggestion");
+  }
+}
+
