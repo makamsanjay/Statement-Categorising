@@ -7,40 +7,45 @@ const openai = new OpenAI({
 async function aiSuggestCards({
   category,
   currency,
-  totalSpent = 0,
-  country = "US"
+  country = "US",
+  totalSpent = 0
 }) {
   const prompt = `
-You are a REAL credit card cashback expert.
+You are a real-world credit card expert.
 
-Return JSON ONLY. No markdown. No backticks.
+IMPORTANT RULES (STRICT):
+- DO NOT apply rotating bonus rates (5%, 10%, etc.)
+- Treat ALL rotating cards as BASE RATE ONLY
+- Example:
+  - Chase Freedom Flex → 1% base
+  - Discover It → 1% base
+- Only recommend category bonuses that are ALWAYS active
 
-Rules:
-- NEVER return 0% cashback
-- Cashback must be realistic for ${country}
-- If category-specific exists → use it
-- Else fallback to flat-rate (>=1.5%)
+Your task:
+- Select the BEST 2 cards in ${country} for "${category}"
+- Cards may be free or paid
+- CashbackRate must reflect ONLY guaranteed, always-on rates
 
-Return EXACT format:
+Return JSON ONLY in this format:
 
 {
-  "summary": "",
+  "summary": "One clear sentence",
   "cards": [
     {
-      "name": "",
-      "issuer": "",
+      "name": "Card name",
+      "issuer": "Bank",
       "cardType": "free | paid",
       "annualFee": 0,
-      "cashbackRate": 3,
-      "reason": ""
+      "cashbackRate": 2,
+      "reason": "Why this card is good for this category"
     },
     {
-      "name": "",
-      "issuer": "",
-      "cardType": "free | paid",
+      "name": "Card name",
+      "issuer": "Bank",
+      "cardType": "paid",
       "annualFee": 95,
-      "cashbackRate": 2,
-      "reason": ""
+      "cashbackRate": 3,
+      "reason": "Why this card is good for this category"
     }
   ]
 }
@@ -52,26 +57,7 @@ Return EXACT format:
     temperature: 0.2
   });
 
-  let raw = completion.choices[0].message.content
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
-    .trim();
-
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    console.error("❌ AI RAW:", raw);
-    throw new Error("AI JSON invalid");
-  }
-
-  // 🔒 HARD VALIDATION (but NOT override)
-  parsed.cards = parsed.cards.slice(0, 2).map(c => ({
-    ...c,
-    cashbackRate: Math.max(Number(c.cashbackRate), 1.5)
-  }));
-
-  return parsed;
+  return JSON.parse(completion.choices[0].message.content);
 }
 
 module.exports = { aiSuggestCards };
