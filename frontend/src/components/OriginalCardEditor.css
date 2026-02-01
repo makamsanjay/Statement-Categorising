@@ -1,0 +1,164 @@
+/* ================================
+   ORIGINAL CARD EDITOR – WRAPPER
+================================ */
+
+.original-card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px 0;
+}
+
+/* ================================
+   DISPLAY MODE (Saved Card)
+================================ */
+
+.original-card-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827; /* neutral-900 */
+}
+
+/* Pencil icon button */
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  color: #6b7280; /* neutral-500 */
+}
+
+.icon-btn:hover {
+  color: #111827;
+}
+
+/* ================================
+   ADD ORIGINAL CARD MODE
+================================ */
+
+.add-original-btn {
+  background-color: #f9fafb; /* neutral-50 */
+  border: 1px dashed #d1d5db; /* neutral-300 */
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151; /* neutral-700 */
+  cursor: pointer;
+}
+
+.add-original-btn:hover {
+  background-color: #f3f4f6; /* neutral-100 */
+  border-color: #9ca3af;
+}
+
+/* Info icon */
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid #d1d5db;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: default;
+}
+
+.info-icon:hover {
+  background-color: #f3f4f6;
+}
+
+/* ================================
+   EDIT / ADD FORM
+================================ */
+
+.original-card-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 10px 0 16px 0;
+  padding: 12px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb; /* neutral-200 */
+  border-radius: 8px;
+  max-width: 360px;
+}
+
+/* Field group */
+.original-card-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.original-card-form label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Inputs */
+.original-card-form input {
+  padding: 8px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  outline: none;
+}
+
+.original-card-form input:focus {
+  border-color: #2563eb; /* blue-600 */
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+/* ================================
+   FORM ACTIONS
+================================ */
+
+.original-card-form .actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.original-card-form .primary {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.original-card-form .primary:hover {
+  background-color: #1d4ed8;
+}
+
+.original-card-form .secondary {
+  background-color: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.original-card-form .secondary:hover {
+  background-color: #f3f4f6;
+}
+
+/* ================================
+   INLINE ERROR
+================================ */
+
+.inline-error {
+  font-size: 12px;
+  color: #dc2626; /* red-600 */
+  margin-top: -4px;
+}

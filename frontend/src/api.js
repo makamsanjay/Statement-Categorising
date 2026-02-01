@@ -40,10 +40,16 @@ export const previewUpload = async (file) => {
   return data;
 };
 
-export const saveConfirmedTransactions = async (transactions) => {
+export const saveConfirmedTransactions = async ({
+  transactions,
+  detectedCard
+}) => {
   const res = await authFetch(`${BASE_URL}/upload/confirm`, {
     method: "POST",
-    body: JSON.stringify({ transactions }),
+    body: JSON.stringify({
+      transactions,
+      detectedCard
+    }),
   });
 
   const data = await res.json();
@@ -302,6 +308,149 @@ export const login = async (email, password) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password })
   });
-  if (!res.ok) throw new Error("Login failed");
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || "Login failed");
+  }
+
+  return data;
+};
+
+
+export async function sendForgotPasswordOTP(email) {
+  const res = await fetch(`${BASE_URL}/auth/password/forgot`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to send OTP");
+  }
+
+  return res.json();
+}
+
+
+export async function verifyForgotPasswordOTP(email, otp) {
+  const res = await fetch(`${BASE_URL}/auth/password/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Invalid OTP");
+  }
+
+  return res.json();
+}
+
+export async function resetPassword(email, password, confirmPassword) {
+  const res = await fetch(`${BASE_URL}/auth/password/reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, confirmPassword })
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Password reset failed");
+  }
+
+  return res.json();
+}
+
+export async function getCardSuggestions(payload) {
+  const res = await fetch(
+    "http://localhost:5050/ai/card-suggestions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to get card suggestions");
+  }
+
+  return data;
+}
+
+export async function getSavedCardSuggestions() {
+  const res = await fetch(
+    "http://localhost:5050/ai/card-suggestions",
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to load suggestions");
+  }
+
+  return res.json();
+}
+
+export async function deleteCardSuggestion(id) {
+  const res = await fetch(
+    `http://localhost:5050/ai/card-suggestions/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to delete suggestion");
+  }
+}
+
+export async function updateOriginalCardName(cardId, payload) {
+  const res = await fetch(
+    `http://localhost:5050/cards/${cardId}/original-card`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to save original card");
+  }
+
+  return res.json();
+}
+
+export const deleteOriginalCardName = async (cardId) => {
+  const res = await fetch(
+    `http://localhost:5050/cards/${cardId}/original-name`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    }
+  );
+
   return res.json();
 };

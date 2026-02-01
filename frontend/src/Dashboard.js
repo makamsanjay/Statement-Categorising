@@ -23,10 +23,10 @@ import "./pages/UploadPage.css";
 import AnalyticsPage from "./pages/Analytics";
 import ProfilePage from "./pages/ProfilePage";
 import HelpPage from "./pages/HelpPage";
-
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
+import CardSuggestions from "./pages/CardSuggestions";
 
 const DEFAULT_CATEGORIES = [
   "Food & Dining",
@@ -92,10 +92,7 @@ useEffect(() => {
 }, []);
 
 
-
-const [showUpgrade, setShowUpgrade] = useState(false);
-
-const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState("0");
+const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState(0);
 
 const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -216,9 +213,8 @@ const { totalIncome, totalExpense } = useMemo(() => {
   return { totalIncome: income, totalExpense: expense };
 }, [allTransactions]);
 
-
- const handleUpload = async () => {
-  // 🔄 reset UI state
+ 
+const handleUpload = async () => {
   setScanStarted(true);
   setScanStatus({});
   setError("");
@@ -241,136 +237,137 @@ const { totalIncome, totalExpense } = useMemo(() => {
     statusMap[file.name] = { status: "scanning" };
     setScanStatus({ ...statusMap });
 
-   const isPDF = file.type === "application/pdf";
-const isCSV = file.name.toLowerCase().endsWith(".csv");
-const isExcel =
-  file.name.toLowerCase().endsWith(".xls") ||
-  file.name.toLowerCase().endsWith(".xlsx");
+    const isPDF = file.type === "application/pdf";
+    const isCSV = file.name.toLowerCase().endsWith(".csv");
+    const isExcel =
+      file.name.toLowerCase().endsWith(".xls") ||
+      file.name.toLowerCase().endsWith(".xlsx");
 
-if (!isPDF && !isCSV && !isExcel) {
-  statusMap[file.name] = {
-    status: "failed",
-    message: "Unsupported file type"
-  };
-  setScanStatus({ ...statusMap });
-  continue;
-}
-
-try {
-  const data = await previewUpload(file);
-
-  if (isPDF) {
-    if (!Array.isArray(data) || data.length === 0) {
+    if (!isPDF && !isCSV && !isExcel) {
       statusMap[file.name] = {
         status: "failed",
-        message: "No transactions found in this PDF"
+        message: "Unsupported file type"
       };
       setScanStatus({ ...statusMap });
       continue;
     }
 
-    pdfPreview.push(
-      ...data.map(t => ({ ...t, selected: true }))
-    );
+    try {
+      const data = await previewUpload(file);
+      console.log("🌐 PREVIEW API RESPONSE:", data);
 
-    statusMap[file.name] = { status: "success" };
-  } else {
-    // CSV / Excel → valid but no preview
-    statusMap[file.name] = {
-      status: "success",
-      message: "File verified — will be processed on save"
-    };
+
+      // ✅ PDFs → previewable
+      if (isPDF) {
+        const txns = data?.transactions || [];
+
+        if (!Array.isArray(txns) || txns.length === 0) {
+          statusMap[file.name] = {
+            status: "failed",
+            message: "No transactions found in this PDF"
+          };
+          setScanStatus({ ...statusMap });
+          continue;
+        }
+
+        pdfPreview.push(
+          ...txns.map(t => ({
+            ...t,
+            selected: true
+          }))
+        );
+
+
+        statusMap[file.name] = { status: "success" };
+      } 
+      // ✅ CSV / Excel → accepted, no preview
+      else {
+        statusMap[file.name] = {
+          status: "success",
+          message: "File verified — will be processed on save"
+        };
+      }
+
+      setScanStatus({ ...statusMap });
+    } catch (err) {
+      statusMap[file.name] = {
+        status: "failed",
+        message: err.message || "File could not be processed"
+      };
+      setScanStatus({ ...statusMap });
+    }
   }
 
-  setScanStatus({ ...statusMap });
-
-} catch (err) {
-  statusMap[file.name] = {
-    status: "failed",
-    message:
-      err.message ||
-      "File could not be processed due to security or parsing issues"
-  };
-  setScanStatus({ ...statusMap });
-}
-  }
   setScanning(false);
 
-  if (pdfPreview.length === 0) {
-  setInfoMessage(
-    "No previewable transactions were found. " +
-    "PDFs can be previewed before saving, while CSV and Excel files " +
-    "will be securely processed when you confirm the upload."
+  const uploadedAnyPDF = files.some(
+    f => f.type === "application/pdf"
   );
+
+  if (uploadedAnyPDF && pdfPreview.length === 0) {
+    setInfoMessage(
+      "No previewable transactions were found in the uploaded PDF(s). " +
+      "PDFs can be previewed before saving, while CSV and Excel files " +
+      "will be securely processed when you confirm the upload."
+    );
     return;
   }
 
-  // ✅ SUCCESS PATH
-  setPreview(pdfPreview);
-
-  if (cards.length > 0) {
+  if (pdfPreview.length > 0) {
+    setPreview(pdfPreview);
     setSelectedUploadCardIndex(activeCardIndex);
+    setShowPreview(true);
   }
 
-  setShowPreview(true);
   setFiles([]);
 };
+
 
 const handleConfirm = async (e) => {
   e?.preventDefault();
 
-  const selected = preview.filter(t => t.selected);
-  if (!selected.length) {
+  const selectedTxns = preview.filter(t => t.selected);
+  if (!selectedTxns.length) {
     alert("Select at least one transaction");
     return;
   }
 
-const card = cards?.[selectedUploadCardIndex];
+  const card = cards[selectedUploadCardIndex];
+  if (!card || !card._id) {
+    alert("Please select a card before confirming upload");
+    return;
+  }
 
-if (!card || !card._id) {
-  alert("Please select a card before confirming upload");
-  return;
-}
-
-  
-
-  const payload = selected.map(t => ({
-  date: t.date,
-  description: t.description,
-  amount: Number(t.amount),
-  category: t.category || "Other",
-  cardId: card._id,
-  currency: card.displayCurrency
-}));
-
-await saveConfirmedTransactions(payload);
-
-await refreshDashboardData();
+  const payload = selectedTxns.map(t => ({
+    date: t.date,
+    description: t.description,
+    amount: Number(t.amount),
+    category: t.category || "Other",
+    cardId: card._id,
+    currency: card.displayCurrency
+  }));
 
 
-const updatedCards = await getCards();
-setCards(updatedCards);
 
-const newIndex = updatedCards.findIndex(c => c._id === card._id);
-setActiveCardIndex(newIndex === -1 ? 0 : newIndex);
-setTransactions(await getTransactionsByCard(card._id));
+await saveConfirmedTransactions({
+  transactions: payload
+});
 
 
-  const txns = await getTransactionsByCard(card._id);
-  setTransactions(txns);
+ // 🔄 refresh transactions for the selected card
+await refreshDashboardData(selectedUploadCardIndex);
 
-
-setActiveCardIndex(selectedUploadCardIndex);
-setActiveView("transactions");
-
-setFiles([]);
+// 🧹 reset upload state
 setPreview([]);
+setFiles([]);
 setShowPreview(false);
 
 if (fileInputRef.current) {
   fileInputRef.current.value = "";
 }
 
+// 🚀 navigate ONLY after everything is synced
+setActiveView("transactions");
 };
 
 
@@ -488,10 +485,13 @@ setTransactions(await getTransactionsByCard(cardId));
 
 
 
- const handleBulkDelete = async () => {
+const handleBulkDelete = async () => {
   if (!selectedTxns.length) return;
 
   if (!window.confirm("Delete selected transactions permanently?")) return;
+
+  const cardId = cards[activeCardIndex]?._id;
+  if (!cardId) return;
 
   await fetch("http://localhost:5050/transactions/bulk-delete", {
     method: "POST",
@@ -502,22 +502,14 @@ setTransactions(await getTransactionsByCard(cardId));
     body: JSON.stringify({ ids: selectedTxns })
   });
 
-  const updatedTxns = await getTransactionsByCard(cardId);
-  setTransactions(updatedTxns);
+  // 🔄 Refresh everything cleanly (single source of truth)
+  await refreshDashboardData(activeCardIndex);
 
-  const all = await getTransactions();
-  setAllTransactions(all);
-
- setSelectedTxns([]);
-setEditMode(false);
-
-await refreshDashboardData();
-
-
-const cardId = cards[activeCardIndex]._id;
-setTransactions(await getTransactionsByCard(cardId));
-
+  // 🧹 Reset UI state
+  setSelectedTxns([]);
+  setEditMode(false);
 };
+
 
 
   const buildCardChartData = (cardTxns) => {
@@ -689,10 +681,31 @@ const refreshActiveCardTransactions = async () => {
   setAllTransactions(all);
 };
 
+const handleAddPreviewTxn = () => {
+  const today = new Date().toISOString().slice(0, 10);
+
+  setPreview(prev => [
+    {
+      id: crypto.randomUUID?.() || Date.now(),
+      selected: true,
+      date: today,
+      description: "",
+      amount: -0,          // default expense
+      category: "Other",
+      confidence: 1,
+      source: "manual"
+    },
+    ...prev
+  ]);
+};
+
+
+
 return (
   <div className="dashboard-layout">
     {/* LEFT SIDEBAR */}
-    <Sidebar onNavigate={setActiveView} />
+    <Sidebar onNavigate={setActiveView}
+    activeView={activeView} />
 
     {/* RIGHT MAIN AREA */}
     <div className="dashboard-main">
@@ -839,12 +852,14 @@ return (
           </button>
 
           <div className="active-card-center">
-            <h3 className="active-card-name">
-              {cards[activeCardIndex].name}
-              {cards[activeCardIndex].last4 && (
-                <span> • {cards[activeCardIndex].last4}</span>
-              )}
-            </h3>
+           <h3 className="active-card-name">
+  {cards[activeCardIndex].name}
+  {cards[activeCardIndex].last4 && (
+    <span> • {cards[activeCardIndex].last4}</span>
+  )}
+</h3>
+
+
             <p className="active-card-subtitle">
               Latest 5 transactions
             </p>
@@ -1012,7 +1027,7 @@ return (
       🔍 Scanning files for viruses…
     </div>
   )}
-  
+
 {infoMessage && (
   <div className="upload-info">
     ℹ️ {infoMessage}
@@ -1032,6 +1047,24 @@ return (
 {showPreview && (
   <>
     <h3>Preview Transactions</h3>
+
+    <div className="preview-notice">
+  <div className="preview-notice-icon">ℹ️</div>
+
+  <div className="preview-notice-content">
+    <strong>Please review transactions before confirming</strong>
+    <p>
+      Some bank statements (especially Chase ledger type) may format transactions in a way
+      that can cause small extraction mistakes — most commonly in
+      <span className="highlight"> income / credit transactions</span>.
+      We recommend skimming once before confirming.
+    </p>
+    <p className="muted">
+      You can edit or correct any transaction later after saving.
+    </p>
+  </div>
+</div>
+
 
     <div className="upload-card-select">
       <strong>Post transactions to:</strong>
@@ -1057,6 +1090,15 @@ return (
       >
         ➕ Add Card
       </button>
+
+      <button
+    type="button"
+    className="upload-add-txn"
+    onClick={handleAddPreviewTxn}
+  >
+    ➕ Add Transaction
+  </button>
+
     </div>
 
     <table className="preview-table">
@@ -1221,6 +1263,15 @@ return (
     onRefresh={refreshActiveCardTransactions}
   />
 )}
+
+{activeView === "card-suggestions" && (
+  <CardSuggestions
+    isPro={isPro}
+    onUpgrade={startCheckout}
+  />
+)}
+
+
 
 
         {/* ================= BUDGET ================= */}

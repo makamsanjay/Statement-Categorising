@@ -7,17 +7,13 @@ const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
 
 /* ============================
-   0️⃣ GET USER CARDS (RAW)
-   ============================ */
-
-/* ============================
    1️⃣ GET USER CARDS (SUMMARY)
    ============================ */
 router.get("/summary", auth, loadUser, async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const cards = await Card.find({ userId });
+    const cards = await Card.find({ userId }).sort({ createdAt: 1 });
 
     const result = [];
 
@@ -26,7 +22,7 @@ router.get("/summary", auth, loadUser, async (req, res) => {
         {
           $match: {
             cardId: card._id,
-            userId: userId   // ✅ FIX
+            userId
           }
         },
         {
@@ -52,6 +48,10 @@ router.get("/summary", auth, loadUser, async (req, res) => {
         last4: card.last4,
         baseCurrency: card.baseCurrency,
         displayCurrency: card.displayCurrency,
+
+        // ✅ IMPORTANT: always return originalCard explicitly
+        originalCard: card.originalCard ?? null,
+
         income: agg[0]?.income || 0,
         expense: agg[0]?.expense || 0
       });
@@ -59,13 +59,13 @@ router.get("/summary", auth, loadUser, async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    console.error(err);
+    console.error("❌ Card summary failed:", err);
     res.status(500).json({ error: "Failed to fetch cards" });
   }
 });
 
 /* ============================
-   2️⃣ CREATE CARD (FIXED LOGIC ORDER)
+   2️⃣ CREATE CARD
    ============================ */
 router.post("/", auth, loadUser, async (req, res) => {
   try {
@@ -83,7 +83,6 @@ router.post("/", auth, loadUser, async (req, res) => {
       });
     }
 
-    // ❌ 1️⃣ DUPLICATE NAME CHECK (FIRST)
     const duplicate = await Card.findOne({
       userId: req.user._id,
       name
@@ -91,11 +90,10 @@ router.post("/", auth, loadUser, async (req, res) => {
 
     if (duplicate) {
       return res.status(409).json({
-        error: `A card named "${name}" already exists. Please choose a different name.`
+        error: `A card named "${name}" already exists`
       });
     }
 
-    // 🔒 2️⃣ FREE PLAN LIMIT (AFTER DUPLICATE CHECK)
     if (req.user.plan === "free") {
       const count = await Card.countDocuments({
         userId: req.user._id
@@ -103,27 +101,26 @@ router.post("/", auth, loadUser, async (req, res) => {
 
       if (count >= 1) {
         return res.status(403).json({
-          message: "Free plan allows only 1 card. Upgrade to Pro."
+          message: "Free plan allows only 1 card"
         });
       }
     }
 
-    // ✅ 3️⃣ CREATE CARD
     const card = await Card.create({
       userId: req.user._id,
       name,
       last4,
       baseCurrency,
-      displayCurrency
+      displayCurrency,
+      originalCard: null
     });
 
     res.json(card);
   } catch (err) {
-    console.error(err);
+    console.error("❌ Create card failed:", err);
     res.status(500).json({ error: "Failed to create card" });
   }
 });
-
 
 /* ============================
    3️⃣ RENAME CARD
@@ -133,7 +130,7 @@ router.put("/:id/rename", auth, loadUser, async (req, res) => {
     const { name } = req.body;
 
     if (!name) {
-      return res.status(400).json({ error: "name is required" });
+      return res.status(400).json({ error: "Name is required" });
     }
 
     const card = await Card.findOneAndUpdate(
@@ -195,6 +192,58 @@ router.delete("/delete/:id", auth, loadUser, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete card" });
+  }
+});
+
+/* ============================
+   SET / UPDATE ORIGINAL CARD NAME
+   ============================ */
+router.put("/:id/original-card", auth, loadUser, async (req, res) => {
+  try {
+    const { issuer, product } = req.body;
+
+    if (!issuer || !product) {
+      return res.status(400).json({
+        error: "Issuer and product are required"
+      });
+    }
+
+    const updated = await Card.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      {
+        originalCard: {
+          issuer: issuer.trim(),
+          product: product.trim()
+        }
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Card not found" });
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error("❌ Original card update failed:", err);
+    res.status(500).json({ error: "Failed to save original card" });
+  }
+});
+
+/* ============================
+   REMOVE ORIGINAL CARD NAME
+   ============================ */
+router.delete("/:id/original-name", auth, loadUser, async (req, res) => {
+  try {
+    const card = await Card.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { originalCard: null },
+      { new: true }
+    );
+
+    res.json(card);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to remove original card" });
   }
 });
 

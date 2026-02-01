@@ -4,17 +4,19 @@ const csv = require("csv-parser");
 const fs = require("fs");
 const XLSX = require("xlsx");
 const pdfParse = require("pdf-parse");
-const Tesseract = require("tesseract.js");
 const crypto = require("crypto");
 
 const { aiExtractTransactions } = require("../ai/aiExtractTransactions");
+
 const Transaction = require("../models/Transaction");
+const Card = require("../models/Card");
 
 const categorize = require("../utils/categorize");
 const { aiCategorize } = require("../ai/aiCategorize");
 const AICategoryCache = require("../models/AICategoryCache");
 const normalizeMerchant = require("../utils/normalizeMerchant");
 const { scanFile } = require("../utils/virusScan");
+const { shouldEscalateModel } = require("../utils/shouldEscalateModel");
 
 const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
@@ -26,9 +28,7 @@ const router = express.Router();
 ========================= */
 const upload = multer({
   dest: "uploads/",
-  limits: {
-    fileSize: 20 * 1024 * 1024
-  },
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const name = file.originalname.toLowerCase();
     if (
@@ -48,18 +48,10 @@ const upload = multer({
    FREE PLAN UPLOAD LIMIT
 ========================= */
 function canUploadToday(user) {
-  if (typeof user.uploadsToday !== "number") {
-    user.uploadsToday = 0;
-  }
+  if (typeof user.uploadsToday !== "number") user.uploadsToday = 0;
+  if (!user.lastUploadDate) user.lastUploadDate = new Date(0);
 
-  if (!user.lastUploadDate) {
-    user.lastUploadDate = new Date(0);
-  }
-
-  if (!user.plan) {
-    user.plan = "free";
-  }
-
+  const plan = user.plan || "free";
   const today = new Date().toDateString();
 
   if (user.lastUploadDate.toDateString() !== today) {
@@ -67,7 +59,8 @@ function canUploadToday(user) {
     user.lastUploadDate = new Date();
   }
 
-  return user.plan !== "free" || user.uploadsToday < 1;
+  if (plan !== "free") return true;
+  return user.uploadsToday < 1;
 }
 
 /* =========================
@@ -90,22 +83,44 @@ function parseExcel(filePath) {
   return XLSX.utils.sheet_to_json(sheet);
 }
 
+/* =========================
+   PDF PARSER (SAFE)
+========================= */
 async function parsePDF(filePath) {
   const buffer = fs.readFileSync(filePath);
   const pdf = await pdfParse(buffer);
-  let text = pdf.text;
+  const text = pdf.text;
 
-  // OCR fallback (WORKING VERSION)
+  // ❌ DO NOT OCR PDFs (causes crash)
   if (!text || text.trim().length < 50) {
-    const ocr = await Tesseract.recognize(filePath, "eng");
-    text = ocr.data.text;
+    throw new Error(
+      "This PDF does not contain extractable text. Scanned PDFs are not supported."
+    );
   }
 
-  if (!text || text.trim().length < 50) {
-    throw new Error("Unable to extract text from PDF");
+  console.log("🤖 Using model: gpt-4o-mini (initial pass)");
+  const miniRows = await aiExtractTransactions(text, "gpt-4o-mini");
+
+  if (!Array.isArray(miniRows) || miniRows.length === 0) {
+    const strongOnly = await aiExtractTransactions(text, "gpt-4o");
+    return Array.isArray(strongOnly) ? strongOnly : [];
   }
 
-  return aiExtractTransactions(text);
+  const escalate = shouldEscalateModel(text, miniRows);
+
+  if (!escalate) return miniRows;
+
+  console.log("🤖 Using model: gpt-4o (fallback pass)");
+  const strongRows = await aiExtractTransactions(text, "gpt-4o");
+
+  if (!Array.isArray(strongRows) || strongRows.length === 0) {
+    return miniRows;
+  }
+
+  const missingCount = miniRows.length - strongRows.length;
+  if (missingCount > 2) return miniRows;
+
+  return strongRows;
 }
 
 /* =========================
@@ -122,9 +137,7 @@ async function resolveCategory(description) {
     const merchantKey = normalizeMerchant(description);
     const cached = await AICategoryCache.findOne({ merchantKey });
 
-    if (cached) {
-      return { ...cached.toObject(), source: "ai-cache" };
-    }
+    if (cached) return { ...cached.toObject(), source: "ai-cache" };
 
     const aiCategory = (await aiCategorize(description)) || "Other";
 
@@ -141,7 +154,7 @@ async function resolveCategory(description) {
 }
 
 /* =========================
-   PDF PREVIEW (NO LIMIT COUNT)
+   PDF PREVIEW (NO CARD LOGIC)
 ========================= */
 router.post(
   "/preview",
@@ -154,44 +167,56 @@ router.post(
 
       for (const file of req.files) {
         try {
-          // 🔐 Virus scan
           await scanFile(file.path);
 
-          // Only PDFs allowed for preview
           if (!file.originalname.toLowerCase().endsWith(".pdf")) {
             fs.unlinkSync(file.path);
             continue;
           }
 
-          // 📄 Parse PDF
           const rows = await parsePDF(file.path);
 
           for (const row of rows) {
             const result = await resolveCategory(row.description);
+            let amount = Number(row.amount);
+
+            if (/purchase|withdrawal|fee|pos|atm/i.test(row.description)) {
+              amount = -Math.abs(amount);
+            }
+
+            if (/salary|deposit|credit|refund/i.test(row.description)) {
+              amount = Math.abs(amount);
+            }
 
             preview.push({
               id: crypto.randomUUID(),
               ...row,
+              amount: Number(amount.toFixed(2)),
               category: result.category,
               confidence: result.confidence,
               selected: true
             });
           }
 
-          // 🧹 cleanup
           fs.unlinkSync(file.path);
         } catch (fileErr) {
-          if (fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-          }
-
-          return res.status(400).json({
-            error: fileErr.message || "File blocked for security reasons"
-          });
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+          console.warn(
+            "Skipping file:",
+            file.originalname,
+            fileErr.message
+          );
+          continue; // ✅ do not kill whole request
         }
       }
 
-      res.json(preview);
+      if (!preview.length) {
+        return res.status(400).json({
+          error: "No valid transactions found in uploaded files"
+        });
+      }
+
+      res.json({ transactions: preview });
     } catch (err) {
       console.error("Preview failed:", err);
       res.status(400).json({ error: err.message });
@@ -200,7 +225,7 @@ router.post(
 );
 
 /* =========================
-   CONFIRM & SAVE
+   CONFIRM & SAVE (NO CARD LOGIC)
 ========================= */
 router.post("/confirm", auth, loadUser, async (req, res) => {
   try {
@@ -217,7 +242,6 @@ router.post("/confirm", auth, loadUser, async (req, res) => {
         t.date &&
         t.description &&
         typeof t.amount === "number" &&
-        !Number.isNaN(t.amount) &&
         t.cardId &&
         t.currency
     );
@@ -226,26 +250,19 @@ router.post("/confirm", auth, loadUser, async (req, res) => {
       return res.status(400).json({ error: "No valid transactions" });
     }
 
-    // 🛡️ dedupe + attach userId
     const unique = new Map();
-
     cleaned.forEach(t => {
       const key = `${t.date}-${t.description}-${t.amount}-${t.cardId}`;
-      unique.set(key, {
-        ...t,
-        userId: req.user._id
-      });
+      unique.set(key, { ...t, userId: req.user._id });
     });
 
-    const deduped = Array.from(unique.values());
+    await Transaction.insertMany([...unique.values()], { ordered: false });
 
-    await Transaction.insertMany(deduped, { ordered: false });
-
-    req.user.uploadsToday = (req.user.uploadsToday || 0) + 1;
+    req.user.uploadsToday += 1;
     req.user.lastUploadDate = new Date();
     await req.user.save();
 
-    res.json({ success: true, inserted: deduped.length });
+    res.json({ success: true, inserted: unique.size });
   } catch (err) {
     console.error("Confirm failed:", err);
     res.status(500).json({ error: err.message });

@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const userRoutes = require("./routes/user");
 const app = express();
+const cardSuggestionsRoute = require("./routes/cardSuggestions");
 
 /* ================================
    ✅ STRIPE WEBHOOK (MUST BE FIRST)
@@ -29,6 +30,7 @@ app.use((req, res, next) => {
 /* ================================
    ROUTES
    ================================ */
+app.use("/auth/password", require("./routes/password"));
 app.use("/auth", require("./routes/auth"));
 app.use("/billing", require("./routes/billing"));
 app.use("/transactions", require("./routes/Transactions"));
@@ -39,10 +41,8 @@ app.use("/cards", require("./routes/cards"));
 app.use("/statements", require("./routes/statements"));
 app.use("/analytics", require("./routes/analytics"));
 app.use("/support", require("./routes/support"));
-
-
 app.use("/users", userRoutes);
-
+app.use("/ai/card-suggestions", cardSuggestionsRoute);
 
 /* ================================
    DATABASE
