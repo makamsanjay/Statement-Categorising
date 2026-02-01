@@ -41,6 +41,7 @@ const DEFAULT_CATEGORIES = [
   "Taxes",
   "Transfers",
   "Subscriptions",
+  "Credit Card Payment",
   "Other"
 ];
 

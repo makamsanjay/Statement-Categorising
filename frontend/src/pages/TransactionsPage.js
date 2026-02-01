@@ -14,8 +14,6 @@ import "./TransactionsPage.css";
 import ExportModal from "../components/ExportModal";
 import OriginalCardEditor from "../components/OriginalCardEditor";
 
-
-
 const DEFAULT_CATEGORIES = [
   "Food & Dining",
   "Groceries",
@@ -29,6 +27,7 @@ const DEFAULT_CATEGORIES = [
   "Taxes",
   "Transfers",
   "Subscriptions",
+  "Credit Card Payment",
   "Other"
 ];
 
@@ -49,6 +48,10 @@ const formatCardName = (card) =>
 
 export default function TransactionsPage({ onRefresh }) {
 const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+useEffect(() => {
+  setCategories(DEFAULT_CATEGORIES);
+}, []);
+
   const [cards, setCards] = useState([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   

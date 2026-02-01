@@ -94,11 +94,29 @@ export default function CardSuggestionsPage({ isPro, onUpgrade }) {
 
   /* ================= DERIVED DATA ================= */
 
-  const categories = useMemo(() => {
-    const set = new Set();
-    allTransactions.forEach(t => t.category && set.add(t.category));
-    return Array.from(set);
-  }, [allTransactions]);
+const DEFAULT_CATEGORIES = [
+  "Food & Dining",
+  "Groceries",
+  "Transportation",
+  "Shopping",
+  "Entertainment",
+  "Utilities",
+  "Healthcare",
+  "Education",
+  "Income",
+  "Taxes",
+  "Transfers",
+  "Subscriptions",
+  "Credit Card Payment",
+  "Other"
+];
+
+const categories = useMemo(() => {
+  const set = new Set(DEFAULT_CATEGORIES);
+  allTransactions.forEach(t => t.category && set.add(t.category));
+  return Array.from(set);
+}, [allTransactions]);
+
 
   const filteredTxns = useMemo(() => {
     if (!category) return [];

@@ -180,9 +180,13 @@ router.post(
             const result = await resolveCategory(row.description);
             let amount = Number(row.amount);
 
-            if (/purchase|withdrawal|fee|pos|atm/i.test(row.description)) {
-              amount = -Math.abs(amount);
-            }
+            // Credit card bill payment → NOT expense
+if (/credit card|card payment|statement balance|payment thank you/i.test(row.description)) {
+  amount = -Math.abs(amount);
+}
+else if (/purchase|withdrawal|fee|pos|atm/i.test(row.description)) {
+  amount = -Math.abs(amount);
+}
 
             if (/salary|deposit|credit|refund/i.test(row.description)) {
               amount = Math.abs(amount);
