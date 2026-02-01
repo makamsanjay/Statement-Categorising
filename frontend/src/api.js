@@ -40,10 +40,16 @@ export const previewUpload = async (file) => {
   return data;
 };
 
-export const saveConfirmedTransactions = async (transactions) => {
+export const saveConfirmedTransactions = async ({
+  transactions,
+  detectedCard
+}) => {
   const res = await authFetch(`${BASE_URL}/upload/confirm`, {
     method: "POST",
-    body: JSON.stringify({ transactions }),
+    body: JSON.stringify({
+      transactions,
+      detectedCard
+    }),
   });
 
   const data = await res.json();
