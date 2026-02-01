@@ -1,6 +1,6 @@
 import "./Sidebar.css";
 
-function Sidebar({ onNavigate }) {
+function Sidebar({ activeView, onNavigate }) {
   return (
     <div className="sidebar">
       <div className="sidebar-logo">
@@ -48,12 +48,21 @@ function Sidebar({ onNavigate }) {
         >
           Analytics
         </button>
+   <button
+  className={activeView === "card-suggestions" ? "active" : ""}
+  onClick={() => onNavigate("card-suggestions")}
+>
+  Card Suggestions
+</button>
+
+
         <button
           className="sidebar-item"
           onClick={() => onNavigate("help")}
         >
           Help
         </button>
+
       </nav>
     </div>
   );

@@ -364,3 +364,25 @@ export async function resetPassword(email, password, confirmPassword) {
 
   return res.json();
 }
+
+export async function getCardSuggestions(payload) {
+  const res = await fetch(
+    "http://localhost:5050/ai/card-suggestions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to get card suggestions");
+  }
+
+  return data;
+}

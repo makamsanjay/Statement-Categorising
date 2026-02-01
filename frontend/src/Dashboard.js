@@ -23,10 +23,10 @@ import "./pages/UploadPage.css";
 import AnalyticsPage from "./pages/Analytics";
 import ProfilePage from "./pages/ProfilePage";
 import HelpPage from "./pages/HelpPage";
-
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
+import CardSuggestions from "./pages/CardSuggestions";
 
 const DEFAULT_CATEGORIES = [
   "Food & Dining",
@@ -91,9 +91,6 @@ useEffect(() => {
     .catch(() => {});
 }, []);
 
-
-
-const [showUpgrade, setShowUpgrade] = useState(false);
 
 const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState(0);
 
@@ -707,7 +704,8 @@ const handleAddPreviewTxn = () => {
 return (
   <div className="dashboard-layout">
     {/* LEFT SIDEBAR */}
-    <Sidebar onNavigate={setActiveView} />
+    <Sidebar onNavigate={setActiveView}
+    activeView={activeView} />
 
     {/* RIGHT MAIN AREA */}
     <div className="dashboard-main">
@@ -1265,6 +1263,15 @@ return (
     onRefresh={refreshActiveCardTransactions}
   />
 )}
+
+{activeView === "card-suggestions" && (
+  <CardSuggestions
+    isPro={isPro}
+    onUpgrade={startCheckout}
+  />
+)}
+
+
 
 
         {/* ================= BUDGET ================= */}
