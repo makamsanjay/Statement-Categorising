@@ -570,3 +570,70 @@
 .export-btn:active {
   transform: translateY(0);
 }
+
+.card-totals {
+  margin-top: 8px;
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+}
+
+.card-totals .income {
+  color: #065f46;
+}
+
+.card-totals .expense {
+  color: #991b1b;
+}
+
+.tx-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+
+
+.txn-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #f9fafb);
+  border: 1px solid #e5e7eb;
+}
+
+.txn-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+}
+
+.txn-summary-item .label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.txn-summary-item .value {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.txn-summary-item.income .value {
+  color: #047857;
+}
+
+.txn-summary-item.expense .value {
+  color: #b91c1c;
+}
+
+.txn-summary-card .divider {
+  width: 1px;
+  height: 34px;
+  background: #e5e7eb;
+}

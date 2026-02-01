@@ -51,6 +51,7 @@ export default function TransactionsPage({ onRefresh }) {
 const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [cards, setCards] = useState([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
+  
 
   const [transactions, setTransactions] = useState([]);
   const [draftTxns, setDraftTxns] = useState([]);
@@ -126,6 +127,23 @@ const handleAddCategory = (setter, value) => {
   }, 0);
 };
 
+const calculateTotals = (transactions) => {
+  let income = 0;
+  let expense = 0;
+
+  transactions.forEach(t => {
+    if (t.amount > 0) income += t.amount;
+    if (t.amount < 0) expense += Math.abs(t.amount);
+  });
+
+  return { income, expense };
+};
+
+const activeCard = cards[activeCardIndex];
+
+const { income, expense } = useMemo(() => {
+  return calculateTotals(transactions);
+}, [transactions]);
 
   /* ---------------- ADD TRANSACTION ---------------- */
 
@@ -283,15 +301,38 @@ const derivedCategories = useMemo(() => {
 
     <div className="tx-page">
   <div className="tx-header">
-    <h2>Transactions</h2>
+  <h2>Transactions</h2>
 
-    <button
-      className="export-btn"
-      onClick={() => setShowExport(true)}
-    >
-      Export
-    </button>
+  <div className="tx-header-right">
+   <button
+  className="export-btn"
+  onClick={() => setShowExport(true)}
+>
+  Export
+</button>
+
+
+    {activeCard && (
+      <div className="txn-summary-card">
+        <div className="txn-summary-item income">
+          <span className="label">Total Income</span>
+          <span className="value">
+            {activeCard.displayCurrency} {income.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="divider" />
+
+        <div className="txn-summary-item expense">
+          <span className="label">Total Expense</span>
+          <span className="value">
+            {activeCard.displayCurrency} {expense.toFixed(2)}
+          </span>
+        </div>
+      </div>
+    )}
   </div>
+</div>
 
 
 
@@ -324,7 +365,7 @@ const derivedCategories = useMemo(() => {
           prev.map(c =>
             c._id === updatedCard._id ? updatedCard : c
           )
-        );
+        )
       }}
     />
   )}
@@ -380,7 +421,6 @@ const derivedCategories = useMemo(() => {
     </button>
   </div>
 </div>
-
 
       {/* ADD TXN + PIE SIDE BY SIDE */}
       <div className="txn-top-row">
