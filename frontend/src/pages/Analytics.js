@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pie } from "react-chartjs-2";
+import { Pie, Bar, Line } from "react-chartjs-2";
 import "chart.js/auto";
 import { getCards, getTransactions } from "../api";
 import "./Analytics.css";
@@ -10,10 +10,19 @@ const SORTS = {
   LATEST: "latest"
 };
 
+const CHARTS = {
+  PIE: "pie",
+  BAR: "bar",
+  LINE: "line"
+};
+
 export default function AnalyticsPage({ refreshKey }) {
   /* ---------------- DATA ---------------- */
   const [cards, setCards] = useState([]);
   const [allTransactions, setAllTransactions] = useState([]);
+
+  const [globalChartType, setGlobalChartType] = useState(CHARTS.PIE);
+  const [cardChartType, setCardChartType] = useState(CHARTS.PIE);
 
   const [activeCardIndex, setActiveCardIndex] = useState(0);
 
@@ -28,14 +37,14 @@ export default function AnalyticsPage({ refreshKey }) {
   const [globalCategory, setGlobalCategory] = useState(null);
   const [cardCategory, setCardCategory] = useState(null);
 
-  /* ---------------- LOAD / REFRESH ---------------- */
+  /* ---------------- LOAD ---------------- */
   useEffect(() => {
     getCards().then(setCards);
   }, []);
 
   useEffect(() => {
     getTransactions().then(txns => {
-      setAllTransactions([...txns]); // 🔥 force rerender
+      setAllTransactions([...txns]);
     });
   }, [refreshKey]);
 
@@ -67,6 +76,26 @@ export default function AnalyticsPage({ refreshKey }) {
     else
       list.sort((a, b) => Math.abs(a.amount) - Math.abs(b.amount));
     return list;
+  };
+
+  const buildLineData = (txns) => {
+    const map = {};
+    txns.forEach(t => {
+      map[t.date] = (map[t.date] || 0) + Math.abs(t.amount);
+    });
+
+    const labels = Object.keys(map).sort();
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Spending",
+          data: labels.map(l => map[l]),
+          tension: 0.35,
+          borderWidth: 2
+        }
+      ]
+    };
   };
 
   /* ================= GLOBAL ================= */
@@ -139,7 +168,6 @@ export default function AnalyticsPage({ refreshKey }) {
     <div className="analytics-page">
       <h2>Analytics</h2>
 
-      {/* DATE FILTER */}
       <div className="analytics-filters">
         <select value={range} onChange={e => setRange(e.target.value)}>
           <option value="30">Last 30 days</option>
@@ -156,10 +184,12 @@ export default function AnalyticsPage({ refreshKey }) {
         )}
       </div>
 
-      {/* GLOBAL */}
       <AnalyticsSection
         title="All Cards"
         chartData={globalCategory ? globalSubChartData : globalBaseChartData}
+        lineData={buildLineData(globalExpenseTxns)}
+        chartType={globalChartType}
+        setChartType={setGlobalChartType}
         onCategory={setGlobalCategory}
         selectedCategory={globalCategory}
         onClose={() => setGlobalCategory(null)}
@@ -169,11 +199,13 @@ export default function AnalyticsPage({ refreshKey }) {
         cards={cards}
       />
 
-      {/* CARD */}
       {activeCard && (
         <AnalyticsSection
           title={activeCard.name}
           chartData={cardChartData}
+          lineData={buildLineData(cardExpenseTxns)}
+          chartType={cardChartType}
+          setChartType={setCardChartType}
           onCategory={setCardCategory}
           selectedCategory={cardCategory}
           onClose={() => setCardCategory(null)}
@@ -202,6 +234,9 @@ export default function AnalyticsPage({ refreshKey }) {
 function AnalyticsSection({
   title,
   chartData,
+  lineData,
+  chartType,
+  setChartType,
   onCategory,
   selectedCategory,
   onClose,
@@ -218,7 +253,6 @@ function AnalyticsSection({
   return (
     <div className={`analytics-card ${selectedCategory ? "split" : ""}`}>
       <div className="analytics-split">
-
         <div className="analytics-chart">
           <div className="chart-header">
             {arrows && <button disabled={disablePrev} onClick={onPrev}>←</button>}
@@ -226,7 +260,19 @@ function AnalyticsSection({
             {arrows && <button disabled={disableNext} onClick={onNext}>→</button>}
           </div>
 
-          {chartData && (
+          <div className="chart-switch">
+            {Object.values(CHARTS).map(c => (
+              <button
+                key={c}
+                className={chartType === c ? "active" : ""}
+                onClick={() => setChartType(c)}
+              >
+                {c.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          {chartData && chartType === CHARTS.PIE && (
             <Pie
               data={chartData}
               options={{
@@ -236,6 +282,22 @@ function AnalyticsSection({
                 }
               }}
             />
+          )}
+
+          {chartData && chartType === CHARTS.BAR && (
+            <Bar
+              data={chartData}
+              options={{
+                onClick: (_, el) => {
+                  if (!el.length) return;
+                  onCategory(chartData.labels[el[0].index]);
+                }
+              }}
+            />
+          )}
+
+          {lineData && chartType === CHARTS.LINE && (
+            <Line data={lineData} />
           )}
         </div>
 
@@ -273,7 +335,6 @@ function AnalyticsSection({
             })}
           </div>
         </div>
-
       </div>
     </div>
   );

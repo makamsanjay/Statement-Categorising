@@ -3,11 +3,16 @@ import {
   getCards,
   getTransactionsByCard,
   saveConfirmedTransactions,
-  updateTransaction
+  updateTransaction,
+  createCard,
+  renameCard,
+  deleteCard
 } from "../api";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./TransactionsPage.css";
+import ExportModal from "../components/ExportModal";
+import OriginalCardEditor from "../components/OriginalCardEditor";
 
 const DEFAULT_CATEGORIES = [
   "Food & Dining",
@@ -22,6 +27,7 @@ const DEFAULT_CATEGORIES = [
   "Taxes",
   "Transfers",
   "Subscriptions",
+  "Credit Card Payment",
   "Other"
 ];
 
@@ -42,8 +48,13 @@ const formatCardName = (card) =>
 
 export default function TransactionsPage({ onRefresh }) {
 const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+useEffect(() => {
+  setCategories(DEFAULT_CATEGORIES);
+}, []);
+
   const [cards, setCards] = useState([]);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
+  
 
   const [transactions, setTransactions] = useState([]);
   const [draftTxns, setDraftTxns] = useState([]);
@@ -52,6 +63,8 @@ const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [editMode, setEditMode] = useState(false);
   const [selectedTxns, setSelectedTxns] = useState([]);
   const [bulkCategory, setBulkCategory] = useState("");
+  const [showExport, setShowExport] = useState(false);
+
 
   const [newTxn, setNewTxn] = useState({
     date: "",
@@ -117,6 +130,23 @@ const handleAddCategory = (setter, value) => {
   }, 0);
 };
 
+const calculateTotals = (transactions) => {
+  let income = 0;
+  let expense = 0;
+
+  transactions.forEach(t => {
+    if (t.amount > 0) income += t.amount;
+    if (t.amount < 0) expense += Math.abs(t.amount);
+  });
+
+  return { income, expense };
+};
+
+const activeCard = cards[activeCardIndex];
+
+const { income, expense } = useMemo(() => {
+  return calculateTotals(transactions);
+}, [transactions]);
 
   /* ---------------- ADD TRANSACTION ---------------- */
 
@@ -271,8 +301,44 @@ const derivedCategories = useMemo(() => {
   /* ---------------- JSX ---------------- */
 
   return (
+
     <div className="tx-page">
-      <h2>Transactions</h2>
+  <div className="tx-header">
+  <h2>Transactions</h2>
+
+  <div className="tx-header-right">
+   <button
+  className="export-btn"
+  onClick={() => setShowExport(true)}
+>
+  Export
+</button>
+
+
+    {activeCard && (
+      <div className="txn-summary-card">
+        <div className="txn-summary-item income">
+          <span className="label">Total Income</span>
+          <span className="value">
+            {activeCard.displayCurrency} {income.toFixed(2)}
+          </span>
+        </div>
+
+        <div className="divider" />
+
+        <div className="txn-summary-item expense">
+          <span className="label">Total Expense</span>
+          <span className="value">
+            {activeCard.displayCurrency} {expense.toFixed(2)}
+          </span>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
+
+
 
       {/* CARD SWITCHER */}
       {cards.length > 0 && (
@@ -290,6 +356,74 @@ const derivedCategories = useMemo(() => {
           >→</button>
         </div>
       )}
+
+      {/* ================= CARD HEADER ================= */}
+<div className="card-header-bar">
+<div className="card-title">
+  {cards[activeCardIndex] && (
+    <OriginalCardEditor
+      card={cards[activeCardIndex]}
+      onSaved={(updatedCard) => {
+        setCards(prev =>
+          prev.map(c =>
+            c._id === updatedCard._id ? updatedCard : c
+          )
+        )
+      }}
+    />
+  )}
+</div>
+
+  <div className="card-actions">
+    <button
+      className="card-btn"
+      onClick={() => {
+        const name = prompt("Rename card");
+        if (!name) return;
+        renameCard(cards[activeCardIndex]._id, name)
+          .then(() => getCards().then(setCards));
+      }}
+    >
+      Rename Card
+    </button>
+
+    <button
+      className="card-btn danger"
+      onClick={() => {
+        if (!window.confirm("Delete this card and all its transactions?"))
+          return;
+
+        deleteCard(cards[activeCardIndex]._id)
+          .then(() => {
+            setActiveCardIndex(0);
+            return getCards();
+          })
+          .then(setCards);
+      }}
+    >
+      Delete Card
+    </button>
+
+    <button
+      className="card-btn primary"
+      onClick={() => {
+        const name = prompt("Enter card name");
+        if (!name) return;
+
+        const last4 = prompt("Last 4 digits (optional)");
+
+        createCard({
+          name,
+          last4: last4 || undefined,
+          baseCurrency: "USD",
+          displayCurrency: "USD"
+        }).then(() => getCards().then(setCards));
+      }}
+    >
+      + Add Card
+    </button>
+  </div>
+</div>
 
       {/* ADD TXN + PIE SIDE BY SIDE */}
       <div className="txn-top-row">
@@ -562,12 +696,22 @@ const derivedCategories = useMemo(() => {
   <option value="__add_new__">➕ Add new</option>
 </select>
 
+
         ) : (
           t.category
         )}
       </td>
     </tr>
   ))}
+
+ {showExport && (
+  <ExportModal
+    transactions={draftTxns}
+    onClose={() => setShowExport(false)}
+  />
+)}
+
+
 </tbody>
 
       </table>

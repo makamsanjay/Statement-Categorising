@@ -1,77 +1,82 @@
 const express = require("express");
 const router = express.Router();
-const stripe = require("../stripe/stripe");
+const Razorpay = require("razorpay");
 const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
 
-/* ============================
-   1️⃣ START CHECKOUT (UPGRADE)
-   ============================ */
-router.post("/create-checkout-session", auth, loadUser, async (req, res) => {
-  try {
-    // ⛔ Prevent duplicate subscriptions
-    if (req.user.plan === "monthly" || req.user.plan === "yearly") {
-      return res.status(400).json({
-        error: "You already have an active Pro subscription"
-      });
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-
-      // Stripe will create or reuse customer automatically
-      customer_email: req.user.email,
-
-      // 🔑 IMPORTANT: metadata for webhook
-      metadata: {
-        userId: req.user._id.toString()
-      },
-
-      subscription_data: {
-        metadata: {
-          userId: req.user._id.toString()
-        }
-      },
-
-      line_items: [
-        {
-          price: process.env.STRIPE_PRO_PRICE_ID,
-          quantity: 1
-        }
-      ],
-
-      success_url: `${process.env.FRONTEND_URL}/billing-success`,
-      cancel_url: `${process.env.FRONTEND_URL}/billing-cancel`
-    });
-
-    res.json({ url: session.url });
-  } catch (err) {
-    console.error("Stripe checkout error:", err);
-    res.status(500).json({ error: "Failed to start checkout" });
-  }
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
 /* ============================
-   2️⃣ STRIPE BILLING PORTAL
+   1️⃣ CREATE SUBSCRIPTION
    ============================ */
-router.post("/portal", auth, loadUser, async (req, res) => {
+router.post(
+  "/create-subscription",
+  auth,
+  loadUser,
+  async (req, res) => {
   try {
-    if (!req.user.stripeCustomerId) {
-      return res.status(400).json({
-        error: "No active subscription found"
-      });
+    console.log("🔍 USER:", req.user);
+    console.log("🔍 PLAN ID:", process.env.RAZORPAY_PLAN_ID);
+    console.log("🔍 KEY ID:", process.env.RAZORPAY_KEY_ID);
+
+const subscription = await razorpay.subscriptions.create({
+  plan_id: process.env.RAZORPAY_PLAN_ID,
+  customer_notify: 1,
+  total_count: 12,
+  notes: {
+    userId: req.user._id.toString() // ✅ DB linkage
+  }
+});
+
+if (req.user.razorpaySubscriptionId) {
+  return res.status(400).json({
+    error: "You already have an active subscription"
+  });
+}
+
+
+    res.json(subscription);
+  } catch (err) {
+    console.error("❌ Razorpay subscription error FULL:", err);
+    res.status(500).json({
+      error: err.message || "Failed to create subscription"
+    });
+  }
+});
+
+
+/* ============================
+   2️⃣ CANCEL SUBSCRIPTION
+   ============================ */
+router.post("/cancel", auth, loadUser, async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!user.razorpaySubscriptionId) {
+      return res.status(400).json({ error: "No active subscription" });
     }
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: req.user.stripeCustomerId,
-      return_url: process.env.FRONTEND_URL
+    const sub = await razorpay.subscriptions.cancel(
+      user.razorpaySubscriptionId,
+      { cancel_at_cycle_end: 1 }
+    );
+
+    // 🔥 IMPORTANT: update DB immediately
+    await user.updateOne({
+      subscriptionStatus: "canceled",
+      planExpiresAt: new Date(sub.current_end * 1000)
     });
 
-    res.json({ url: session.url });
+    res.json({
+      success: true,
+      expiresAt: sub.current_end * 1000
+    });
   } catch (err) {
-    console.error("Billing portal error:", err);
-    res.status(500).json({ error: "Failed to open billing portal" });
+    console.error("Cancel subscription error:", err);
+    res.status(500).json({ error: "Failed to cancel subscription" });
   }
 });
 
@@ -82,9 +87,59 @@ router.get("/status", auth, loadUser, async (req, res) => {
   res.json({
     plan: req.user.plan || "free",
     subscriptionStatus: req.user.subscriptionStatus || "none",
-    cancelAtPeriodEnd: req.user.cancelAtPeriodEnd || false,
     planExpiresAt: req.user.planExpiresAt || null
   });
 });
+
+// routes/billing.js
+
+// routes/billing.js
+router.get("/manage", auth, loadUser, async (req, res) => {
+  const user = req.user;
+
+  res.json({
+    plan: user.plan,
+    subscriptionStatus: user.subscriptionStatus,
+    razorpaySubscriptionId: user.razorpaySubscriptionId,
+    planExpiresAt: user.planExpiresAt,
+    isCanceled:
+      user.subscriptionStatus === "canceled" ||
+      user.subscriptionStatus === "authenticated",
+    email: user.email, 
+  });
+});
+
+/* ============================
+   4️⃣ RESUME SUBSCRIPTION
+============================ */
+/* ============================
+   4️⃣ RESUME SUBSCRIPTION
+   ============================ */
+router.post("/resume", auth, loadUser, async (req, res) => {
+  try {
+    // 🛑 no subscription
+    if (!req.user.razorpaySubscriptionId) {
+      return res.status(400).json({
+        error: "No subscription to resume"
+      });
+    }
+
+    // 🟢 Already active → just clear cancellation intent
+    req.user.subscriptionStatus = "active";
+    await req.user.save();
+
+    return res.json({
+      success: true,
+      message: "Subscription will renew automatically"
+    });
+  } catch (err) {
+    console.error("Resume logic error:", err);
+    res.status(500).json({
+      error: "Failed to resume subscription"
+    });
+  }
+});
+
+
 
 module.exports = router;

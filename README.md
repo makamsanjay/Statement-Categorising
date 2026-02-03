@@ -1,4 +1,4 @@
-# Statement-Categorising
+# Statement-Categorizing
 User uploads pdf/excel/csv bank statements so the pdf should be read and extracted and then the txn should be categorised by sections we create (food, shopping, etc.)  
 
 How can AI/LLM can be implemented: here AI can help us in categorising the txns into sections and also we will teach llm for advanced level where it can say eligible for tax benefits or not from the previous data and training from finetuning llm or any relevant method.

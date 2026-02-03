@@ -597,3 +597,139 @@ th {
   color: #9ca3af;
 }
 
+/* Global security error */
+.upload-error.security {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 14px;
+}
+
+/* Scanning indicator */
+.upload-scanning {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #0f766e;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Per-file scan results */
+.upload-scan-status {
+  margin-top: 12px;
+  padding-left: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.upload-scan-status li {
+  margin-bottom: 6px;
+}
+
+.upload-scan-status li.scanning {
+  color: #0f172a;
+}
+
+.upload-scan-status li.success {
+  color: #16a34a;
+}
+
+.upload-scan-status li.failed {
+  color: #dc2626;
+}
+
+.upload-info {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 14px;
+}
+
+.preview-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #3b82f6;
+
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+}
+
+.preview-notice-icon {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.preview-notice-content strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.preview-notice-content p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.preview-notice-content p + p {
+  margin-top: 6px;
+}
+
+.preview-notice-content .muted {
+  color: #64748b;
+}
+
+.preview-notice-content .highlight {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.upload-add-txn {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px dashed #94a3b8;
+  background: #f8fafc;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.upload-add-txn:hover {
+  background: #eef2ff;
+  border-color: #6366f1;
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: #4f46e5;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.card-original-name {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 2px;
+}

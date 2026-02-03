@@ -6,6 +6,8 @@ const User = require("../models/User");
 const Card = require("../models/Card");
 const crypto = require("crypto");
 const EmailOTP = require("../models/EmailOTP");
+const sendEmail = require("../utils/sendEmail");
+
 
 
 /* ============================
@@ -54,16 +56,22 @@ router.post("/signup", async (req, res) => {
    ============================ */
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+
+    email = email.trim().toLowerCase();
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({
+        error: "No account found with this email"
+      });
     }
 
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({
+        error: "Incorrect password"
+      });
     }
 
     const token = jwt.sign(
@@ -146,6 +154,7 @@ router.post("/verify-signup-otp", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 module.exports = router;

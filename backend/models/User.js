@@ -2,23 +2,61 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema(
   {
+    /* =========================
+       AUTH CORE
+    ========================= */
     email: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
+      lowercase: true,
+      trim: true,
+      index: true
     },
+
     password: {
       type: String,
       required: true
     },
 
-    // 🔐 PLAN & BILLING
+    name: {
+      type: String,
+      trim: true
+    },
+
+    phone: {
+      type: String,
+      trim: true
+    },
+
+    /* =========================
+       FORGOT PASSWORD
+    ========================= */
+    forgotPasswordOTP: {
+      type: String,
+      default: null
+    },
+
+    forgotPasswordExpires: {
+      type: Date,
+      default: null
+    },
+
+    forgotPasswordOTPVerified: {
+      type: Boolean,
+      default: false
+    },
+
+    /* =========================
+       PLAN & BILLING
+    ========================= */
     plan: {
       type: String,
       enum: ["free", "monthly", "yearly"],
       default: "free"
     },
 
+    // 🔴 Legacy (Stripe) — keep temporarily for safety
     stripeCustomerId: {
       type: String,
       default: null
@@ -29,29 +67,44 @@ const UserSchema = new mongoose.Schema(
       default: null
     },
 
+    // 🟢 Razorpay (ACTIVE)
+    razorpaySubscriptionId: {
+      type: String,
+      default: null
+    },
+
     subscriptionStatus: {
       type: String,
-      enum: ["none", "trialing", "active", "canceled"],
+      enum: ["none", "created", "active", "authenticated", "canceled"],
       default: "none"
     },
 
+    planExpiresAt: {
+      type: Date,
+      default: null
+    },
+
+    /* =========================
+       USAGE LIMITING
+    ========================= */
     uploadsToday: {
       type: Number,
       default: 0
     },
-  planExpiresAt: {
-  type: Date,
-  default: null
-},
+
     lastUploadDate: {
       type: Date,
       default: null
-    },
-    name: String,
-email: String,
-phone: String,
+    }
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
+
+/* =========================
+   SAFETY INDEX
+========================= */
+UserSchema.index({ email: 1 });
 
 module.exports = mongoose.model("User", UserSchema);

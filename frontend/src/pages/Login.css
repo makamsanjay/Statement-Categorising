@@ -264,3 +264,47 @@
 .auth-form p button:active {
   outline: none;
 }
+
+.forgot-link {
+  font-size: 14px;
+  color: #2563eb;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+.forgot-link.center {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.link-text {
+  font-size: 14px;
+  color: #2563eb;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.link-text:hover {
+  text-decoration: underline;
+}
+
+.link-text.muted {
+  color: #6b7280;
+}
+
+.auth-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.password-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+}

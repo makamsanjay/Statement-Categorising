@@ -1,76 +1,78 @@
+/* =========================
+   BASE LAYOUT
+========================= */
+
 .profile-page {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 40px 20px;
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
 }
 
 .profile-card {
   background: #ffffff;
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow:
-    0 20px 40px rgba(0,0,0,0.08),
-    0 4px 12px rgba(0,0,0,0.05);
-}
-
-.profile-card h2 {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.profile-subtitle {
-  font-size: 14px;
-  color: #64748b;
-  margin-bottom: 28px;
-}
-
-/* Fields */
-.profile-field {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 28px;
   margin-bottom: 24px;
+}
+
+.profile-card h2,
+.profile-card h3 {
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.profile-subtitle,
+.muted {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================
+   FIELDS
+========================= */
+
+.profile-field {
+  margin-top: 20px;
 }
 
 .profile-field label {
   display: block;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: #374151;
   margin-bottom: 6px;
 }
 
-/* Editable input */
-.profile-input {
+.profile-input,
+.profile-card input {
   width: 100%;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  font-size: 15px;
-  transition: all 0.25s ease;
-}
-
-.profile-input:focus {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.profile-input:focus,
+.profile-card input:focus {
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
-.profile-input:disabled {
-  background: #f8fafc;
-  color: #64748b;
-  cursor: not-allowed;
-}
-
-/* Read-only field */
 .profile-readonly {
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: #f8fafc;
-  font-size: 15px;
-  color: #475569;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
   border: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #111827;
 }
 
-/* Hint */
 .profile-hint {
   display: inline-block;
   margin-top: 6px;
@@ -78,8 +80,99 @@
   color: #10b981;
 }
 
-/* Muted */
-.muted {
-  color: #9ca3af;
+/* =========================
+   ERROR BOX
+========================= */
+
+.error-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+/* =========================
+   DELETE / DANGER ZONE
+========================= */
+
+.profile-card.danger {
+  border: 1px solid #fee2e2;
+  background: #fff;
+}
+
+.profile-card.danger h3 {
+  color: #b91c1c;
+}
+
+.profile-card.danger p {
+  margin-top: 8px;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
   font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* PRIMARY (VERIFY OTP) */
+button.primary {
+  background: #4f46e5;
+  color: #fff;
+  margin-top: 5px;
+}
+
+button.primary:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
+}
+
+/* DANGER BUTTON */
+button.danger-btn {
+  background: #dc2626;
+  color: #fff;
+  margin-top: 12px;
+}
+
+button.danger-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+}
+
+/* =========================
+   OTP INPUT SPACING
+========================= */
+
+.profile-card.danger input {
+  margin-top: 12px;
+  letter-spacing: 3px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 640px) {
+  .profile-card {
+    padding: 20px;
+  }
 }
