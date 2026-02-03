@@ -8,10 +8,9 @@ import {
   getTransactionsByCard,
   fetchHealthScore,
   updateCardCurrency,
-  startCheckout,
   getBillingStatus,
-  openBillingPortal,
-  createCard
+  createCard,
+  getManageBilling
 } from "./api";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
@@ -27,6 +26,11 @@ import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "./App.css";
 import CardSuggestions from "./pages/CardSuggestions";
+import {
+   createRazorpaySubscription,
+  cancelRazorpaySubscription
+ } from "./api";
+import ManageBilling from "./pages/ManageBilling";
 
 const DEFAULT_CATEGORIES = [
   "Food & Dining",
@@ -84,6 +88,14 @@ const [scanStarted, setScanStarted] = useState(false);
 const [infoMessage, setInfoMessage] = useState("");
 
 
+const [showBilling, setShowBilling] = useState(false);
+const [billingDetails, setBillingDetails] = useState(null);
+
+const openManageBilling = async () => {
+  const data = await getManageBilling();
+  setBillingDetails(data);
+  setShowBilling(true);
+};
 
 
 useEffect(() => {
@@ -322,6 +334,39 @@ const handleUpload = async () => {
 
   setFiles([]);
 };
+
+const startRazorpayCheckout = async () => {
+  const subscription = await createRazorpaySubscription();
+
+  const options = {
+    key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+    subscription_id: subscription.id,
+    name: "Your App Name",
+    description: "Pro Subscription",
+
+    prefill: {
+      email: billing?.email || "",   // ✅ IMPORTANT
+    },
+
+    handler: async function (response) {
+      console.log("Payment success", response);
+
+      // ⏳ wait for webhook → DB update
+      setTimeout(async () => {
+        const updatedBilling = await getBillingStatus();
+        setBilling(updatedBilling);
+      }, 1500);
+    },
+
+    theme: {
+      color: "#0f172a"
+    }
+  };
+
+  const rzp = new window.Razorpay(options);
+  rzp.open();
+};
+
 
 
 const handleConfirm = async (e) => {
@@ -712,26 +757,26 @@ return (
     <div className="dashboard-main">
       {/* TOP BAR */}
       <TopBar
-        isPro={isPro}
-        plan={billing?.plan}
-        currency={cards[0]?.displayCurrency || "USD"}
-        onChangeCurrency={async (newCurrency) => {
-          await Promise.all(
-            cards.map(card =>
-              updateCardCurrency(card._id, newCurrency)
-            )
-          );
-          const updated = await getCards();
-          setCards(updated);
-        }}
-        onUpgrade={startCheckout}
-        onManageBilling={async () => {
-          const url = await openBillingPortal();
-          window.location.href = url;
-        }}
-        onLogout={logout}
-        onNavigate={setActiveView} 
-      />
+  isPro={isPro}
+  plan={billing?.plan}
+  currency={cards[0]?.displayCurrency || "USD"}
+  onChangeCurrency={async (newCurrency) => {
+    await Promise.all(
+      cards.map(card =>
+        updateCardCurrency(card._id, newCurrency)
+      )
+    );
+    const updated = await getCards();
+    setCards(updated);
+  }}
+  onUpgrade={startRazorpayCheckout}
+  onManageBilling={() => setActiveView("billing")}
+  onLogout={logout}
+  onNavigate={setActiveView}
+/>
+
+{activeView === "billing" && <ManageBilling />}
+
 
       {/* CONTENT */}
       <div className="container dashboard-content">
@@ -1268,7 +1313,7 @@ return (
 {activeView === "card-suggestions" && (
   <CardSuggestions
     isPro={isPro}
-    onUpgrade={startCheckout}
+    onUpgrade={startRazorpayCheckout}
   />
 )}
 

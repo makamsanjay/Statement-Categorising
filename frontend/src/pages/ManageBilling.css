@@ -1,0 +1,75 @@
+.billing-page {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.billing-page h2 {
+  margin-bottom: 24px;
+}
+
+.billing-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.billing-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.billing-row:last-child {
+  border-bottom: none;
+}
+
+.status {
+  text-transform: capitalize;
+}
+
+.status.active {
+  color: #16a34a;
+}
+
+.status.canceled {
+  color: #dc2626;
+}
+
+.billing-actions {
+  display: flex;
+  gap: 12px;
+}
+
+button.primary {
+  background: #0f172a;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+button.danger {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.billing-note {
+  margin-top: 16px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.billing-loading,
+.billing-error {
+  padding: 32px;
+  text-align: center;
+}
