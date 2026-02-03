@@ -2,21 +2,20 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const userRoutes = require("./routes/user");
+
 const app = express();
-const cardSuggestionsRoute = require("./routes/cardSuggestions");
 
 /* ================================
-   ✅ STRIPE WEBHOOK (MUST BE FIRST)
+   🚨 RAZORPAY WEBHOOK — MUST BE FIRST
    ================================ */
 app.post(
-  "/webhook/stripe",
+  "/webhook/razorpay",
   express.raw({ type: "application/json" }),
-  require("./routes/stripeWebhook")
+  require("./routes/razorpayWebhook")
 );
 
 /* ================================
-   ✅ NORMAL MIDDLEWARES (AFTER)
+   NORMAL MIDDLEWARES (AFTER)
    ================================ */
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
@@ -41,8 +40,8 @@ app.use("/cards", require("./routes/cards"));
 app.use("/statements", require("./routes/statements"));
 app.use("/analytics", require("./routes/analytics"));
 app.use("/support", require("./routes/support"));
-app.use("/users", userRoutes);
-app.use("/ai/card-suggestions", cardSuggestionsRoute);
+app.use("/users", require("./routes/user"));
+app.use("/ai/card-suggestions", require("./routes/cardSuggestions"));
 
 /* ================================
    DATABASE
@@ -51,8 +50,6 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("Mongo error:", err.message));
-
-app.get("/", (_, res) => res.send("Backend running"));
 
 const PORT = process.env.PORT || 5050;
 app.listen(PORT, () => console.log(`Server running on ${PORT}`));

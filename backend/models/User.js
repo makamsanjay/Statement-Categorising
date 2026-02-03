@@ -56,6 +56,7 @@ const UserSchema = new mongoose.Schema(
       default: "free"
     },
 
+    // 🔴 Legacy (Stripe) — keep temporarily for safety
     stripeCustomerId: {
       type: String,
       default: null
@@ -66,9 +67,15 @@ const UserSchema = new mongoose.Schema(
       default: null
     },
 
+    // 🟢 Razorpay (ACTIVE)
+    razorpaySubscriptionId: {
+      type: String,
+      default: null
+    },
+
     subscriptionStatus: {
       type: String,
-      enum: ["none", "trialing", "active", "canceled"],
+      enum: ["none", "created", "active", "authenticated", "canceled"],
       default: "none"
     },
 
@@ -96,7 +103,7 @@ const UserSchema = new mongoose.Schema(
 );
 
 /* =========================
-   SAFETY INDEX (EXTRA)
+   SAFETY INDEX
 ========================= */
 UserSchema.index({ email: 1 });
 

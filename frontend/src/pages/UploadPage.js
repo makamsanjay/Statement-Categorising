@@ -15,6 +15,7 @@ const DEFAULT_CATEGORIES = [
   "Taxes",
   "Transfers",
   "Subscriptions",
+  "Credit Card Payment",
   "Other"
 ];
 
@@ -27,7 +28,13 @@ function UploadPage({ cards, activeCardIndex, refreshData }) {
   const [files, setFiles] = useState([]);
   const [preview, setPreview] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+
+useEffect(() => {
+  setCategories(DEFAULT_CATEGORIES);
+}, []);
+
+  
 
   const fileInputRef = useRef(null);
 

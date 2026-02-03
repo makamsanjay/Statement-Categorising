@@ -25,6 +25,7 @@
     "nodemailer": "^7.0.13",
     "openai": "^6.15.0",
     "pdf-parse": "^1.1.1",
+    "razorpay": "^2.9.6",
     "stripe": "^20.2.0",
     "tesseract.js": "^7.0.0",
     "xlsx": "^0.18.5"

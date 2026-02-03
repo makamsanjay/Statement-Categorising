@@ -176,17 +176,7 @@ export const updateCardCurrency = async (cardId, displayCurrency) => {
 /* ============================
    BILLING (STRIPE)
    ============================ */
-export const startCheckout = async () => {
-  const res = await authFetch(
-    `${BASE_URL}/billing/create-checkout-session`,
-    { method: "POST" }
-  );
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Checkout failed");
-
-  window.location.href = data.url;
-};
 
 export const getBillingStatus = async () => {
   const res = await authFetch(`${BASE_URL}/billing/status`);
@@ -194,16 +184,6 @@ export const getBillingStatus = async () => {
   return res.json();
 };
 
-export const openBillingPortal = async () => {
-  const res = await authFetch(`${BASE_URL}/billing/portal`, {
-    method: "POST",
-  });
-
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to open billing portal");
-
-  return data.url;
-};
 
 /* ============================
    BUDGETS
@@ -453,4 +433,70 @@ export const deleteOriginalCardName = async (cardId) => {
   );
 
   return res.json();
+};
+
+// src/api.js
+
+export const createRazorpaySubscription = async () => {
+  const res = await authFetch(
+    `${BASE_URL}/billing/create-subscription`,
+    { method: "POST" }
+  );
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to start subscription");
+  }
+
+  return res.json();
+};
+
+export const cancelRazorpaySubscription = async () => {
+  const res = await authFetch(
+    `${BASE_URL}/billing/cancel`,
+    { method: "POST" }
+  );
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to cancel subscription");
+  }
+
+  return res.json();
+};
+
+export const getManageBilling = async () => {
+  const res = await authFetch(`${BASE_URL}/billing/manage`);
+  if (!res.ok) throw new Error("Failed to load billing");
+  return res.json();
+};
+
+export const resumeRazorpaySubscription = async () => {
+  const res = await fetch("http://localhost:5050/billing/resume", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    }
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to resume subscription");
+  }
+
+  return res.json();
+};
+
+export const startCheckout = async () => {
+  const res = await authFetch(
+    `${BASE_URL}/billing/create-subscription`,
+    { method: "POST" }
+  );
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Checkout failed");
+  }
+
+  return res.json(); // returns subscription
 };
