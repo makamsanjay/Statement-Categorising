@@ -6,6 +6,10 @@ import Signup from "./pages/Signup";
 import Dashboard from "./Dashboard";
 import PaymentPage from "./pages/PaymentPage";
 import PricingPage from "./pages/PricingPage";
+import LandingPage from "./pages/LandingPage";
+
+// ✅ ADD THIS
+import ThemeProvider from "./components/providers/ThemeProvider";
 
 function App() {
   const [token, setToken] = useState(() =>
@@ -22,32 +26,37 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* 🌐 Public routes */}
-        <Route path="/" element={<PricingPage />} />
-        <Route path="/payment" element={<PaymentPage />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* 🌐 Public pages */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
 
-        <Route
-          path="/login"
-          element={token ? <Navigate to="/dashboard" /> : <Login />}
-        />
+          {/* 🔐 Auth */}
+          <Route
+            path="/login"
+            element={token ? <Navigate to="/dashboard" /> : <Login />}
+          />
+          <Route
+            path="/signup"
+            element={token ? <Navigate to="/dashboard" /> : <Signup />}
+          />
 
-        <Route
-          path="/signup"
-          element={token ? <Navigate to="/dashboard" /> : <Signup />}
-        />
+          {/* 💳 Payment */}
+          <Route path="/payment" element={<PaymentPage />} />
 
-        {/* 🔐 Protected routes */}
-        <Route
-          path="/dashboard/*"
-          element={token ? <Dashboard /> : <Navigate to="/login" />}
-        />
+          {/* 📊 App */}
+          <Route
+            path="/dashboard/*"
+            element={token ? <Dashboard /> : <Navigate to="/login" />}
+          />
 
-        {/* ❓ Unknown routes */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+          {/* ❓ Fallback */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 
