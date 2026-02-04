@@ -12,39 +12,30 @@ const razorpay = new Razorpay({
 /* ============================
    1️⃣ CREATE SUBSCRIPTION
    ============================ */
-router.post(
-  "/create-subscription",
-  auth,
-  loadUser,
-  async (req, res) => {
-  try {
-    console.log("🔍 USER:", req.user);
-    console.log("🔍 PLAN ID:", process.env.RAZORPAY_PLAN_ID);
-    console.log("🔍 KEY ID:", process.env.RAZORPAY_KEY_ID);
+router.post("/create-subscription", auth, loadUser, async (req, res) => {
+  const user = req.user;
 
-const subscription = await razorpay.subscriptions.create({
-  plan_id: process.env.RAZORPAY_PLAN_ID,
-  customer_notify: 1,
-  total_count: 12,
-  notes: {
-    userId: req.user._id.toString() // ✅ DB linkage
-  }
-});
-
-if (req.user.razorpaySubscriptionId) {
-  return res.status(400).json({
-    error: "You already have an active subscription"
-  });
-}
-
-
-    res.json(subscription);
-  } catch (err) {
-    console.error("❌ Razorpay subscription error FULL:", err);
-    res.status(500).json({
-      error: err.message || "Failed to create subscription"
+  // 🔒 BLOCK if already active
+  if (
+    user.subscriptionStatus === "active" &&
+    user.razorpaySubscriptionId
+  ) {
+    return res.status(400).json({
+      error: "Subscription already active"
     });
   }
+
+  const subscription = await razorpay.subscriptions.create({
+    plan_id: process.env.RAZORPAY_PLAN_ID,
+    customer_notify: 1,
+    total_count: 12,
+    notes: {
+      userId: user._id.toString(),
+      email: user.email
+    }
+  });
+
+  res.json(subscription);
 });
 
 
