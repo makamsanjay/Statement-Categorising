@@ -55,7 +55,7 @@ export default function Navbar() {
         </button>
 
         <button
-  onClick={() => navigate("/contact")}
+  onClick={() => navigate("/help")}
   className="hover:text-primary transition"
 >
   Help
