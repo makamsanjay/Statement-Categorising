@@ -8,7 +8,13 @@ import {
 } from "../api";
 import "./card-suggestions.css";
 
-export default function CardSuggestionsPage({ isPro, onUpgrade }) {
+export default function CardSuggestionsPage({
+  isPro,
+  pricing,
+  billingState,
+  onUpgrade
+}) {
+
   const [cards, setCards] = useState([]);
   const [allTransactions, setAllTransactions] = useState([]);
 
@@ -191,9 +197,18 @@ const categories = useMemo(() => {
           <div className="locked-overlay">
             <h3>Upgrade to Pro</h3>
             <p>Unlock AI-powered cashback optimization.</p>
-            <button className="upgrade-btn" onClick={onUpgrade}>
-              Upgrade to Pro
-            </button>
+            <button
+  className="upgrade-btn"
+  onClick={onUpgrade}
+  disabled={billingState === "processing"}
+>
+  {billingState === "processing"
+    ? "Activating…"
+    : pricing?.display
+      ? `Upgrade to Pro — ${pricing.display}`
+      : "Upgrade to Pro"}
+</button>
+
           </div>
           <FakeLayout />
         </div>

@@ -9,6 +9,14 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
+// ✅ this is fine (no user here)
+const PLAN_BY_GROUP = {
+  INR: process.env.RAZORPAY_PLAN_INR,
+  USD: process.env.RAZORPAY_PLAN_USD,
+  EUR: process.env.RAZORPAY_PLAN_EUR,
+  GBP: process.env.RAZORPAY_PLAN_GBP
+};
+
 /* ============================
    1️⃣ CREATE SUBSCRIPTION
    ============================ */
@@ -17,36 +25,60 @@ router.post(
   auth,
   loadUser,
   async (req, res) => {
-  try {
-    console.log("🔍 USER:", req.user);
-    console.log("🔍 PLAN ID:", process.env.RAZORPAY_PLAN_ID);
-    console.log("🔍 KEY ID:", process.env.RAZORPAY_KEY_ID);
+    const user = req.user;
 
-const subscription = await razorpay.subscriptions.create({
-  plan_id: process.env.RAZORPAY_PLAN_ID,
-  customer_notify: 1,
-  total_count: 12,
-  notes: {
-    userId: req.user._id.toString() // ✅ DB linkage
-  }
-});
+    // 🚨 HARD BLOCK
+    if (user.subscriptionStatus === "active") {
+      return res.status(400).json({
+        error: "Subscription already active"
+      });
+    }
 
-if (req.user.razorpaySubscriptionId) {
-  return res.status(400).json({
-    error: "You already have an active subscription"
-  });
-}
+    if (user.subscriptionStatus === "pending") {
+      return res.status(400).json({
+        error: "Subscription activation in progress"
+      });
+    }
 
+    // 💰 PRICING GROUP (LOCKED)
+    const pricingGroup = user.pricingGroup || "INR";
+
+    const PLAN_BY_GROUP = {
+      INR: process.env.RAZORPAY_PLAN_INR,
+      USD: process.env.RAZORPAY_PLAN_USD,
+      EUR: process.env.RAZORPAY_PLAN_EUR,
+      GBP: process.env.RAZORPAY_PLAN_GBP
+    };
+
+    const planId = PLAN_BY_GROUP[pricingGroup];
+
+    if (!planId) {
+      console.error("❌ Missing Razorpay plan for:", pricingGroup);
+      return res.status(500).json({
+        error: "Pricing configuration error"
+      });
+    }
+
+    // ✅ Create Razorpay subscription
+    const subscription = await razorpay.subscriptions.create({
+      plan_id: planId,
+      customer_notify: 1,
+      total_count: 12,
+      notes: {
+        userId: user._id.toString(),
+        email: user.email,
+        pricingGroup
+      }
+    });
+
+    // 🔒 LOCK USER
+    user.subscriptionStatus = "pending";
+    user.subscriptionStartedAt = new Date();
+    await user.save();
 
     res.json(subscription);
-  } catch (err) {
-    console.error("❌ Razorpay subscription error FULL:", err);
-    res.status(500).json({
-      error: err.message || "Failed to create subscription"
-    });
   }
-});
-
+);
 
 /* ============================
    2️⃣ CANCEL SUBSCRIPTION
@@ -84,30 +116,26 @@ router.post("/cancel", auth, loadUser, async (req, res) => {
    3️⃣ BILLING STATUS (READ-ONLY)
    ============================ */
 router.get("/status", auth, loadUser, async (req, res) => {
-  res.json({
-    plan: req.user.plan || "free",
-    subscriptionStatus: req.user.subscriptionStatus || "none",
-    planExpiresAt: req.user.planExpiresAt || null
-  });
-});
-
-// routes/billing.js
-
-// routes/billing.js
-router.get("/manage", auth, loadUser, async (req, res) => {
   const user = req.user;
 
+  // 🔄 AUTO-RESET abandoned pending subscriptions
+  if (
+    user.subscriptionStatus === "pending" &&
+    user.subscriptionStartedAt &&
+    Date.now() - new Date(user.subscriptionStartedAt).getTime() > 1 * 60 * 1000
+  ) {
+    user.subscriptionStatus = "none";
+    user.subscriptionStartedAt = null;
+    await user.save();
+  }
+
   res.json({
-    plan: user.plan,
-    subscriptionStatus: user.subscriptionStatus,
-    razorpaySubscriptionId: user.razorpaySubscriptionId,
-    planExpiresAt: user.planExpiresAt,
-    isCanceled:
-      user.subscriptionStatus === "canceled" ||
-      user.subscriptionStatus === "authenticated",
-    email: user.email, 
+    plan: user.plan || "free",
+    subscriptionStatus: user.subscriptionStatus || "none",
+    planExpiresAt: user.planExpiresAt || null
   });
 });
+
 
 /* ============================
    4️⃣ RESUME SUBSCRIPTION

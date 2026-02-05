@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================= */
+/* THEME VARIABLES */
+/* ============================= */
+
+:root {
+  --bg: #f5f6fa;
+  --fg: #0b0f19;
+  --card: rgba(255, 255, 255, 0.7);
+  --primary: #3b82f6;
+  --secondary: #a78bfa;
+}
+
+.dark {
+  --bg: #0b0f19;
+  --fg: #f8fafc;
+  --card: rgba(20, 20, 30, 0.6);
+  --primary: #38bdf8;
+  --secondary: #a78bfa;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Glassmorphism utility */
+.glass {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Subtle text smoothing */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

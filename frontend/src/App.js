@@ -6,6 +6,15 @@ import Signup from "./pages/Signup";
 import Dashboard from "./Dashboard";
 import PaymentPage from "./pages/PaymentPage";
 import PricingPage from "./pages/PricingPage";
+import LandingPage from "./pages/LandingPage";
+import ContactPage from "./pages/ContactPage";
+
+
+// Providers
+import ThemeProvider from "./components/providers/ThemeProvider";
+
+// ✅ Navbar controller
+import NavbarGate from "./components/layout/NavbarGate";
 
 function App() {
   const [token, setToken] = useState(() =>
@@ -22,32 +31,45 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* 🌐 Public routes */}
-        <Route path="/" element={<PricingPage />} />
-        <Route path="/payment" element={<PaymentPage />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        {/* ✅ NAVBAR ONLY WHERE ALLOWED */}
+        <NavbarGate />
 
-        <Route
-          path="/login"
-          element={token ? <Navigate to="/dashboard" /> : <Login />}
-        />
+        <Routes>
+          {/* 🌐 Public */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          {/* future */}
+          {/* <Route path="/help" element={<HelpPage />} /> */}
 
-        <Route
-          path="/signup"
-          element={token ? <Navigate to="/dashboard" /> : <Signup />}
-        />
+          {/* 🔐 Auth */}
+          <Route
+            path="/login"
+            element={token ? <Navigate to="/dashboard" /> : <Login />}
+          />
+          <Route
+            path="/signup"
+            element={token ? <Navigate to="/dashboard" /> : <Signup />}
+          />
 
-        {/* 🔐 Protected routes */}
-        <Route
-          path="/dashboard/*"
-          element={token ? <Dashboard /> : <Navigate to="/login" />}
-        />
+          {/* 💳 Payment */}
+          <Route path="/payment" element={<PaymentPage />} />
 
-        {/* ❓ Unknown routes */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+          {/* 📊 App */}
+          <Route
+            path="/dashboard/*"
+            element={token ? <Dashboard /> : <Navigate to="/login" />}
+          />
+
+          <Route path="/help" element={<ContactPage />} />
+
+
+          {/* ❓ Fallback */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

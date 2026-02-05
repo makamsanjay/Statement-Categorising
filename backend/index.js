@@ -2,16 +2,15 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const razorpayWebhook = require("./routes/razorpayWebhook");
+
 
 const app = express();
 
-/* ================================
-   🚨 RAZORPAY WEBHOOK — MUST BE FIRST
-   ================================ */
 app.post(
-  "/webhook/razorpay",
+  "/api/razorpay/webhook",
   express.raw({ type: "application/json" }),
-  require("./routes/razorpayWebhook")
+  razorpayWebhook
 );
 
 /* ================================

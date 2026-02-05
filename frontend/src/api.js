@@ -172,15 +172,20 @@ export const updateCardCurrency = async (cardId, displayCurrency) => {
   return res.json();
 };
 
-
-/* ============================
-   BILLING (STRIPE)
-   ============================ */
-
-
 export const getBillingStatus = async () => {
   const res = await authFetch(`${BASE_URL}/billing/status`);
   if (!res.ok) throw new Error("Failed to fetch billing status");
+  return res.json();
+};
+
+
+export const getBillingPricing = async () => {
+  const res = await authFetch(`${BASE_URL}/billing/pricing`);
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch pricing");
+  }
+
   return res.json();
 };
 
