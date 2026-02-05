@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const razorpayWebhook = require("./routes/razorpayWebhook");
+const { generalLimiter } = require("./middleware/rateLimiters");
 
 
 const app = express();
@@ -12,6 +13,10 @@ app.post(
   express.raw({ type: "application/json" }),
   razorpayWebhook
 );
+
+if (!process.env.JWT_SECRET) {
+  throw new Error(" JWT_SECRET is not set");
+}
 
 /* ================================
    NORMAL MIDDLEWARES (AFTER)
@@ -41,6 +46,7 @@ app.use("/analytics", require("./routes/analytics"));
 app.use("/support", require("./routes/support"));
 app.use("/users", require("./routes/user"));
 app.use("/ai/card-suggestions", require("./routes/cardSuggestions"));
+app.use(generalLimiter);
 
 /* ================================
    DATABASE

@@ -265,8 +265,20 @@ export const sendSignupOtp = async (email) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email })
   });
-  if (!res.ok) throw new Error("OTP send failed");
+
+  const data = await res.json(); // 🔑 always read body
+
+  if (!res.ok) {
+    throw new Error(
+      data?.error ||
+      data?.message ||
+      "OTP send failed"
+    );
+  }
+
+  return data;
 };
+
 
 export const verifySignupOtp = async (email, otp) => {
   const res = await fetch(`${BASE_URL}/auth/verify-signup-otp`, {

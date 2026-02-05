@@ -10,12 +10,18 @@ const sendEmail = require("../utils/sendEmail");
 const detectPricingGroupFromIP = require("../utils/detectCountry");
 
 
+const {
+  loginLimiter,
+  signupLimiter,
+  sendOtpLimiter,
+  verifyOtpLimiter
+} = require("../middleware/rateLimiters");
 
 /* ============================
    SIGNUP
    ============================ */
 
-router.post("/signup", async (req, res) => {
+router.post("/signup", signupLimiter, async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
@@ -46,11 +52,11 @@ router.post("/signup", async (req, res) => {
 
     await EmailOTP.deleteOne({ email });
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || "dev_secret",
-      { expiresIn: "7d" }
-    );
+  const token = jwt.sign(
+  { userId: user._id },
+  process.env.JWT_SECRET,
+  { expiresIn: "12h" }
+);
 
     res.json({ token });
   } catch (err) {
@@ -64,7 +70,7 @@ router.post("/signup", async (req, res) => {
 /* ============================
    LOGIN
    ============================ */
-router.post("/login", async (req, res) => {
+router.post("/login",signupLimiter,async (req, res) => {
   try {
     let { email, password } = req.body;
 
@@ -96,7 +102,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/send-signup-otp", async (req, res) => {
+router.post("/send-signup-otp", signupLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -138,7 +144,7 @@ await sendEmail({
   }
 });
 
-router.post("/verify-signup-otp", async (req, res) => {
+router.post("/verify-signup-otp", signupLimiter, async (req, res) => {
   try {
     const { email, otp } = req.body;
 

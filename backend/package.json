@@ -17,6 +17,7 @@
     "csv-parser": "^3.2.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
     "fs-extra": "^11.3.3",
     "geoip-lite": "^1.4.10",
     "jsonwebtoken": "^9.0.3",
