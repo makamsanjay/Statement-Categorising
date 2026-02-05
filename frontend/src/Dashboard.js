@@ -134,6 +134,25 @@ useEffect(() => {
     .catch(() => {});
 }, []);
 
+useEffect(() => {
+  const intent = sessionStorage.getItem("pricingIntent");
+
+  // Only auto-trigger once, and only if user is eligible
+  if (
+    intent === "pro" &&
+    billing &&
+    billing.subscriptionStatus === "none" &&
+    billingState === "idle"
+  ) {
+    console.log("🚀 Pricing intent detected → starting checkout");
+
+    startRazorpayCheckout();
+
+    // 🔥 clear intent immediately (one-shot)
+    sessionStorage.removeItem("pricingIntent");
+  }
+}, [billing, billingState]);
+
 
 const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState(0);
 

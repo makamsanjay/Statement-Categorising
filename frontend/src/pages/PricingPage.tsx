@@ -40,17 +40,26 @@ const COUNTRIES = {
   },
 };
 
-function discountPercent(original, price) {
+function discountPercent(original: number, price: number) {
   if (original === price) return 0;
   return Math.round(((original - price) / original) * 100);
 }
 
 export default function PricingPage() {
   const navigate = useNavigate();
-  const [country, setCountry] = useState("IN");
+  const [country, setCountry] = useState<keyof typeof COUNTRIES>("IN");
 
   const plan = COUNTRIES[country];
   const discount = discountPercent(plan.original, plan.price);
+
+  const handleUpgradeClick = () => {
+    // ✅ store intent only (frontend hint, NOT trusted by backend)
+    sessionStorage.setItem("pricingIntent", "pro");
+    sessionStorage.setItem("pricingCountry", country);
+
+    // ✅ go to signup (or login if you prefer)
+    navigate("/signup");
+  };
 
   return (
     <div className="min-h-screen pt-32 pb-28 px-6">
@@ -68,10 +77,10 @@ export default function PricingPage() {
 
         {/* COUNTRY SELECT */}
         <div className="mt-10 flex justify-center">
-          <div className="glass rounded-xl px-5 py-3 border border-white/10 shadow-lg hover:shadow-xl transition">
+          <div className="glass rounded-xl px-5 py-3 border border-white/10 shadow-lg">
             <select
               value={country}
-              onChange={(e) => setCountry(e.target.value)}
+              onChange={(e) => setCountry(e.target.value as any)}
               className="bg-transparent outline-none text-sm font-medium cursor-pointer"
             >
               {Object.entries(COUNTRIES).map(([key, c]) => (
@@ -86,19 +95,7 @@ export default function PricingPage() {
         {/* PRICING GRID */}
         <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* FREE PLAN */}
-          <div className="
-            relative
-            glass
-            rounded-3xl
-            p-8
-            border
-            border-white/10
-            shadow-lg
-            transition-all
-            duration-300
-            hover:-translate-y-2
-            hover:shadow-2xl
-          ">
+          <div className="glass rounded-3xl p-8 border border-white/10 shadow-lg">
             <h3 className="text-xl font-semibold">Free</h3>
             <p className="mt-2 text-sm text-foreground/70">
               Start here. No commitment.
@@ -121,75 +118,23 @@ export default function PricingPage() {
 
             <button
               onClick={() => navigate("/login")}
-              className="
-                mt-10
-                w-full
-                px-6
-                py-3
-                rounded-xl
-                border
-                border-white/20
-                hover:bg-white/5
-                hover:shadow-inner
-                transition
-              "
+              className="mt-10 w-full px-6 py-3 rounded-xl border border-white/20"
             >
               Continue free
             </button>
           </div>
 
           {/* PRO PLAN */}
-          <div className="
-            relative
-            rounded-3xl
-            p-8
-            border
-            border-primary/40
-            bg-gradient-to-b
-            from-primary/5
-            to-transparent
-            shadow-xl
-            transition-all
-            duration-300
-            hover:-translate-y-2
-            hover:shadow-[0_25px_80px_rgba(56,189,248,0.25)]
-          ">
-            {/* BADGES */}
-            <div className="absolute -top-5 left-6 bg-primary text-white text-xs px-4 py-1 rounded-full shadow-lg">
-              Most chosen
-            </div>
-
-            {discount > 0 && (
-              <div className="absolute -top-5 right-6 bg-emerald-500 text-white text-xs px-4 py-1 rounded-full shadow-lg">
-                {discount}% OFF · Limited time
-              </div>
-            )}
-
+          <div className="rounded-3xl p-8 border border-primary/40 shadow-xl">
             <h3 className="text-xl font-semibold">Pro</h3>
-            <p className="mt-2 text-sm text-foreground/70">
-              Built for people serious about their finances.
-            </p>
 
             <div className="mt-6">
-              <div className="flex items-end gap-3">
-                <p className="text-4xl font-semibold text-primary">
-                  ₹{plan.price}
-                  <span className="text-sm font-normal text-foreground/60">
-                    {" "}
-                    / month
-                  </span>
-                </p>
-
-                {discount > 0 && (
-                  <p className="text-sm line-through text-foreground/50">
-                    ₹{plan.original}
-                  </p>
-                )}
-              </div>
-
-              {plan.approx && (
-                <p className="text-sm text-foreground/60 mt-1">
-                  {plan.approx}
+              <p className="text-4xl font-semibold text-primary">
+                ₹{plan.price} / month
+              </p>
+              {discount > 0 && (
+                <p className="text-sm text-emerald-400">
+                  {discount}% OFF · Limited time
                 </p>
               )}
             </div>
@@ -202,28 +147,9 @@ export default function PricingPage() {
               <li>✔ Priority support</li>
             </ul>
 
-            {discount > 0 && (
-              <p className="mt-6 text-sm text-emerald-400">
-                Offer valid for early users only
-              </p>
-            )}
-
             <button
-              onClick={() => navigate("/payment")}
-              className="
-                mt-8
-                w-full
-                px-6
-                py-3
-                rounded-xl
-                bg-primary
-                text-white
-                font-medium
-                shadow-lg
-                hover:shadow-[0_10px_40px_rgba(56,189,248,0.5)]
-                hover:opacity-95
-                transition
-              "
+              onClick={handleUpgradeClick}
+              className="mt-8 w-full px-6 py-3 rounded-xl bg-primary text-white"
             >
               Upgrade to Pro
             </button>

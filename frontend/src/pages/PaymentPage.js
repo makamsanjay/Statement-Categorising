@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./PaymentPage.css";
 import { startCheckout } from "../api";
 import { useNavigate } from "react-router-dom";
