@@ -75,9 +75,11 @@ function Login() {
 
   try {
     const res = await login(email, password);
+
     localStorage.setItem("token", res.token);
     window.dispatchEvent(new Event("storage"));
-    navigate("/");
+
+    navigate("/dashboard", { replace: true });
   } catch (err) {
     alert(err.message || "Login failed");
   }

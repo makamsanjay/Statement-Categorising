@@ -144,10 +144,13 @@ const verifyOtp = async () => {
 
     const res = await signup({ name, email, password });
 
+    // ✅ Save auth
     localStorage.setItem("token", res.token);
-    window.location.href = "/";
+    window.dispatchEvent(new Event("storage"));
+
+    // ✅ FIX: go straight to dashboard
+    navigate("/dashboard", { replace: true });
   } catch (err) {
-    // 👇 backend message wins
     setError(
       err.message ||
       "An account with this email already exists"
