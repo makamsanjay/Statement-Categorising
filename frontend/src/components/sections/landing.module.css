@@ -1,0 +1,14 @@
+/* Landing-only styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.landingRoot * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.glass {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}

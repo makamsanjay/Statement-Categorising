@@ -6,6 +6,7 @@ import { motion as _motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import FloatingCard from "../ui/FloatingCard";
 import CardStack from "../ui/CardStack";
+import "./landing.module.css";
 
 const motion = _motion as any;
 

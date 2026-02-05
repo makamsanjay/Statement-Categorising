@@ -8,9 +8,11 @@ module.exports = async function razorpayWebhook(req, res) {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const receivedSignature = req.headers["x-razorpay-signature"];
 
+    const body = req.body.toString();
+
     const expectedSignature = crypto
       .createHmac("sha256", secret)
-      .update(req.body)
+      .update(body)
       .digest("hex");
 
     if (receivedSignature !== expectedSignature) {
@@ -18,13 +20,11 @@ module.exports = async function razorpayWebhook(req, res) {
       return res.status(400).send("Invalid signature");
     }
 
-    const event = JSON.parse(req.body.toString());
+    const event = JSON.parse(body);
     console.log("📩 Razorpay Event:", event.event);
 
-    if (
-      event.event === "subscription.activated" ||
-      event.event === "subscription.authenticated"
-    ) {
+    // ✅ SUBSCRIPTION ACTIVATED
+    if (event.event === "subscription.activated") {
       const sub = event.payload.subscription.entity;
       const userId = sub.notes?.userId;
 
@@ -43,6 +43,7 @@ module.exports = async function razorpayWebhook(req, res) {
       console.log("✅ USER UPGRADED TO MONTHLY:", userId);
     }
 
+    // ❌ SUBSCRIPTION CANCELLED
     if (event.event === "subscription.cancelled") {
       const sub = event.payload.subscription.entity;
 
@@ -59,7 +60,7 @@ module.exports = async function razorpayWebhook(req, res) {
       console.log("⚠️ Subscription cancelled");
     }
 
-    res.json({ status: "ok" });
+    res.status(200).json({ status: "ok" });
   } catch (err) {
     console.error("❌ Webhook error:", err);
     res.sendStatus(500);

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import "./theme.css";
 
 type Theme = "light" | "dark";
 
@@ -22,18 +23,38 @@ export default function ThemeProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    return (localStorage.getItem("theme") as Theme) || "dark";
-  });
+  const [theme, setTheme] = useState<Theme>("light"); // 👈 force initial light
 
+  /**
+   * 🔒 FIRST PAINT FIX
+   * This runs once and guarantees:
+   * - light mode on startup
+   * - no Chrome / OS dark-mode interference
+   */
   useEffect(() => {
-    document.documentElement.classList.remove("light", "dark");
-    document.documentElement.classList.add(theme);
+    const root = document.documentElement;
+
+    root.classList.remove("dark");
+    root.classList.add("light");
+
+    localStorage.setItem("theme", "light");
+  }, []);
+
+  /**
+   * 🔁 Sync theme changes
+   */
+  useEffect(() => {
+    const root = document.documentElement;
+
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
+
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const toggleTheme = () =>
+  const toggleTheme = () => {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

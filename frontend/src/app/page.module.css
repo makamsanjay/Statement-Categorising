@@ -33,6 +33,7 @@ body {
   transition: background-color 0.4s ease, color 0.4s ease;
 }
 
+/* Glassmorphism utility */
 .glass {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);

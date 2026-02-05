@@ -9,7 +9,8 @@ function TopBar({
   onUpgrade,
   onManageBilling,
   onLogout,
-  onNavigate 
+  onNavigate,
+  billingState
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
@@ -45,13 +46,17 @@ function TopBar({
 
         {/* UPGRADE BUTTON — ONLY FOR FREE USERS */}
         {!isPro && (
-          <button
-            className="topbar-upgrade"
-            onClick={onUpgrade}
-          >
-            Upgrade to Pro
-          </button>
-        )}
+  <button
+    className="topbar-upgrade"
+    onClick={onUpgrade}
+    disabled={billingState === "processing"}
+  >
+    {billingState === "processing"
+      ? "Activating…"
+      : "Upgrade to Pro"}
+  </button>
+)}
+
 
         {/* USER ICON */}
         <button

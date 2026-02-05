@@ -90,6 +90,35 @@ const [infoMessage, setInfoMessage] = useState("");
 
 const [showBilling, setShowBilling] = useState(false);
 const [billingDetails, setBillingDetails] = useState(null);
+const [billingState, setBillingState] = useState("idle");
+
+useEffect(() => {
+  if (billing?.subscriptionStatus === "active") {
+    setBillingState("active");
+  } else if (billing?.subscriptionStatus === "pending") {
+    setBillingState("processing");
+  } else {
+    setBillingState("idle");
+  }
+}, [billing]);
+
+useEffect(() => {
+  if (billingState !== "processing") return;
+
+  const interval = setInterval(async () => {
+    const updated = await getBillingStatus();
+    setBilling(updated);
+
+    if (updated.subscriptionStatus === "active") {
+      setBillingState("active");
+      clearInterval(interval);
+    }
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [billingState]);
+
+
 
 const openManageBilling = async () => {
   const data = await getManageBilling();
@@ -334,28 +363,40 @@ const handleUpload = async () => {
 
   setFiles([]);
 };
-
 const startRazorpayCheckout = async () => {
-  const subscription = await createRazorpaySubscription();
+  if (billingState !== "idle") return; // 🔒 hard lock
+
+  setBillingState("processing");
+
+  let subscription;
+  try {
+    subscription = await createRazorpaySubscription();
+  } catch (err) {
+    setBillingState("idle");
+    alert(err.message || "Unable to start subscription");
+    return;
+  }
 
   const options = {
     key: process.env.REACT_APP_RAZORPAY_KEY_ID,
     subscription_id: subscription.id,
-    name: "Your App Name",
+    name: "SpendSwitch",
     description: "Pro Subscription",
 
     prefill: {
-      email: billing?.email || "",   // ✅ IMPORTANT
+      email: billing?.email || ""
     },
 
-    handler: async function (response) {
-      console.log("Payment success", response);
+    handler: () => {
+      // Payment received — webhook will confirm
+      setBillingState("processing");
+    },
 
-      // ⏳ wait for webhook → DB update
-      setTimeout(async () => {
-        const updatedBilling = await getBillingStatus();
-        setBilling(updatedBilling);
-      }, 1500);
+    modal: {
+      ondismiss: () => {
+        // User closed checkout without paying
+        setBillingState("idle");
+      }
     },
 
     theme: {
@@ -366,6 +407,8 @@ const startRazorpayCheckout = async () => {
   const rzp = new window.Razorpay(options);
   rzp.open();
 };
+
+
 
 
 
@@ -758,6 +801,7 @@ return (
       {/* TOP BAR */}
       <TopBar
   isPro={isPro}
+  billingState={billingState}
   plan={billing?.plan}
   currency={cards[0]?.displayCurrency || "USD"}
   onChangeCurrency={async (newCurrency) => {

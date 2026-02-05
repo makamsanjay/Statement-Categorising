@@ -12,31 +12,47 @@ const razorpay = new Razorpay({
 /* ============================
    1️⃣ CREATE SUBSCRIPTION
    ============================ */
-router.post("/create-subscription", auth, loadUser, async (req, res) => {
-  const user = req.user;
+router.post(
+  "/create-subscription",
+  auth,
+  loadUser,
+  async (req, res) => {
+    const user = req.user;
 
-  // 🔒 BLOCK if already active
-  if (
-    user.subscriptionStatus === "active" &&
-    user.razorpaySubscriptionId
-  ) {
-    return res.status(400).json({
-      error: "Subscription already active"
-    });
-  }
-
-  const subscription = await razorpay.subscriptions.create({
-    plan_id: process.env.RAZORPAY_PLAN_ID,
-    customer_notify: 1,
-    total_count: 12,
-    notes: {
-      userId: user._id.toString(),
-      email: user.email
+    // 🚨 HARD BLOCK — NO DOUBLE SUBSCRIPTIONS
+    if (user.subscriptionStatus === "active") {
+      return res.status(400).json({
+        error: "Subscription already active"
+      });
     }
-  });
 
-  res.json(subscription);
-});
+    if (user.subscriptionStatus === "pending") {
+      return res.status(400).json({
+        error: "Subscription activation in progress"
+      });
+    }
+
+    // ✅ Create Razorpay subscription
+    const subscription = await razorpay.subscriptions.create({
+      plan_id: process.env.RAZORPAY_PLAN_ID,
+      customer_notify: 1,
+      total_count: 12,
+      notes: {
+        userId: user._id.toString(), // 🔥 REQUIRED for webhook
+        email: user.email
+      }
+    });
+
+    // 🔒 LOCK USER IMMEDIATELY
+   user.subscriptionStatus = "pending";
+user.subscriptionStartedAt = new Date();
+await user.save();
+
+
+    res.json(subscription);
+  }
+);
+
 
 
 /* ============================
@@ -75,30 +91,26 @@ router.post("/cancel", auth, loadUser, async (req, res) => {
    3️⃣ BILLING STATUS (READ-ONLY)
    ============================ */
 router.get("/status", auth, loadUser, async (req, res) => {
-  res.json({
-    plan: req.user.plan || "free",
-    subscriptionStatus: req.user.subscriptionStatus || "none",
-    planExpiresAt: req.user.planExpiresAt || null
-  });
-});
-
-// routes/billing.js
-
-// routes/billing.js
-router.get("/manage", auth, loadUser, async (req, res) => {
   const user = req.user;
 
+  // 🔄 AUTO-RESET abandoned pending subscriptions
+  if (
+    user.subscriptionStatus === "pending" &&
+    user.subscriptionStartedAt &&
+    Date.now() - new Date(user.subscriptionStartedAt).getTime() > 1 * 60 * 1000
+  ) {
+    user.subscriptionStatus = "none";
+    user.subscriptionStartedAt = null;
+    await user.save();
+  }
+
   res.json({
-    plan: user.plan,
-    subscriptionStatus: user.subscriptionStatus,
-    razorpaySubscriptionId: user.razorpaySubscriptionId,
-    planExpiresAt: user.planExpiresAt,
-    isCanceled:
-      user.subscriptionStatus === "canceled" ||
-      user.subscriptionStatus === "authenticated",
-    email: user.email, 
+    plan: user.plan || "free",
+    subscriptionStatus: user.subscriptionStatus || "none",
+    planExpiresAt: user.planExpiresAt || null
   });
 });
+
 
 /* ============================
    4️⃣ RESUME SUBSCRIPTION

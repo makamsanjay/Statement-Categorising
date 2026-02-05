@@ -73,11 +73,20 @@ const UserSchema = new mongoose.Schema(
       default: null
     },
 
-    subscriptionStatus: {
-      type: String,
-      enum: ["none", "created", "active", "authenticated", "canceled"],
-      default: "none"
-    },
+   subscriptionStatus: {
+  type: String,
+  enum: [
+    "none",          
+    "pending",       
+    "authenticated", 
+    "active",        
+    "canceled"       
+  ],
+  default: "none"
+},subscriptionStartedAt: {
+  type: Date,
+  default: null
+},
 
     planExpiresAt: {
       type: Date,
