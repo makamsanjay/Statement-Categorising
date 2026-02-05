@@ -92,6 +92,19 @@ const UserSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    country: {
+  type: String,
+  uppercase: true,
+  default: "IN" // safe fallback
+},
+pricingGroup: {
+  type: String,
+  enum: ["INR", "USD", "EUR", "GBP"],
+  default: null,
+  index: true
+},
+
+
 
     /* =========================
        USAGE LIMITING

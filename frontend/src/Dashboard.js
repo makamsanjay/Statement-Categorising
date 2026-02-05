@@ -9,6 +9,7 @@ import {
   fetchHealthScore,
   updateCardCurrency,
   getBillingStatus,
+  getBillingPricing,
   createCard,
   getManageBilling
 } from "./api";
@@ -153,6 +154,13 @@ useEffect(() => {
 
 const [cards, setCards] = useState([]);
 const [activeCardIndex, setActiveCardIndex] = useState(0);
+
+const [pricing, setPricing] = useState(null);
+
+useEffect(() => {
+  getBillingPricing().then(setPricing).catch(() => {});
+}, []);
+
 
 
   const refreshDashboardData = async (cardIndex = activeCardIndex) => {
@@ -392,12 +400,12 @@ const startRazorpayCheckout = async () => {
       setBillingState("processing");
     },
 
-    modal: {
-      ondismiss: () => {
-        // User closed checkout without paying
-        setBillingState("idle");
-      }
-    },
+   modal: {
+  ondismiss: () => {
+   setBillingState("idle");
+   // Do nothing — backend status is source of truth
+  }
+},
 
     theme: {
       color: "#0f172a"
@@ -802,6 +810,7 @@ return (
       <TopBar
   isPro={isPro}
   billingState={billingState}
+  pricing={pricing}
   plan={billing?.plan}
   currency={cards[0]?.displayCurrency || "USD"}
   onChangeCurrency={async (newCurrency) => {
@@ -1355,10 +1364,12 @@ return (
 )}
 
 {activeView === "card-suggestions" && (
-  <CardSuggestions
-    isPro={isPro}
-    onUpgrade={startRazorpayCheckout}
-  />
+ <CardSuggestions
+  isPro={isPro}
+  pricing={pricing}
+  billingState={billingState}
+  onUpgrade={startRazorpayCheckout}
+/>
 )}
 
 

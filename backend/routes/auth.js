@@ -7,12 +7,14 @@ const Card = require("../models/Card");
 const crypto = require("crypto");
 const EmailOTP = require("../models/EmailOTP");
 const sendEmail = require("../utils/sendEmail");
+const detectPricingGroupFromIP = require("../utils/detectCountry");
 
 
 
 /* ============================
    SIGNUP
    ============================ */
+
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -24,10 +26,15 @@ router.post("/signup", async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
+    // 🌍 Detect geo safely
+    const geo = await detectPricingGroupFromIP(req);
+
     const user = await User.create({
       name,
       email,
-      password: hashed
+      password: hashed,
+      country: geo.country,
+      pricingGroup: geo.pricingGroup
     });
 
     await Card.create({
@@ -47,9 +54,12 @@ router.post("/signup", async (req, res) => {
 
     res.json({ token });
   } catch (err) {
+    console.error("❌ SIGNUP ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
+
 
 /* ============================
    LOGIN
@@ -154,7 +164,5 @@ router.post("/verify-signup-otp", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
 
 module.exports = router;

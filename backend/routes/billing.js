@@ -9,6 +9,14 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
+// ✅ this is fine (no user here)
+const PLAN_BY_GROUP = {
+  INR: process.env.RAZORPAY_PLAN_INR,
+  USD: process.env.RAZORPAY_PLAN_USD,
+  EUR: process.env.RAZORPAY_PLAN_EUR,
+  GBP: process.env.RAZORPAY_PLAN_GBP
+};
+
 /* ============================
    1️⃣ CREATE SUBSCRIPTION
    ============================ */
@@ -19,7 +27,7 @@ router.post(
   async (req, res) => {
     const user = req.user;
 
-    // 🚨 HARD BLOCK — NO DOUBLE SUBSCRIPTIONS
+    // 🚨 HARD BLOCK
     if (user.subscriptionStatus === "active") {
       return res.status(400).json({
         error: "Subscription already active"
@@ -32,28 +40,45 @@ router.post(
       });
     }
 
+    // 💰 PRICING GROUP (LOCKED)
+    const pricingGroup = user.pricingGroup || "INR";
+
+    const PLAN_BY_GROUP = {
+      INR: process.env.RAZORPAY_PLAN_INR,
+      USD: process.env.RAZORPAY_PLAN_USD,
+      EUR: process.env.RAZORPAY_PLAN_EUR,
+      GBP: process.env.RAZORPAY_PLAN_GBP
+    };
+
+    const planId = PLAN_BY_GROUP[pricingGroup];
+
+    if (!planId) {
+      console.error("❌ Missing Razorpay plan for:", pricingGroup);
+      return res.status(500).json({
+        error: "Pricing configuration error"
+      });
+    }
+
     // ✅ Create Razorpay subscription
     const subscription = await razorpay.subscriptions.create({
-      plan_id: process.env.RAZORPAY_PLAN_ID,
+      plan_id: planId,
       customer_notify: 1,
       total_count: 12,
       notes: {
-        userId: user._id.toString(), // 🔥 REQUIRED for webhook
-        email: user.email
+        userId: user._id.toString(),
+        email: user.email,
+        pricingGroup
       }
     });
 
-    // 🔒 LOCK USER IMMEDIATELY
-   user.subscriptionStatus = "pending";
-user.subscriptionStartedAt = new Date();
-await user.save();
-
+    // 🔒 LOCK USER
+    user.subscriptionStatus = "pending";
+    user.subscriptionStartedAt = new Date();
+    await user.save();
 
     res.json(subscription);
   }
 );
-
-
 
 /* ============================
    2️⃣ CANCEL SUBSCRIPTION

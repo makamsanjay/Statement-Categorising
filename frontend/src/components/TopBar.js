@@ -5,13 +5,14 @@ function TopBar({
   isPro,
   plan = "free",
   currency,
+  pricing,
   onChangeCurrency,
   onUpgrade,
   onManageBilling,
   onLogout,
   onNavigate,
   billingState
-}) {
+})  {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -53,9 +54,12 @@ function TopBar({
   >
     {billingState === "processing"
       ? "Activating…"
-      : "Upgrade to Pro"}
+      : pricing?.display
+        ? `Upgrade to Pro — ${pricing.display}`
+        : "Upgrade to Pro"}
   </button>
 )}
+
 
 
         {/* USER ICON */}
