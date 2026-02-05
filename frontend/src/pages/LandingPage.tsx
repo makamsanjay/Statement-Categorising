@@ -5,6 +5,8 @@ import TryNow from "../components/sections/TryNow";
 import AIInsights from "../components/sections/AIInsights";
 import TrustSecurity from "../components/sections/TrustSecurity";
 import FooterCTA from "../components/sections/FooterCTA";
+import Footer from "../components/layout/Footer";
+import WhyChooseUs from "../components/sections/WhyChooseUs";
 
 export default function LandingPage() {
   return (
@@ -15,8 +17,9 @@ export default function LandingPage() {
         <HowItWorks />
         <TryNow />
         <AIInsights />
+        <WhyChooseUs />
         <TrustSecurity />
-        <FooterCTA />
+         <Footer />
       </main>
     </>
   );

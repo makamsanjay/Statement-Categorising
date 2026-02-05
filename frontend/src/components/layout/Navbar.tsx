@@ -2,6 +2,7 @@ import { motion as _motion } from "framer-motion";
 import { Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ContactPage from "../../pages/ContactPage";
 
 const motion = _motion as any;
 
@@ -38,24 +39,41 @@ export default function Navbar() {
         {/* Logo */}
         <button
           onClick={() => navigate("/")}
-          className="font-semibold text-lg"
+          className="font-semibold text-lg hover:opacity-90 transition"
         >
           Expense<span className="text-primary">AI</span>
         </button>
 
         <div className="w-px h-6 bg-foreground/10" />
 
-        {/* Auth buttons */}
+        {/* Primary links */}
+        <button
+          onClick={() => navigate("/pricing")}
+          className="text-sm hover:text-primary transition"
+        >
+          Pricing
+        </button>
+
+        <button
+  onClick={() => navigate("/contact")}
+  className="hover:text-primary transition"
+>
+  Help
+</button>
+
+        <div className="w-px h-6 bg-foreground/10" />
+
+        {/* Auth */}
         <button
           onClick={() => navigate("/login")}
-          className="hover:text-primary transition"
+          className="text-sm hover:text-primary transition"
         >
           Login
         </button>
 
         <button
           onClick={() => navigate("/signup")}
-          className="hover:text-primary transition"
+          className="text-sm hover:text-primary transition"
         >
           Sign up
         </button>

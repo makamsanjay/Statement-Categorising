@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Footer from "../components/layout/Footer";
 
 const COUNTRIES = {
   IN: {
@@ -33,8 +34,8 @@ const COUNTRIES = {
   OTHER: {
     label: "Other countries",
     flag: "🌍",
-    price: 99,
-    original: 499,
+    price: 799,
+    original: 799,
     approx: null,
   },
 };
@@ -57,17 +58,17 @@ export default function PricingPage() {
         {/* HEADER */}
         <div className="text-center max-w-2xl mx-auto">
           <h1 className="text-4xl lg:text-5xl font-semibold tracking-tight">
-            Pricing that makes sense
+            Simple, transparent pricing
           </h1>
           <p className="mt-4 text-foreground/70">
-            Built for students, professionals, and anyone who wants clarity
-            over their money — without overpaying.
+            Pay less than a coffee per month and finally understand where your
+            money goes.
           </p>
         </div>
 
         {/* COUNTRY SELECT */}
         <div className="mt-10 flex justify-center">
-          <div className="glass rounded-xl px-5 py-3 border border-white/10 shadow-lg">
+          <div className="glass rounded-xl px-5 py-3 border border-white/10 shadow-lg hover:shadow-xl transition">
             <select
               value={country}
               onChange={(e) => setCountry(e.target.value)}
@@ -85,56 +86,93 @@ export default function PricingPage() {
         {/* PRICING GRID */}
         <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* FREE PLAN */}
-          <div className="glass rounded-3xl p-8 border border-white/10 shadow-lg">
+          <div className="
+            relative
+            glass
+            rounded-3xl
+            p-8
+            border
+            border-white/10
+            shadow-lg
+            transition-all
+            duration-300
+            hover:-translate-y-2
+            hover:shadow-2xl
+          ">
             <h3 className="text-xl font-semibold">Free</h3>
             <p className="mt-2 text-sm text-foreground/70">
-              Try the basics. No card required.
+              Start here. No commitment.
             </p>
 
             <div className="mt-6">
               <p className="text-4xl font-semibold">₹0</p>
               <p className="text-sm text-foreground/60 mt-1">
-                Unlimited time
+                Unlimited access
               </p>
             </div>
 
             <ul className="mt-8 space-y-3 text-sm text-foreground/70">
               <li>✔ Upload expenses</li>
-              <li>✔ Automatic categorization</li>
+              <li>✔ Auto categorization</li>
               <li>✔ Monthly summaries</li>
               <li className="opacity-40">✖ AI insights</li>
-              <li className="opacity-40">✖ Smart recommendations</li>
+              <li className="opacity-40">✖ Smart suggestions</li>
             </ul>
 
             <button
               onClick={() => navigate("/login")}
-              className="mt-10 w-full px-6 py-3 rounded-xl border border-white/20 hover:bg-white/5 transition"
+              className="
+                mt-10
+                w-full
+                px-6
+                py-3
+                rounded-xl
+                border
+                border-white/20
+                hover:bg-white/5
+                hover:shadow-inner
+                transition
+              "
             >
               Continue free
             </button>
           </div>
 
           {/* PRO PLAN */}
-          <div className="relative glass rounded-3xl p-8 border border-primary/40 shadow-glass">
-            {/* TOP BADGES */}
-            <div className="absolute -top-5 left-6 bg-primary text-white text-xs px-4 py-1 rounded-full">
+          <div className="
+            relative
+            rounded-3xl
+            p-8
+            border
+            border-primary/40
+            bg-gradient-to-b
+            from-primary/5
+            to-transparent
+            shadow-xl
+            transition-all
+            duration-300
+            hover:-translate-y-2
+            hover:shadow-[0_25px_80px_rgba(56,189,248,0.25)]
+          ">
+            {/* BADGES */}
+            <div className="absolute -top-5 left-6 bg-primary text-white text-xs px-4 py-1 rounded-full shadow-lg">
               Most chosen
             </div>
 
             {discount > 0 && (
-              <div className="absolute -top-5 right-6 bg-emerald-500 text-white text-xs px-4 py-1 rounded-full">
+              <div className="absolute -top-5 right-6 bg-emerald-500 text-white text-xs px-4 py-1 rounded-full shadow-lg">
                 {discount}% OFF · Limited time
               </div>
             )}
 
             <h3 className="text-xl font-semibold">Pro</h3>
             <p className="mt-2 text-sm text-foreground/70">
-              For people who want real control over their spending.
+              Built for people serious about their finances.
             </p>
 
             <div className="mt-6">
               <div className="flex items-end gap-3">
-                <p className="text-4xl font-semibold">
+                <p className="text-4xl font-semibold text-primary">
                   ₹{plan.price}
                   <span className="text-sm font-normal text-foreground/60">
                     {" "}
@@ -159,32 +197,40 @@ export default function PricingPage() {
             <ul className="mt-8 space-y-3 text-sm text-foreground/70">
               <li>✔ Everything in Free</li>
               <li>✔ AI-powered insights</li>
-              <li>✔ Spending trends & patterns</li>
-              <li>✔ Smart saving suggestions</li>
+              <li>✔ Spending patterns</li>
+              <li>✔ Smart saving advice</li>
               <li>✔ Priority support</li>
             </ul>
 
-            {/* URGENCY LINE */}
             {discount > 0 && (
               <p className="mt-6 text-sm text-emerald-400">
-                🔥 Offer valid for early users only
+                Offer valid for early users only
               </p>
             )}
 
             <button
               onClick={() => navigate("/payment")}
-              className="mt-8 w-full px-6 py-3 rounded-xl bg-primary text-white font-medium hover:opacity-90 transition"
+              className="
+                mt-8
+                w-full
+                px-6
+                py-3
+                rounded-xl
+                bg-primary
+                text-white
+                font-medium
+                shadow-lg
+                hover:shadow-[0_10px_40px_rgba(56,189,248,0.5)]
+                hover:opacity-95
+                transition
+              "
             >
               Upgrade to Pro
             </button>
           </div>
         </div>
 
-        {/* SOCIAL PROOF / FOOTNOTE */}
-        <p className="mt-14 text-center text-sm text-foreground/60">
-          Thousands of users track their spending smarter with ExpenseAI.
-          Cancel anytime.
-        </p>
+        <Footer />
       </div>
     </div>
   );

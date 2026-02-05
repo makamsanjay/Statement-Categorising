@@ -7,9 +7,14 @@ import Dashboard from "./Dashboard";
 import PaymentPage from "./pages/PaymentPage";
 import PricingPage from "./pages/PricingPage";
 import LandingPage from "./pages/LandingPage";
+import ContactPage from "./pages/ContactPage";
 
-// ✅ ADD THIS
+
+// Providers
 import ThemeProvider from "./components/providers/ThemeProvider";
+
+// ✅ Navbar controller
+import NavbarGate from "./components/layout/NavbarGate";
 
 function App() {
   const [token, setToken] = useState(() =>
@@ -28,10 +33,15 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
+        {/* ✅ NAVBAR ONLY WHERE ALLOWED */}
+        <NavbarGate />
+
         <Routes>
-          {/* 🌐 Public pages */}
+          {/* 🌐 Public */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          {/* future */}
+          {/* <Route path="/help" element={<HelpPage />} /> */}
 
           {/* 🔐 Auth */}
           <Route
@@ -51,6 +61,9 @@ function App() {
             path="/dashboard/*"
             element={token ? <Dashboard /> : <Navigate to="/login" />}
           />
+
+          <Route path="/help" element={<ContactPage />} />
+
 
           {/* ❓ Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
