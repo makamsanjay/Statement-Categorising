@@ -4,11 +4,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Card = require("../models/Card");
-const crypto = require("crypto");
 const EmailOTP = require("../models/EmailOTP");
 const sendEmail = require("../utils/sendEmail");
 const detectPricingGroupFromIP = require("../utils/detectCountry");
-
 
 const {
   loginLimiter,
@@ -18,21 +16,42 @@ const {
 } = require("../middleware/rateLimiters");
 
 /* ============================
-   SIGNUP
-   ============================ */
+   HELPERS
+============================ */
+const normalizeEmail = (email) =>
+  email?.trim().toLowerCase();
 
+/* ============================
+   SIGNUP
+============================ */
 router.post("/signup", signupLimiter, async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    let { name, email, password } = req.body;
+
+    email = normalizeEmail(email);
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: "Invalid input" });
+    }
+
+    // 🛑 Prevent NoSQL injection
+    if (typeof email !== "string" || typeof password !== "string") {
+      return res.status(400).json({ error: "Invalid input" });
+    }
 
     const otpRecord = await EmailOTP.findOne({ email });
     if (!otpRecord || !otpRecord.verified) {
       return res.status(403).json({ error: "Email not verified" });
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    // 🛑 Double check duplicate account
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(409).json({ error: "Account already exists" });
+    }
 
-    // 🌍 Detect geo safely
+    const hashed = await bcrypt.hash(password, 12);
+
     const geo = await detectPricingGroupFromIP(req);
 
     const user = await User.create({
@@ -52,61 +71,64 @@ router.post("/signup", signupLimiter, async (req, res) => {
 
     await EmailOTP.deleteOne({ email });
 
-  const token = jwt.sign(
-  { userId: user._id },
-  process.env.JWT_SECRET,
-  { expiresIn: "12h" }
-);
-
-    res.json({ token });
-  } catch (err) {
-    console.error("❌ SIGNUP ERROR:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-/* ============================
-   LOGIN
-   ============================ */
-router.post("/login",signupLimiter,async (req, res) => {
-  try {
-    let { email, password } = req.body;
-
-    email = email.trim().toLowerCase();
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({
-        error: "No account found with this email"
-      });
-    }
-
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) {
-      return res.status(401).json({
-        error: "Incorrect password"
-      });
-    }
-
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET || "dev_secret",
-      { expiresIn: "7d" }
+      process.env.JWT_SECRET,
+      { expiresIn: "12h" }
     );
 
     res.json({ token });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("SIGNUP ERROR:", err);
+    res.status(500).json({ error: "Signup failed" });
   }
 });
 
-router.post("/send-signup-otp", signupLimiter, async (req, res) => {
+/* ============================
+   LOGIN
+============================ */
+router.post("/login", loginLimiter, async (req, res) => {
   try {
-    const { email } = req.body;
+    let { email, password } = req.body;
+    email = normalizeEmail(email);
 
-    if (!email) return res.status(400).json({ error: "Email required" });
+    if (!email || !password) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "12h" }
+    );
+
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+/* ============================
+   SEND OTP
+============================ */
+router.post("/send-signup-otp", sendOtpLimiter, async (req, res) => {
+  try {
+    let { email } = req.body;
+    email = normalizeEmail(email);
+
+    if (!email) {
+      return res.status(400).json({ error: "Email required" });
+    }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = await bcrypt.hash(otp, 10);
@@ -122,39 +144,29 @@ router.post("/send-signup-otp", signupLimiter, async (req, res) => {
       { upsert: true }
     );
 
- const sendEmail = require("../utils/sendEmail");
-
-await sendEmail({
-  to: email,
-  subject: "Your verification code",
-  html: `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6">
-      <h2>Email Verification</h2>
-      <p>Your verification code is:</p>
-      <h1 style="letter-spacing: 4px">${otp}</h1>
-      <p>This code will expire in 5 minutes.</p>
-      <p>If you did not request this, please ignore this email.</p>
-    </div>
-  `
-});
+    await sendEmail({
+      to: email,
+      subject: "Your verification code",
+      html: `<h2>Your OTP: ${otp}</h2><p>Expires in 5 minutes.</p>`
+    });
 
     res.json({ message: "OTP sent" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "OTP send failed" });
   }
 });
 
-router.post("/verify-signup-otp", signupLimiter, async (req, res) => {
+/* ============================
+   VERIFY OTP
+============================ */
+router.post("/verify-signup-otp", verifyOtpLimiter, async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    let { email, otp } = req.body;
+    email = normalizeEmail(email);
 
     const record = await EmailOTP.findOne({ email });
-    if (!record) {
-      return res.status(400).json({ error: "OTP not found" });
-    }
-
-    if (record.expiresAt < new Date()) {
-      return res.status(400).json({ error: "OTP expired" });
+    if (!record || record.expiresAt < new Date()) {
+      return res.status(400).json({ error: "OTP expired or invalid" });
     }
 
     const ok = await bcrypt.compare(otp, record.otpHash);
@@ -167,7 +179,7 @@ router.post("/verify-signup-otp", signupLimiter, async (req, res) => {
 
     res.json({ verified: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "OTP verification failed" });
   }
 });
 
