@@ -8,6 +8,7 @@ import PaymentPage from "./pages/PaymentPage";
 import PricingPage from "./pages/PricingPage";
 import LandingPage from "./pages/LandingPage";
 import ContactPage from "./pages/ContactPage";
+import { loadGoogleAnalytics } from "./utils/analytics";
 
 
 // Providers
@@ -29,6 +30,21 @@ function App() {
     window.addEventListener("storage", syncAuth);
     return () => window.removeEventListener("storage", syncAuth);
   }, []);
+
+  useEffect(() => {
+  const maybeLoadGA = () => {
+    if (localStorage.getItem("cookieConsent") === "accepted") {
+      loadGoogleAnalytics();
+    }
+  };
+
+  maybeLoadGA();
+  window.addEventListener("cookie-consent-updated", maybeLoadGA);
+
+  return () =>
+    window.removeEventListener("cookie-consent-updated", maybeLoadGA);
+}, []);
+
 
   return (
     <ThemeProvider>
