@@ -6,12 +6,13 @@ import AIInsights from "../components/sections/AIInsights";
 import TrustSecurity from "../components/sections/TrustSecurity";
 import Footer from "../components/layout/Footer";
 import WhyChooseUs from "../components/sections/WhyChooseUs";
-
+import CookieBanner from "../components/CookieBanner";
 export default function LandingPage() {
   return (
     <>
       <Navbar />
       <main>
+        <CookieBanner />
         <Hero />
         <HowItWorks />
         <TryNow />
