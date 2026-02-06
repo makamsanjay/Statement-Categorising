@@ -67,17 +67,16 @@ function Login() {
   const [error, setError] = useState("");
 
   /* ===== LOGIN HANDLER (UNCHANGED) ===== */
- const handleLogin = async () => {
+const handleLogin = async () => {
   if (!isValidEmail(email)) {
     alert("Please enter a valid email address");
     return;
   }
 
   try {
-    const res = await login(email, password);
-    localStorage.setItem("token", res.token);
-    window.dispatchEvent(new Event("storage"));
-    navigate("/");
+    await login(email, password);
+    // 🔑 DO NOTHING HERE
+    // App.js will re-render and redirect automatically
   } catch (err) {
     alert(err.message || "Login failed");
   }

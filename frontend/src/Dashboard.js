@@ -134,6 +134,25 @@ useEffect(() => {
     .catch(() => {});
 }, []);
 
+useEffect(() => {
+  const intent = sessionStorage.getItem("pricingIntent");
+
+  // Only auto-trigger once, and only if user is eligible
+  if (
+    intent === "pro" &&
+    billing &&
+    billing.subscriptionStatus === "none" &&
+    billingState === "idle"
+  ) {
+    console.log("🚀 Pricing intent detected → starting checkout");
+
+    startRazorpayCheckout();
+
+    // 🔥 clear intent immediately (one-shot)
+    sessionStorage.removeItem("pricingIntent");
+  }
+}, [billing, billingState]);
+
 
 const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState(0);
 
@@ -248,8 +267,24 @@ useEffect(() => {
 const [health, setHealth] = useState(null);
 
 useEffect(() => {
-  fetchHealthScore().then(setHealth);
-}, [transactions]);
+  let cancelled = false;
+
+  const loadHealth = async () => {
+    try {
+      const data = await fetchHealthScore();
+      if (!cancelled) setHealth(data);
+    } catch (err) {
+      // silently ignore rate limits
+      console.warn("Health fetch skipped:", err.message);
+    }
+  };
+
+  loadHealth();
+
+  return () => {
+    cancelled = true;
+  };
+}, []); // 🔒 run ONCE on dashboard load
 
 const { totalIncome, totalExpense } = useMemo(() => {
   let income = 0;
@@ -725,11 +760,20 @@ const categoryCardChartData =
       };
 
 
-      
-const logout = () => {
-  localStorage.clear();
-  window.location.replace("/login");
+const logout = async () => {
+  try {
+    await fetch("http://localhost:5050/auth/logout", {
+      method: "POST",
+      credentials: "include"
+    });
+  } catch (err) {
+    // logout should still work even if request fails
+    console.warn("Logout request failed:", err);
+  } finally {
+    window.location.replace("/login");
+  }
 };
+
 
 const handleAddCard = async () => {
   const name = prompt("Enter card name");
