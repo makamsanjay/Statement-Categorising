@@ -140,45 +140,62 @@ export default function CardSuggestionsPage({
     );
   }, [filteredTxns]);
 
-  const currency =
-    cards.find(c => c._id === cardId)?.displayCurrency ||
-    cards[0]?.displayCurrency ||
-    "INR";
+const currency = useMemo(() => {
+  if (scope === "single" && cardId) {
+    return (
+      cards.find(c => String(c._id) === String(cardId))
+        ?.displayCurrency || "INR"
+    );
+  }
 
-  /* ================= ACTION ================= */
+  return cards[0]?.displayCurrency || "INR";
+}, [cards, scope, cardId]);
 
-  const handleGetSuggestions = async () => {
-    setLoading(true);
-    setError("");
+const handleGetSuggestions = async () => {
+  if (!category) {
+    setError("Please select a category.");
+    return;
+  }
 
-    try {
-      const data = await getCardSuggestions({
-        category,
-        scope,
-        cardId: scope === "single" ? cardId : null,
-        totalSpent,
-        currency
-      });
+  if (scope === "single" && !cardId) {
+    setError("Please select a card.");
+    return;
+  }
 
-      setSelectedSuggestion(data);
+  setLoading(true);
+  setError("");
 
-      setHistory(prev => {
-        const filtered = prev.filter(
-          h =>
-            !(
-              h.category === data.category &&
-              h.scope === data.scope &&
-              String(h.cardId) === String(data.cardId)
-            )
-        );
-        return [data, ...filtered];
-      });
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const data = await getCardSuggestions({
+      category,
+      scope,
+      cardId: scope === "single" ? cardId : null,
+      totalSpent,
+      currency
+    });
+
+    setSelectedSuggestion(data);
+
+    setHistory(prev => {
+      const filtered = prev.filter(
+        h =>
+          !(
+            h.category === data.category &&
+            h.scope === data.scope &&
+            String(h.cardId) === String(data.cardId)
+          )
+      );
+      return [data, ...filtered];
+    });
+  } catch (e) {
+    setError(
+      e?.message || "Failed to fetch card suggestions. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   /* ================= FREE GATE ================= */
 
@@ -321,13 +338,17 @@ export default function CardSuggestionsPage({
             <button
               className="delete-btn"
               onClick={async e => {
-                e.stopPropagation();
-                await deleteCardSuggestion(item._id);
-                setHistory(h => h.filter(x => x._id !== item._id));
-                if (selectedSuggestion?._id === item._id) {
-                  setSelectedSuggestion(null);
-                }
-              }}
+  e.stopPropagation();
+  try {
+    await deleteCardSuggestion(item._id);
+    setHistory(h => h.filter(x => x._id !== item._id));
+    if (selectedSuggestion?._id === item._id) {
+      setSelectedSuggestion(null);
+    }
+  } catch {
+    setError("Failed to delete suggestion");
+  }
+}}
             >
               ×
             </button>
