@@ -404,24 +404,25 @@ const derivedCategories = useMemo(() => {
       Delete Card
     </button>
 
-    <button
-      className="card-btn primary"
-      onClick={() => {
-        const name = prompt("Enter card name");
-        if (!name) return;
+ <button
+  className="card-btn primary add-card-btn add-card-force"
+  onClick={() => {
+    const name = prompt("Enter card name");
+    if (!name) return;
 
-        const last4 = prompt("Last 4 digits (optional)");
+    const last4 = prompt("Last 4 digits (optional)");
 
-        createCard({
-          name,
-          last4: last4 || undefined,
-          baseCurrency: "USD",
-          displayCurrency: "USD"
-        }).then(() => getCards().then(setCards));
-      }}
-    >
-      + Add Card
-    </button>
+    createCard({
+      name,
+      last4: last4 || undefined,
+      baseCurrency: "USD",
+      displayCurrency: "USD"
+    }).then(() => getCards().then(setCards));
+  }}
+>
+  + Add Card
+</button>
+
   </div>
 </div>
 
@@ -492,22 +493,39 @@ const derivedCategories = useMemo(() => {
           <button onClick={handleAddTransaction}>Save</button>
         </div>
 
-        {chartData && (
-         <div className="txn-chart-card">
-  <h4> Card-wise Spending Breakdown</h4>
-  <div className="chart-wrapper">
-    <Pie
-      data={chartData}
-      options={{
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: "bottom" }
-        }
-      }}
-    />
+       {chartData && (
+  <div className="txn-chart-card">
+    <div id="card-wise-header">
+      <h4>Card-wise Spending Breakdown</h4>
+
+      <div id="card-wise-tooltip">
+        <span id="card-wise-info-icon">i</span>
+
+        <div id="card-wise-tooltip-content">
+          <strong>Tip</strong>
+          <ul>
+            <li>
+              Click on any <b>category name or field below</b> to exclude it and
+            explore deeper insights.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div className="chart-wrapper">
+      <Pie
+        data={chartData}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "bottom" }
+          }
+        }}
+      />
+    </div>
   </div>
-</div>
 
         )}
       </div>

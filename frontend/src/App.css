@@ -733,3 +733,78 @@ th {
   color: #6b7280;
   margin-top: 2px;
 }
+
+/* =========================
+   CHART TITLE + INFO ICON
+========================= */
+
+.chart-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+/* Info icon */
+.info-tooltip {
+  position: relative;
+}
+
+.info-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  user-select: none;
+}
+
+/* Tooltip box */
+.tooltip-content {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  width: 260px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #111827;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: all 0.15s ease;
+  z-index: 20;
+}
+
+/* Show on hover */
+.info-tooltip:hover .tooltip-content {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* Tooltip text */
+.tooltip-content strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.tooltip-content ul {
+  padding-left: 16px;
+  margin: 0;
+}
+
+.tooltip-content li {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}

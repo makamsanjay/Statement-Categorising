@@ -883,23 +883,43 @@ return (
     {/* CHARTS */}
     <div className="charts-row">
       <div className="chart-card chart-large">
-        <h3>Where Your Money Went</h3>
-        {chartData ? (
-          <Pie
-            data={chartData}
-            options={{
-              onClick: (_, elements) => {
-                if (!elements.length) return;
-                const index = elements[0].index;
-                setSelectedCategory(chartData.labels[index]);
-              },
-              plugins: { legend: { position: "bottom" } }
-            }}
-          />
-        ) : (
-          <p>No expense data</p>
-        )}
+  <div className="chart-title-row">
+    <h3>Where Your Money Went</h3>
+
+    <div className="info-tooltip">
+      <span className="info-icon">i</span>
+      <div className="tooltip-content">
+        <strong>Tips</strong>
+        <ul>
+          <li>
+            Click on any <b>category in the chart</b> to see detailed spending.
+          </li>
+          <li>
+            Click on any <b>category name or field below</b> to exclude it and
+            explore deeper insights.
+          </li>
+        </ul>
       </div>
+    </div>
+  </div>
+
+  {chartData ? (
+    <Pie
+      data={chartData}
+      options={{
+        onClick: (_, elements) => {
+          if (!elements.length) return;
+          const index = elements[0].index;
+          setSelectedCategory(chartData.labels[index]);
+        },
+        plugins: { legend: { position: "bottom" } }
+      }}
+    />
+  ) : (
+    <p>No expense data</p>
+  )}
+</div>
+
 
       <div className="chart-card chart-small">
         {!selectedCategory ? (

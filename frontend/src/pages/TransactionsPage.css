@@ -47,6 +47,7 @@
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
+  align-items: center;
 }
 
 .card-actions button {
@@ -474,12 +475,6 @@
 
 /* ================= CARD ACTION BUTTONS ================= */
 
-.card-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 .card-btn {
   padding: 8px 14px;
   border-radius: 10px;
@@ -497,15 +492,6 @@
   background: #d1d5db;
 }
 
-/* Primary (Add card) */
-.card-btn.primary {
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  color: #fff;
-}
-
-.card-btn.primary:hover {
-  background: linear-gradient(135deg, #4f46e5, #4338ca);
-}
 
 /* Danger (Delete card) */
 .card-btn.danger {
@@ -516,6 +502,8 @@
 .card-btn.danger:hover {
   background: #fecaca;
 }
+
+
 
 /* ================= RESPONSIVE ================= */
 
@@ -636,4 +624,195 @@
   width: 1px;
   height: 34px;
   background: #e5e7eb;
+}
+
+/* =========================
+   CARD-WISE SPENDING TOOLTIP
+========================= */
+
+/* only affects the analytics card header */
+.txn-chart-card > #card-wise-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+/* Tooltip wrapper */
+#card-wise-tooltip {
+  position: relative;
+}
+
+/* Info icon */
+#card-wise-info-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  user-select: none;
+}
+
+/* Tooltip box */
+#card-wise-tooltip-content {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  width: 240px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #111827;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: all 0.15s ease;
+  z-index: 50;
+}
+
+/* Hover behavior */
+#card-wise-tooltip:hover #card-wise-tooltip-content {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* Tooltip text */
+#card-wise-tooltip-content strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+#card-wise-tooltip-content ul {
+  padding-left: 16px;
+  margin: 0;
+}
+
+#card-wise-tooltip-content li {
+  line-height: 1.4;
+}
+
+
+/* =========================
+   ADD CARD BUTTON (MATCH CARD BTNS)
+========================= */
+
+
+.add-card-btn:hover {
+  background: #4338ca;
+  border-color: #4338ca;
+}
+
+/* prevent hover size jump */
+.add-card-btn,
+.add-card-btn:hover {
+  transform: none;
+}
+
+
+.card-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  align-items: center;
+  justify-content: center;
+
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Primary */
+.card-btn.primary {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #ffffff;
+}
+
+.card-btn.primary:hover {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+}
+
+/* Add Card specific */
+.add-card-btn {
+  min-width: 110px;
+}
+
+
+/* =========================
+   FORCE IDENTICAL CARD BUTTON HEIGHT
+========================= */
+/* Force all card buttons into the same box model */
+.card-actions .card-btn {
+  height: 38px;              /* lock height */
+  padding: 0 16px;           /* horizontal only */
+  line-height: normal;       /* 🔥 reset baseline weirdness */
+  display: flex;             /* not inline-flex */
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* Add Card button — NO special sizing */
+
+/* =========================
+   FINAL HARD FIX — CARD ACTION BUTTON ALIGNMENT
+========================= */
+
+.card-actions {
+  display: flex;
+  align-items: center;
+}
+
+/* Normalize ALL buttons inside card-actions */
+.card-actions button {
+  height: 38px;
+  padding: 0 16px;
+  display: flex;            /* 🔥 NOT inline / inline-flex */
+  align-items: center;
+  justify-content: center;
+  line-height: 1;           /* 🔥 CRITICAL */
+  box-sizing: border-box;
+}
+
+/* Remove any inherited inline styles */
+.card-actions .card-btn {
+  display: flex;
+}
+
+/* Ensure Add Card does NOT differ */
+.card-actions .add-card-btn {
+  height: 38px;
+}
+
+/* =========================
+   HARD FORCE FIX — ADD CARD
+========================= */
+
+.card-actions .add-card-force {
+  height: 38px !important;
+  min-height: 38px !important;
+
+  padding: 0 16px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+
+  white-space: nowrap;
+  margin: 0 !important;
 }

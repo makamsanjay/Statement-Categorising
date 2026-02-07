@@ -251,14 +251,40 @@ function AnalyticsSection({
   disableNext
 }) {
   return (
-    <div className={`analytics-card ${selectedCategory ? "split" : ""}`}>
-      <div className="analytics-split">
-        <div className="analytics-chart">
-          <div className="chart-header">
-            {arrows && <button disabled={disablePrev} onClick={onPrev}>←</button>}
-            <h3>{title}</h3>
-            {arrows && <button disabled={disableNext} onClick={onNext}>→</button>}
-          </div>
+  <div className={`analytics-card ${selectedCategory ? "split" : ""}`}>
+    
+    {/* INFO ICON – TOP RIGHT OF CARD */}
+    <div className="analytics-info-tooltip">
+      <span className="analytics-info-icon">i</span>
+
+      <div className="analytics-tooltip-content">
+        <strong>Tips</strong>
+        <ul>
+          <li>
+            Click on any <b>category in the chart</b> to see detailed spending.
+          </li>
+          <li>
+            Click on any <b>category name or field above</b> to exclude it and
+            explore deeper insights.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div className="analytics-split">
+      <div className="analytics-chart">
+        <div className="chart-header">
+          {arrows && (
+            <button disabled={disablePrev} onClick={onPrev}>←</button>
+          )}
+          <h3>{title}</h3>
+          {arrows && (
+            <button disabled={disableNext} onClick={onNext}>→</button>
+          )}
+        </div>
+
+        {/* rest unchanged */}
+
 
           <div className="chart-switch">
             {Object.values(CHARTS).map(c => (
