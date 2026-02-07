@@ -29,7 +29,6 @@ import "./App.css";
 import CardSuggestions from "./pages/CardSuggestions";
 import {
    createRazorpaySubscription,
-  cancelRazorpaySubscription
  } from "./api";
 import ManageBilling from "./pages/ManageBilling";
 
@@ -50,10 +49,7 @@ const DEFAULT_CATEGORIES = [
   "Other"
 ];
 
-const fixAmountSign = (amount, type) => {
-  const abs = Math.abs(amount);
-  return type === "income" ? abs : -abs;
-};
+
 
 const SYMBOL = {
   USD: "$",
@@ -75,8 +71,6 @@ function Dashboard() {
   const [selectedTxns, setSelectedTxns] = useState([]);
   const [bulkCategory, setBulkCategory] = useState("");
 
-const [category, setCategory] = useState("");
-const [budgetAmount, setBudgetAmount] = useState("");
 const formatAmount = (num) => Number(num).toFixed(2);
 
 const [allTransactions, setAllTransactions] = useState([]);
@@ -121,12 +115,6 @@ useEffect(() => {
 
 
 
-const openManageBilling = async () => {
-  const data = await getManageBilling();
-  setBillingDetails(data);
-  setShowBilling(true);
-};
-
 
 useEffect(() => {
   getBillingStatus()
@@ -144,7 +132,6 @@ useEffect(() => {
     billing.subscriptionStatus === "none" &&
     billingState === "idle"
   ) {
-    console.log("🚀 Pricing intent detected → starting checkout");
 
     startRazorpayCheckout();
 
@@ -159,7 +146,6 @@ const [selectedUploadCardIndex, setSelectedUploadCardIndex] = useState(0);
 const [selectedCategory, setSelectedCategory] = useState(null);
 
 const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-const [creatingCard, setCreatingCard] = useState(false);
 
 const [showAddTxn, setShowAddTxn] = useState(false);
 const [activeView, setActiveView] = useState(() => {
@@ -219,10 +205,8 @@ useEffect(() => {
   const loadCards = async () => {
     try {
       const data = await getCards();
-      console.log("CARDS LOADED:", data);
       setCards(data);
     } catch (e) {
-      console.error("FAILED TO LOAD CARDS", e); 
     }
   };
   loadCards();
@@ -282,7 +266,15 @@ const { totalIncome, totalExpense } = useMemo(() => {
   return { totalIncome: income, totalExpense: expense };
 }, [allTransactions]);
 
- 
+const [toast, setToast] = useState(null);
+
+const showToast = (message, duration = 8000) => {
+  setToast(message);
+  setTimeout(() => setToast(null), duration);
+};
+
+ const latestTxns = transactions.slice(0, 5);
+
 const handleUpload = async () => {
   setScanStarted(true);
   setScanStatus({});
@@ -323,7 +315,6 @@ const handleUpload = async () => {
 
     try {
       const data = await previewUpload(file);
-      console.log("🌐 PREVIEW API RESPONSE:", data);
 
 
       // ✅ PDFs → previewable
@@ -400,7 +391,7 @@ const startRazorpayCheckout = async () => {
     subscription = await createRazorpaySubscription();
   } catch (err) {
     setBillingState("idle");
-    alert(err.message || "Unable to start subscription");
+    showToast(err.message || "Unable to start subscription");
     return;
   }
 
@@ -444,13 +435,13 @@ const handleConfirm = async (e) => {
 
   const selectedTxns = preview.filter(t => t.selected);
   if (!selectedTxns.length) {
-    alert("Select at least one transaction");
+    showToast("Select at least one transaction");
     return;
   }
 
   const card = cards[selectedUploadCardIndex];
   if (!card || !card._id) {
-    alert("Please select a card before confirming upload");
+    showToast("Please select a card before confirming upload");
     return;
   }
 
@@ -493,13 +484,13 @@ const handleAddTransaction = async () => {
   const { date, description, amount, type, category } = newTxn;
 
   if (!date || !description || !amount || !category) {
-    alert("Please fill all fields");
+    showToast("Please fill all fields");
     return;
   }
 
   const card = cards[activeCardIndex];
   if (!card) {
-    alert("No card selected");
+    showToast("No card selected");
     return;
   }
 
@@ -573,11 +564,18 @@ useEffect(() => {
   }
 }, [cards, activeCardIndex]);
 
+const [modal, setModal] = useState(null);
+const [modalInput, setModalInput] = useState("");
 
+useEffect(() => {
+  if (modal?.type === "input") {
+    setModalInput("");
+  }
+}, [modal]);
 
   const handleBulkUpdate = async () => {
     if (!bulkCategory || !selectedTxns.length) {
-      alert("Select category and transactions");
+      showToast("Select category and transactions");
       return;
     }
 
@@ -600,32 +598,41 @@ setTransactions(await getTransactionsByCard(cardId));
 
 
 
+const handleBulkDelete = () => {
+  if (!selectedTxns.length) {
+    showToast("Select at least one transaction to delete.");
+    return;
+  }
 
-const handleBulkDelete = async () => {
-  if (!selectedTxns.length) return;
+  setModal({
+    type: "confirm",
+    title: "Delete Transactions",
+    message: "Delete selected transactions permanently?",
+    onConfirm: async () => {
+      const cardId = cards[activeCardIndex]?._id;
+      if (!cardId) {
+        showToast("No active card found.");
+        setModal(null);
+        return;
+      }
 
-  if (!window.confirm("Delete selected transactions permanently?")) return;
+      await fetch("http://localhost:5050/transactions/bulk-delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ ids: selectedTxns })
+      });
 
-  const cardId = cards[activeCardIndex]?._id;
-  if (!cardId) return;
+      await refreshDashboardData(activeCardIndex);
 
-  await fetch("http://localhost:5050/transactions/bulk-delete", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("token")}`
-    },
-    body: JSON.stringify({ ids: selectedTxns })
+      setSelectedTxns([]);
+      setEditMode(false);
+      setModal(null);
+    }
   });
-
-  // 🔄 Refresh everything cleanly (single source of truth)
-  await refreshDashboardData(activeCardIndex);
-
-  // 🧹 Reset UI state
-  setSelectedTxns([]);
-  setEditMode(false);
 };
-
 
 
   const buildCardChartData = (cardTxns) => {
@@ -743,59 +750,11 @@ const categoryCardChartData =
         ]
       };
 
-
-      
-const logout = () => {
-  localStorage.clear();
-  window.location.replace("/login");
-};
-
-const handleAddCard = async () => {
-  const name = prompt("Enter card name");
-  if (!name) return;
-
-  const last4 = prompt("Last 4 digits (optional)");
-  if (last4 && !/^\d{0,4}$/.test(last4)) {
-    alert("Last 4 digits must be up to 4 numbers");
-    return;
+useEffect(() => {
+  if (activeView === "login") {
+    window.location.href = "/login";
   }
-
-  try {
-    const newCard = await createCard({
-      name,
-      last4: last4 || undefined,
-      baseCurrency: "USD",
-      displayCurrency: "USD"
-    });
-
-    
-    const updatedCards = await getCards();
-    setCards(updatedCards);
-
-    const index = updatedCards.findIndex(
-      c => c._id === newCard._id
-    );
-
-    setSelectedUploadCardIndex(index);
-    setActiveCardIndex(index);
-  } catch (err) {
-    alert(err.message);
-  }
-};
-
-const latestTxns = transactions
-  .slice(0, 5);
-
-const refreshActiveCardTransactions = async () => {
-  if (!cards[activeCardIndex]) return;
-
-  const cardId = cards[activeCardIndex]._id;
-  const updated = await getTransactionsByCard(cardId);
-  setTransactions(updated);
-
-  const all = await getTransactions();
-  setAllTransactions(all);
-};
+}, [activeView]);
 
 const handleAddPreviewTxn = () => {
   const today = new Date().toISOString().slice(0, 10);
@@ -806,7 +765,7 @@ const handleAddPreviewTxn = () => {
       selected: true,
       date: today,
       description: "",
-      amount: -0,          // default expense
+      amount: -0,
       category: "Other",
       confidence: 1,
       source: "manual"
@@ -814,8 +773,85 @@ const handleAddPreviewTxn = () => {
     ...prev
   ]);
 };
+      
+const refreshActiveCardTransactions = async () => {
+  if (!cards[activeCardIndex]) return;
 
+  const cardId = cards[activeCardIndex]._id;
 
+  const updated = await getTransactionsByCard(cardId);
+  setTransactions(updated);
+
+  const all = await getTransactions();
+  setAllTransactions(all);
+};
+
+const logout = () => {
+  localStorage.clear();
+  setActiveView("login");
+};
+
+const openAddCardModal = () => {
+  setModal({
+    type: "input",
+    title: "Add Card",
+    placeholder: "Card name",
+    onSubmit: (cardName) => {
+      const trimmedName = cardName?.trim();
+
+      if (!trimmedName) {
+        showToast("Card name cannot be empty.");
+        return; // stay on name input
+      }
+
+      const exists = cards.some(
+        c => c.name?.toLowerCase() === trimmedName.toLowerCase()
+      );
+
+      if (exists) {
+        showToast("A card with this name already exists.");
+        return;
+      }
+
+      // move to last4 step
+      setModal({
+        type: "input",
+        title: "Last 4 digits (optional)",
+        placeholder: "1234",
+        onSubmit: async (last4) => {
+          const digits = last4?.trim();
+
+          if (digits && !/^\d{4}$/.test(digits)) {
+            showToast("Last 4 digits must be exactly 4 numbers.");
+            return; // stay on number input
+          }
+
+          try {
+            const newCard = await createCard({
+              name: trimmedName,
+              last4: digits || undefined,
+              baseCurrency: "USD",
+              displayCurrency: "USD"
+            });
+
+            const updatedCards = await getCards();
+            setCards(updatedCards);
+
+            const index = updatedCards.findIndex(
+              c => c._id === newCard._id
+            );
+
+            setSelectedUploadCardIndex(index);
+            setActiveCardIndex(index);
+            setModal(null);
+          } catch (err) {
+            showToast("Failed to create card. Please try again.");
+          }
+        }
+      });
+    }
+  });
+};
 
 return (
   <div className="dashboard-layout">
@@ -1175,7 +1211,7 @@ return (
   {/* 🔐 Security error */}
   {error && (
     <div className="upload-error security">
-      🛑 {error}
+       {error}
     </div>
   )}
 
@@ -1224,9 +1260,9 @@ return (
       <button
         type="button"
         className="upload-add-card"
-        onClick={handleAddCard}
+        onClick={openAddCardModal}
       >
-        ➕ Add Card
+         Add Card
       </button>
 
       <button
@@ -1234,7 +1270,7 @@ return (
     className="upload-add-txn"
     onClick={handleAddPreviewTxn}
   >
-    ➕ Add Transaction
+     Add Transaction
   </button>
 
     </div>
@@ -1356,19 +1392,32 @@ return (
                   const value = e.target.value;
 
                   if (value === "__add_new__") {
-                    const newCat = prompt("Enter new category name");
-                    if (!newCat) return;
+  setModal({
+    type: "input",
+    title: "Add New Category",
+    placeholder: "Category name",
+    onSubmit: (categoryName) => {
+      const trimmed = categoryName?.trim();
 
-                    if (!categories.includes(newCat)) {
-                      setCategories(prev => [...prev, newCat]);
-                    }
+      if (!trimmed) {
+        showToast("Category name cannot be empty.");
+        return;
+      }
 
-                    const copy = [...preview];
-                    copy[i].category = newCat;
-                    setPreview(copy);
-                    return;
-                  }
+      if (!categories.includes(trimmed)) {
+        setCategories(prev => [...prev, trimmed]);
+      }
 
+      const copy = [...preview];
+      copy[i].category = trimmed;
+      setPreview(copy);
+
+      setModal(null);
+    }
+  });
+
+  return;
+}
                   const copy = [...preview];
                   copy[i].category = value;
                   setPreview(copy);
@@ -1437,6 +1486,46 @@ return (
 
       </div>
     </div>
+
+{modal && (
+  <div className="modal-backdrop">
+    <div className="modal">
+      <h3>{modal.title}</h3>
+      {modal.message && <p>{modal.message}</p>}
+
+      {modal.type === "input" && (
+        <input
+  autoFocus
+  placeholder={modal.placeholder}
+  value={modalInput}
+  onChange={(e) => setModalInput(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      modal.onSubmit(modalInput);
+    }
+  }}
+/>
+      )}
+
+      <div className="modal-actions">
+        <button onClick={() => setModal(null)}>Cancel</button>
+        <button
+          className="primary"
+          onClick={() =>
+            modal.type === "input"
+              ? modal.onSubmit(modalInput)
+              : modal.onConfirm()
+          }
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+    {toast && <div className="toast">{toast}</div>}
   </div>
 );
 }
