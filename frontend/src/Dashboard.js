@@ -81,6 +81,7 @@ const [scanning, setScanning] = useState(false);
 const [scanStatus, setScanStatus] = useState({});
 const [scanStarted, setScanStarted] = useState(false);
 const [infoMessage, setInfoMessage] = useState("");
+const [toast, setToast] = useState(null);
 
 
 const [showBilling, setShowBilling] = useState(false);
@@ -167,17 +168,17 @@ useEffect(() => {
 }, []);
 
 
-
-  const refreshDashboardData = async (cardIndex = activeCardIndex) => {
+const refreshDashboardData = async (cardIndex = activeCardIndex) => {
   const all = await getTransactions();
-  setAllTransactions([...all]); 
+  setAllTransactions(all);
 
-  if (cards[cardIndex]) {
-    const cardId = cards[cardIndex]._id;
-    const cardTxns = await getTransactionsByCard(cardId);
-    setTransactions([...cardTxns]);
-  }
+  const card = cards[cardIndex];
+  if (!card) return;
+
+  const cardTxns = await getTransactionsByCard(card._id);
+  setTransactions(cardTxns);
 };
+
 
 useEffect(() => {
   if (cards.length) {
@@ -266,12 +267,14 @@ const { totalIncome, totalExpense } = useMemo(() => {
   return { totalIncome: income, totalExpense: expense };
 }, [allTransactions]);
 
-const [toast, setToast] = useState(null);
+const toastTimer = useRef(null);
 
 const showToast = (message, duration = 8000) => {
   setToast(message);
-  setTimeout(() => setToast(null), duration);
+  clearTimeout(toastTimer.current);
+  toastTimer.current = setTimeout(() => setToast(null), duration);
 };
+
 
  const latestTxns = transactions.slice(0, 5);
 
@@ -445,6 +448,13 @@ const handleConfirm = async (e) => {
     return;
   }
 
+  for (const t of selectedTxns) {
+  if (!t.date || !t.description || !t.amount) {
+    showToast("Preview transactions have missing fields");
+    return;
+  }
+}
+
   const payload = selectedTxns.map(t => ({
     date: t.date,
     description: t.description,
@@ -582,6 +592,9 @@ useEffect(() => {
     for (const id of selectedTxns) {
       await updateCategory(id, bulkCategory);
     }
+    await Promise.all(
+  selectedTxns.map(id => updateCategory(id, bulkCategory))
+);
 
 setSelectedTxns([]);
 setBulkCategory("");
@@ -752,7 +765,7 @@ const categoryCardChartData =
 
 useEffect(() => {
   if (activeView === "login") {
-    window.location.href = "/login";
+    setActiveView("login");
   }
 }, [activeView]);
 
@@ -970,7 +983,7 @@ return (
           <>
             <div className="chart-header">
               <h3>{selectedCategory} Details</h3>
-              <button onClick={() => setSelectedCategory(null)}>✕</button>
+              <button onClick={() => setSelectedCategory(null)} aria-label="Close">✕</button>
             </div>
             {categoryCardChartData && <Pie data={categoryCardChartData} />}
           </>
