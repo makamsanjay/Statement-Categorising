@@ -146,7 +146,7 @@ router.post("/send-signup-otp", sendOtpLimiter, async (req, res) => {
 
     await sendEmail({
       to: email,
-      subject: "Your verification code",
+      subject: "Your spendswitch verification code",
       html: `<h2>Your OTP: ${otp}</h2><p>Expires in 5 minutes.</p>`
     });
 
