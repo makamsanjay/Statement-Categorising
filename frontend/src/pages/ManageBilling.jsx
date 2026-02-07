@@ -12,6 +12,8 @@ export default function ManageBilling() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+
 
   const load = async () => {
     try {
@@ -35,11 +37,17 @@ export default function ManageBilling() {
 
   const isActive = billing.subscriptionStatus === "active";
   const isCanceled = billing.subscriptionStatus === "canceled";
-  const isFree = billing.plan === "free";
+const isFree = !billing.plan || billing.plan === "free";
 
-  const endDate = billing.planExpiresAt
-    ? new Date(billing.planExpiresAt).toDateString()
-    : null;
+
+const endDate = billing.planExpiresAt
+  ? new Date(billing.planExpiresAt).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    })
+  : null;
+
 
   /* =========================
      ACTIONS
@@ -49,13 +57,24 @@ export default function ManageBilling() {
     try {
       const subscription = await createRazorpaySubscription();
 
-      const rzp = new window.Razorpay({
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        subscription_id: subscription.id,
-        name: "SpendSwitch Pro",
-        description: "Monthly Subscription",
-        theme: { color: "#4f46e5" }
-      });
+   const rzp = new window.Razorpay({
+  key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+  subscription_id: subscription.id,
+  name: "SpendSwitch Pro",
+  description: "Monthly Subscription",
+  handler: () => {
+    // webhook will confirm → reload billing state
+    setLoading(true);
+    setTimeout(load, 3000);
+  },
+  modal: {
+    ondismiss: () => {
+      setLoading(false);
+    }
+  },
+  theme: { color: "#4f46e5" }
+});
+
 
       rzp.open();
     } catch {
@@ -63,15 +82,26 @@ export default function ManageBilling() {
     }
   };
 
-  const confirmCancelSubscription = async () => {
-    try {
-      await cancelRazorpaySubscription();
-      setConfirmCancel(false);
-      await load();
-    } catch {
-      setError("Failed to cancel subscription");
-    }
-  };
+const confirmCancelSubscription = async () => {
+  if (canceling) return;
+  try {
+    setCanceling(true);
+    await cancelRazorpaySubscription();
+    setConfirmCancel(false);
+    await load();
+  } catch {
+    setError("Failed to cancel subscription");
+  } finally {
+    setCanceling(false);
+  }
+};
+
+const STATUS_LABELS = {
+  active: "Active",
+  canceled: "Canceled",
+  pending: "Processing",
+  none: "Inactive"
+};
 
   /* =========================
      UI
@@ -90,8 +120,8 @@ export default function ManageBilling() {
         <div className="billing-row">
           <span>Status</span>
           <strong className={`status ${billing.subscriptionStatus}`}>
-            {billing.subscriptionStatus}
-          </strong>
+  {STATUS_LABELS[billing.subscriptionStatus] || "Unknown"}
+</strong>
         </div>
 
         {billing.planExpiresAt && (
@@ -169,11 +199,12 @@ export default function ManageBilling() {
         {/* FREE USERS ONLY */}
         {isFree && !confirmCancel && (
           <button
-            className="billing-btn primary"
-            onClick={startNewSubscription}
-          >
-            Upgrade to Pro
-          </button>
+  className="billing-btn primary"
+  onClick={startNewSubscription}
+  disabled={loading}
+>
+  Upgrade to Pro
+</button>
         )}
       </div>
 
