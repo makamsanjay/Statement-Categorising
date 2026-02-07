@@ -1,34 +1,25 @@
 .billing-page {
-  max-width: 520px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 24px;
 }
 
-.billing-page h2 {
-  margin-bottom: 24px;
+.billing-title {
+  font-size: 24px;
+  margin-bottom: 20px;
 }
 
 .billing-card {
-  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 16px;
+  background: #fff;
 }
 
 .billing-row {
   display: flex;
   justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.billing-row:last-child {
-  border-bottom: none;
-}
-
-.status {
-  text-transform: capitalize;
+  margin-bottom: 10px;
 }
 
 .status.active {
@@ -39,37 +30,66 @@
   color: #dc2626;
 }
 
+.status.pending {
+  color: #ca8a04;
+}
+
 .billing-actions {
-  display: flex;
-  gap: 12px;
+  margin-top: 24px;
 }
 
-button.primary {
-  background: #0f172a;
-  color: #fff;
+.billing-btn {
   padding: 10px 16px;
   border-radius: 8px;
   border: none;
+  font-size: 14px;
   cursor: pointer;
 }
 
-button.danger {
-  background: #fee2e2;
-  color: #dc2626;
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
+.billing-btn.primary {
+  background: #4f46e5;
+  color: white;
+}
+
+.billing-btn.danger {
+  background: #dc2626;
+  color: white;
+}
+
+.billing-btn.secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.billing-btn + .billing-btn {
+  margin-left: 10px;
+}
+
+.cancel-warning {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.cancel-warning p {
+  font-size: 14px;
+  color: #7f1d1d;
+}
+
+.cancel-actions {
+  margin-top: 12px;
 }
 
 .billing-note {
-  margin-top: 16px;
-  font-size: 13px;
-  color: #64748b;
+  margin-top: 20px;
+  font-size: 12px;
+  color: #6b7280;
 }
 
 .billing-loading,
 .billing-error {
-  padding: 32px;
   text-align: center;
+  padding: 40px;
 }

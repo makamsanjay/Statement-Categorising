@@ -10,6 +10,12 @@ const { generalLimiter } = require("./middleware/rateLimiters");
 const app = express();
 
 /* ================================
+   🔑 TRUST PROXY (REQUIRED FOR RATE LIMIT)
+================================ */
+// ✅ FIX: must be BEFORE rate-limit middleware
+app.set("trust proxy", 1);
+
+/* ================================
    🔐 SECURITY HEADERS
 ================================ */
 app.use(

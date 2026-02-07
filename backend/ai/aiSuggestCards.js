@@ -11,53 +11,46 @@ async function aiSuggestCards({
   totalSpent = 0,
   scope = "all",
   userCards = [],
-  allowComparison = false   // 🔒 HARD GATE FROM BACKEND
+  allowComparison = false
 }) {
-  /* ======================================================
-     USER CARD CONTEXT (STRICTLY GUARDED)
-     ====================================================== */
+
+  /* ================= USER CARD CONTEXT ================= */
+
   const userCardSection = allowComparison
     ? `
-USER'S EXISTING CARDS (VERY IMPORTANT):
+USER'S EXISTING CARDS:
 ${userCards.map(c => `- ${c.issuer} ${c.product}`).join("\n")}
 
-MANDATORY COMPARISON RULES:
-- ONLY compare against the cards listed above
-- Determine their REALISTIC always-on cashback rates
-- Compare NUMERICALLY with your recommendations
-- If ANY user card cashback >= your BEST recommendation:
-  → User ALREADY has a top-tier card
-  → DO NOT suggest switching
-  → Summary MUST clearly say user is already using a high cashback card
-- If user card cashback < best available:
-  → Recommend better cards normally
+COMPARISON RULES:
+- Evaluate user's card cashback realistically
+- DO NOT stop recommendations
+- DO NOT block suggestions
+- Even if user's card is strong:
+  → Still recommend TWO comparable cards
+  → Summary must mention user's current cashback rate
 `
     : `
 IMPORTANT:
-- User has NOT provided official card name(s)
-- DO NOT compare against user's cards
-- DO NOT say user already has the best cashback
-- ONLY recommend best cards normally
+- User cards are NOT provided
+- Do NOT reference user's existing cards
+- Always recommend best available cards
 `;
 
-  /* ======================================================
-     PROMPT
-     ====================================================== */
+  /* ================= PROMPT ================= */
+
   const prompt = `
 You are a REAL-WORLD credit card cashback expert.
 
 ========================
-STRICT RULES (NON-NEGOTIABLE)
+STRICT RULES
 ========================
-- DO NOT use rotating bonus categories
-- Treat rotating cards as BASE RATE ONLY
-- Examples:
-  - Chase Freedom Flex → 1%
-  - Discover It → 1%
-- NEVER guess cashback rates
-- NEVER return 0% cashback
 - ALWAYS return EXACTLY 2 cards
-- Cashback rates must be realistic and defensible
+- DO NOT block suggestions for any reason
+- DO NOT invent unrealistic cards
+- Prefer well-known, real cards
+- Cashback rates must be defensible
+- Paid cards must justify annual fee
+- Annual fee MUST be a number (0 if free)
 
 ========================
 USER CONTEXT
@@ -71,56 +64,41 @@ Scope: ${scope}
 ${userCardSection}
 
 ========================
-DECISION LOGIC (STEP-BY-STEP)
+SUMMARY LOGIC
 ========================
-1. Identify the BEST always-on cashback rate for this category
-2. ${
-    allowComparison
-      ? "Identify the cashback rate of the user's card(s) and compare numerically"
-      : "DO NOT evaluate user's cards at all"
-  }
-3. ${
-    allowComparison
-      ? `If user card >= best available:
-   - User is already optimal
-   - Summary MUST say this clearly
-   - Reasons must reinforce continued use`
-      : `Always recommend the best available cards`
-  }
-4. Paid cards MUST justify annual fee clearly
+- If user's card has strong cashback:
+  Say:
+  "Your current card already offers X% cashback, which is strong for this category."
+- Then continue with:
+  "Here are two comparable options you may consider."
 
-========================
-SUMMARY RULES
-========================
-- If user already has top cashback:
-  Use wording like:
-  "You are already using one of the highest cashback cards for this category."
-- NEVER say this unless comparison is explicitly allowed
-- If comparison is not allowed:
-  - Do NOT mention user's cards at all
+- NEVER say:
+  - "Do not switch"
+  - "You already have the best card"
+  - Anything that blocks suggestions
 
 ========================
 RESPONSE FORMAT (JSON ONLY)
 ========================
 
 {
-  "summary": "Clear, honest, human explanation",
+  "summary": "Clear explanation mentioning user's cashback if applicable",
   "cards": [
     {
-      "name": "Card name",
-      "issuer": "Bank",
+      "name": "Real card name",
+      "issuer": "Bank name",
       "cardType": "free | paid",
       "annualFee": 0,
       "cashbackRate": 2,
-      "reason": "Clear explanation"
+      "reason": "Why this card is good"
     },
     {
-      "name": "Card name",
-      "issuer": "Bank",
+      "name": "Real card name",
+      "issuer": "Bank name",
       "cardType": "paid",
-      "annualFee": 95,
+      "annualFee": what is the annual fee for the suugested card,
       "cashbackRate": 3,
-      "reason": "Clear explanation or comparison"
+      "reason": "Why this card may be better or comparable"
     }
   ]
 }
@@ -129,7 +107,7 @@ RESPONSE FORMAT (JSON ONLY)
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
-    temperature: 0.1
+    temperature: 0.15
   });
 
   return JSON.parse(completion.choices[0].message.content);

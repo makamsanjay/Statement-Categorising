@@ -9,7 +9,9 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
-// ✅ this is fine (no user here)
+/* ============================
+   PLAN MAP
+============================ */
 const PLAN_BY_GROUP = {
   INR: process.env.RAZORPAY_PLAN_INR,
   USD: process.env.RAZORPAY_PLAN_USD,
@@ -19,47 +21,26 @@ const PLAN_BY_GROUP = {
 
 /* ============================
    1️⃣ CREATE SUBSCRIPTION
-   ============================ */
-router.post(
-  "/create-subscription",
-  auth,
-  loadUser,
-  async (req, res) => {
+============================ */
+router.post("/create-subscription", auth, loadUser, async (req, res) => {
+  try {
     const user = req.user;
 
-    // 🚨 HARD BLOCK
     if (user.subscriptionStatus === "active") {
-      return res.status(400).json({
-        error: "Subscription already active"
-      });
+      return res.status(400).json({ error: "Subscription already active" });
     }
 
     if (user.subscriptionStatus === "pending") {
-      return res.status(400).json({
-        error: "Subscription activation in progress"
-      });
+      return res.status(400).json({ error: "Subscription activation in progress" });
     }
 
-    // 💰 PRICING GROUP (LOCKED)
     const pricingGroup = user.pricingGroup || "INR";
-
-    const PLAN_BY_GROUP = {
-      INR: process.env.RAZORPAY_PLAN_INR,
-      USD: process.env.RAZORPAY_PLAN_USD,
-      EUR: process.env.RAZORPAY_PLAN_EUR,
-      GBP: process.env.RAZORPAY_PLAN_GBP
-    };
-
     const planId = PLAN_BY_GROUP[pricingGroup];
 
     if (!planId) {
-      console.error("❌ Missing Razorpay plan for:", pricingGroup);
-      return res.status(500).json({
-        error: "Pricing configuration error"
-      });
+      return res.status(500).json({ error: "Pricing configuration error" });
     }
 
-    // ✅ Create Razorpay subscription
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
@@ -71,18 +52,22 @@ router.post(
       }
     });
 
-    // 🔒 LOCK USER
+    // ✅ SAVE SUBSCRIPTION ID
+    user.razorpaySubscriptionId = subscription.id;
     user.subscriptionStatus = "pending";
     user.subscriptionStartedAt = new Date();
     await user.save();
 
     res.json(subscription);
+  } catch (err) {
+    console.error("Create subscription error:", err);
+    res.status(500).json({ error: "Failed to create subscription" });
   }
-);
+});
 
 /* ============================
    2️⃣ CANCEL SUBSCRIPTION
-   ============================ */
+============================ */
 router.post("/cancel", auth, loadUser, async (req, res) => {
   try {
     const user = req.user;
@@ -96,7 +81,6 @@ router.post("/cancel", auth, loadUser, async (req, res) => {
       { cancel_at_cycle_end: 1 }
     );
 
-    // 🔥 IMPORTANT: update DB immediately
     await user.updateOne({
       subscriptionStatus: "canceled",
       planExpiresAt: new Date(sub.current_end * 1000)
@@ -113,16 +97,15 @@ router.post("/cancel", auth, loadUser, async (req, res) => {
 });
 
 /* ============================
-   3️⃣ BILLING STATUS (READ-ONLY)
-   ============================ */
+   3️⃣ BILLING STATUS
+============================ */
 router.get("/status", auth, loadUser, async (req, res) => {
   const user = req.user;
 
-  // 🔄 AUTO-RESET abandoned pending subscriptions
   if (
     user.subscriptionStatus === "pending" &&
     user.subscriptionStartedAt &&
-    Date.now() - new Date(user.subscriptionStartedAt).getTime() > 1 * 60 * 1000
+    Date.now() - new Date(user.subscriptionStartedAt).getTime() > 60 * 1000
   ) {
     user.subscriptionStatus = "none";
     user.subscriptionStartedAt = null;
@@ -136,38 +119,39 @@ router.get("/status", auth, loadUser, async (req, res) => {
   });
 });
 
+/* ============================
+   4️⃣ MANAGE BILLING
+============================ */
+router.get("/manage", auth, loadUser, async (req, res) => {
+  const user = req.user;
+
+  res.json({
+    plan: user.plan || "free",
+    subscriptionStatus: user.subscriptionStatus || "none",
+    planExpiresAt: user.planExpiresAt || null
+  });
+});
 
 /* ============================
-   4️⃣ RESUME SUBSCRIPTION
+   5️⃣ RESUME SUBSCRIPTION
 ============================ */
-/* ============================
-   4️⃣ RESUME SUBSCRIPTION
-   ============================ */
 router.post("/resume", auth, loadUser, async (req, res) => {
   try {
-    // 🛑 no subscription
     if (!req.user.razorpaySubscriptionId) {
-      return res.status(400).json({
-        error: "No subscription to resume"
-      });
+      return res.status(400).json({ error: "No subscription to resume" });
     }
 
-    // 🟢 Already active → just clear cancellation intent
     req.user.subscriptionStatus = "active";
     await req.user.save();
 
-    return res.json({
+    res.json({
       success: true,
       message: "Subscription will renew automatically"
     });
   } catch (err) {
     console.error("Resume logic error:", err);
-    res.status(500).json({
-      error: "Failed to resume subscription"
-    });
+    res.status(500).json({ error: "Failed to resume subscription" });
   }
 });
-
-
 
 module.exports = router;

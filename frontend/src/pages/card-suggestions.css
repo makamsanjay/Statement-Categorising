@@ -96,43 +96,58 @@
 }
 
 .suggestion-results {
-  background: linear-gradient(
-    180deg,
-    #eef2ff,
-    #ffffff
-  );
+  background: linear-gradient(180deg, #eef2ff, #ffffff);
   border: 1px solid #c7d2fe;
-  border-radius: 20px;
-  padding: 26px;
-  margin-bottom: 32px;
+  border-radius: 22px;
+  padding: 28px;
+  margin-bottom: 40px; /* more space before history */
   box-shadow: 0 14px 36px rgba(99, 102, 241, 0.18);
 }
 
+.suggestion-results .summary {
+  margin: 14px 0 20px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #1e293b;
+}
+
+.suggestion-results .summary.muted {
+  color: #64748b;
+}
+
+
+
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  position: relative;
+}
 
 .results-header h3 {
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: #4338ca;
+  margin: 0;
 }
 
 .close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
   border: none;
-  background: #e0e7ff;
+  background: #eef2ff;
   color: #3730a3;
   width: 34px;
   height: 34px;
-  border-radius: 50%;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  cursor: pointer;
 }
-
-
-.results-header h3 {
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-
 
 .close-btn:hover {
-  background: #e2e8f0;
+  background: #e0e7ff;
 }
 
 .info-banner {
@@ -161,21 +176,9 @@
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 18px;
-}
-
-.suggestion-card {
-  border-radius: 16px;
-  padding: 18px;
-  background: linear-gradient(
-    180deg,
-    #ffffff,
-    #f8fafc
-  );
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.1);
-  position: relative;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 22px;
+  margin-top: 18px;
 }
 
 .suggestion-card::before {
@@ -204,10 +207,24 @@
   box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
 }
 
+.suggestion-card {
+  border-radius: 18px;
+  padding: 18px 18px 20px;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.1);
+  position: relative;
+  overflow: hidden; /* prevents badge overlap */
+}
+
+/* Push title down so badge never overlaps */
 .suggestion-card h5 {
   font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  padding-right: 80px; /* space for badge */
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .rotation-note {

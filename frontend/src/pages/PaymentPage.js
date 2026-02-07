@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import "./PaymentPage.css";
 import { startCheckout } from "../api";
 import { useNavigate } from "react-router-dom";
@@ -13,31 +13,74 @@ export default function PaymentPage() {
   const [error, setError] = useState("");
 
   const handlePayment = async () => {
-  if (!email || !password) {
-    setError("Email and password are required");
-    return;
-  }
+    if (!email || !password) {
+      setError("Email and password are required");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    setError("");
+    try {
+      setLoading(true);
+      setError("");
 
-    const res = await startCheckout({
-      email,
-      password,
-      currency,
-      plan: "pro"
-    });
+      // 1️⃣ Ask backend to prepare Razorpay checkout
+      const res = await startCheckout({
+        email,
+        password,
+        currency,
+        plan: "pro"
+      });
 
-    window.location.href = res.url;
-  } catch (err) {
-    setError(
-      err?.response?.data?.message || "Failed to start payment"
-    );
-    setLoading(false);
-  }
-};
+      /*
+        Expected backend response (example):
+        {
+          key: "rzp_test_xxx",
+          subscription_id: "sub_xxx"
+        }
+      */
 
+      if (!window.Razorpay) {
+        throw new Error("Razorpay SDK not loaded");
+      }
+
+      const options = {
+        key: res.key,
+        subscription_id: res.subscription_id,
+        name: "SpendSwitch",
+        description: "Pro Subscription",
+        prefill: {
+          email
+        },
+        theme: {
+          color: "#4f46e5"
+        },
+        handler: function (response) {
+          // Payment success → go wherever you already handle it
+          navigate("/dashboard", { replace: true });
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+          }
+        }
+      };
+
+      // ✅ IMPORTANT FIX:
+      // Delay opening Razorpay so desktop viewport is detected
+      setTimeout(() => {
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      }, 300);
+
+    } catch (err) {
+      console.error(err);
+      setError(
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to start payment"
+      );
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="payment-container">
@@ -72,11 +115,11 @@ export default function PaymentPage() {
         {error && <div className="error">{error}</div>}
 
         <button onClick={handlePayment} disabled={loading}>
-          {loading ? "Redirecting..." : "Pay & Create Account"}
+          {loading ? "Opening secure checkout…" : "Pay & Create Account"}
         </button>
 
         <span className="secure-text">
-          🔒 Secured by Stripe
+          🔒 Secured by Razorpay
         </span>
       </div>
     </div>

@@ -14,7 +14,6 @@ export default function CardSuggestionsPage({
   billingState,
   onUpgrade
 }) {
-
   const [cards, setCards] = useState([]);
   const [allTransactions, setAllTransactions] = useState([]);
 
@@ -69,60 +68,56 @@ export default function CardSuggestionsPage({
   };
 
   const getSpendContextText = suggestion => {
-  if (!suggestion || !suggestion.totalSpent || suggestion.totalSpent <= 0) {
+    if (!suggestion || !suggestion.totalSpent || suggestion.totalSpent <= 0) {
+      return null;
+    }
+
+    const amount = `${suggestion.currency} ${suggestion.totalSpent.toFixed(2)}`;
+    const category = suggestion.category;
+
+    if (suggestion.scope === "all") {
+      return `You spent ${amount} on ${category} across all your cards.`;
+    }
+
+    if (suggestion.scope === "single" && suggestion.cardId) {
+      const card = cards.find(
+        c => String(c._id) === String(suggestion.cardId)
+      );
+
+      const cardName = card
+        ? `${card.name}${card.last4 ? ` (${card.last4})` : ""}`
+        : "this card";
+
+      return `You spent ${amount} on ${category} using ${cardName}.`;
+    }
+
     return null;
-  }
-
-  const amount = `${suggestion.currency} ${suggestion.totalSpent.toFixed(2)}`;
-  const category = suggestion.category;
-
-  // ✅ ALL CARDS
-  if (suggestion.scope === "all") {
-    return `You spent ${amount} on ${category} across all your cards.`;
-  }
-
-  // ✅ SINGLE CARD
-  if (suggestion.scope === "single" && suggestion.cardId) {
-    const card = cards.find(
-      c => String(c._id) === String(suggestion.cardId)
-    );
-
-    const cardName = card
-      ? `${card.name}${card.last4 ? ` (${card.last4})` : ""}`
-      : "this card";
-
-    return `You spent ${amount} on ${category} using ${cardName}.`;
-  }
-
-  return null;
-};
-
+  };
 
   /* ================= DERIVED DATA ================= */
 
-const DEFAULT_CATEGORIES = [
-  "Food & Dining",
-  "Groceries",
-  "Transportation",
-  "Shopping",
-  "Entertainment",
-  "Utilities",
-  "Healthcare",
-  "Education",
-  "Income",
-  "Taxes",
-  "Transfers",
-  "Subscriptions",
-  "Credit Card Payment",
-  "Other"
-];
+  const DEFAULT_CATEGORIES = [
+    "Food & Dining",
+    "Groceries",
+    "Transportation",
+    "Shopping",
+    "Entertainment",
+    "Utilities",
+    "Healthcare",
+    "Education",
+    "Income",
+    "Taxes",
+    "Transfers",
+    "Subscriptions",
+    "Credit Card Payment",
+    "Other"
+  ];
 
-const categories = useMemo(() => {
-  const set = new Set(DEFAULT_CATEGORIES);
-  allTransactions.forEach(t => t.category && set.add(t.category));
-  return Array.from(set);
-}, [allTransactions]);
-
+  const categories = useMemo(() => {
+    const set = new Set(DEFAULT_CATEGORIES);
+    allTransactions.forEach(t => t.category && set.add(t.category));
+    return Array.from(set);
+  }, [allTransactions]);
 
   const filteredTxns = useMemo(() => {
     if (!category) return [];
@@ -148,7 +143,7 @@ const categories = useMemo(() => {
   const currency =
     cards.find(c => c._id === cardId)?.displayCurrency ||
     cards[0]?.displayCurrency ||
-    "USD";
+    "INR";
 
   /* ================= ACTION ================= */
 
@@ -178,7 +173,6 @@ const categories = useMemo(() => {
         );
         return [data, ...filtered];
       });
-
     } catch (e) {
       setError(e.message);
     } finally {
@@ -198,17 +192,16 @@ const categories = useMemo(() => {
             <h3>Upgrade to Pro</h3>
             <p>Unlock AI-powered cashback optimization.</p>
             <button
-  className="upgrade-btn"
-  onClick={onUpgrade}
-  disabled={billingState === "processing"}
->
-  {billingState === "processing"
-    ? "Activating…"
-    : pricing?.display
-      ? `Upgrade to Pro — ${pricing.display}`
-      : "Upgrade to Pro"}
-</button>
-
+              className="upgrade-btn"
+              onClick={onUpgrade}
+              disabled={billingState === "processing"}
+            >
+              {billingState === "processing"
+                ? "Activating…"
+                : pricing?.display
+                ? `Upgrade to Pro — ${pricing.display}`
+                : "Upgrade to Pro"}
+            </button>
           </div>
           <FakeLayout />
         </div>
@@ -222,7 +215,6 @@ const categories = useMemo(() => {
     <div className="card-suggestions-page">
       <h2>Card Suggestions</h2>
 
-      {/* -------- INPUT BOX -------- */}
       <div className="card-suggestion-box">
         <div className="row">
           <label>Category</label>
@@ -277,44 +269,30 @@ const categories = useMemo(() => {
         {error && <div className="error-box">{error}</div>}
       </div>
 
-      {/* -------- RESULTS -------- */}
       {selectedSuggestion && (
         <div className="suggestion-results">
           <div className="results-header">
             <h3>Results</h3>
-            <button
-              className="close-btn"
-              onClick={() => setSelectedSuggestion(null)}
-            >
+            <button className="close-btn" onClick={() => setSelectedSuggestion(null)}>
               ✕
             </button>
           </div>
 
           {getSpendContextText(selectedSuggestion) && (
-  <p className="summary">
-    {getSpendContextText(selectedSuggestion)}
-  </p>
-)}
+            <p className="summary">{getSpendContextText(selectedSuggestion)}</p>
+          )}
 
-{selectedSuggestion.summary && (
-  <p className="summary muted">
-    {selectedSuggestion.summary}
-  </p>
-)}
+          {selectedSuggestion.summary && (
+            <p className="summary muted">{selectedSuggestion.summary}</p>
+          )}
 
-
-          {typeof selectedSuggestion.summary === "string" &&
-            selectedSuggestion.summary.toLowerCase().includes("already") && (
-              <div>
-                
-              </div>
-            )}
-
-          <CardGroup cards={selectedSuggestion.cards || []} />
+          <CardGroup
+            cards={selectedSuggestion.cards || []}
+            currency={selectedSuggestion.currency || currency}
+          />
         </div>
       )}
 
-      {/* -------- HISTORY -------- */}
       <div className="suggestion-history">
         <h4>History</h4>
 
@@ -332,9 +310,7 @@ const categories = useMemo(() => {
           >
             <div>
               <strong>{item.category}</strong>
-              <div className="muted small">
-                {getHistoryCardLabel(item)}
-              </div>
+              <div className="muted small">{getHistoryCardLabel(item)}</div>
               <div className="muted small">
                 {item.totalSpent > 0
                   ? `${item.currency} ${item.totalSpent.toFixed(2)} spent`
@@ -364,10 +340,8 @@ const categories = useMemo(() => {
 
 /* ================= COMPONENTS ================= */
 
-function CardGroup({ cards }) {
-  if (!Array.isArray(cards) || cards.length === 0) {
-    return null;
-  }
+function CardGroup({ cards, currency }) {
+  if (!Array.isArray(cards) || cards.length === 0) return null;
 
   return (
     <div className="card-grid">
@@ -376,10 +350,10 @@ function CardGroup({ cards }) {
           <h5>{c.name}</h5>
 
           <div className="card-meta">
-            {c.cardType === "paid"
-              ? `Annual Fee: USD ${c.annualFee}`
-              : "No Annual Fee"}
-          </div>
+  {Number(c.annualFee) > 0
+    ? `Annual Fee: ${c.annualFee}`
+    : "No Annual Fee"}
+</div>
 
           <div className="rate">
             Cashback: {c.cashbackRate}
@@ -389,13 +363,11 @@ function CardGroup({ cards }) {
             Estimated savings: <strong>{c.estimatedSavings}</strong>
           </div>
 
-          {c.rotation &&
-            c.rotation.active &&
-            c.rotation.validUntil && (
-              <div className="rotation-note">
-                {c.rotation.note} • until {c.rotation.validUntil}
-              </div>
-            )}
+          {c.rotation?.active && c.rotation?.validUntil && (
+            <div className="rotation-note">
+              {c.rotation.note} • until {c.rotation.validUntil}
+            </div>
+          )}
 
           <p>{c.reason}</p>
         </div>
@@ -403,8 +375,6 @@ function CardGroup({ cards }) {
     </div>
   );
 }
-
-/* ================= LOCKED UI ================= */
 
 function FakeLayout() {
   return (
