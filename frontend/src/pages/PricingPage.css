@@ -1,113 +1,299 @@
+/* =========================
+   DESIGN TOKENS (LIGHT)
+   ========================= */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f8fafc;
+  --card-bg: #ffffff;
+  --border: #e5e7eb;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --success: #10b981;
+  --danger: #ef4444;
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-strong: 0 30px 70px rgba(37, 99, 235, 0.18);
+}
+
+/* =========================
+   DARK MODE — MANUAL TOGGLE
+   Works with:
+   html.dark
+   body.dark
+   [data-theme="dark"]
+   ========================= */
+html.dark,
+body.dark,
+[data-theme="dark"] {
+  --bg: #0b0f19;
+  --bg-soft: #0f172a;
+  --card-bg: #111827;
+  --border: #1f2937;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+  --shadow-strong: 0 40px 90px rgba(59, 130, 246, 0.35);
+}
+
+/* =========================
+   SYSTEM DARK MODE (FALLBACK)
+   ========================= */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not([data-theme="light"]) {
+    --bg: #0b0f19;
+    --bg-soft: #0f172a;
+    --card-bg: #111827;
+    --border: #1f2937;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+
+    --shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+    --shadow-strong: 0 40px 90px rgba(59, 130, 246, 0.35);
+  }
+}
+
+/* =========================
+   PAGE CONTAINER
+   ========================= */
 .pricing-container {
-  background: #ffffff;
   min-height: 100vh;
-  padding: 60px 20px;
+  padding: 140px 20px 100px;
+  background:
+    radial-gradient(
+      1200px 600px at 50% -200px,
+      rgba(37, 99, 235, 0.08),
+      transparent 60%
+    ),
+    linear-gradient(180deg, var(--bg-soft), var(--bg));
+  color: var(--text);
   text-align: center;
 }
 
+/* =========================
+   INNER WRAPPER
+   ========================= */
+.pricing-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* =========================
+   HEADER
+   ========================= */
 .pricing-title {
-  font-size: 36px;
-  font-weight: 700;
-  color: #000;
+  font-size: clamp(32px, 4vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .pricing-subtitle {
-  margin-top: 10px;
-  color: #555;
+  margin-top: 14px;
   font-size: 16px;
+  color: var(--text-muted);
 }
 
+/* =========================
+   COUNTRY SELECT
+   ========================= */
 .currency-switcher {
-  margin: 30px 0;
+  margin: 42px 0 10px;
 }
 
 .currency-switcher select {
-  margin-left: 10px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
+.currency-switcher select:hover,
+.currency-switcher select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  outline: none;
+}
+
+/* =========================
+   PRICING GRID
+   ========================= */
 .pricing-cards {
+  margin-top: 70px;
   display: flex;
+  gap: 40px;
   justify-content: center;
-  gap: 30px;
-  margin-top: 40px;
   flex-wrap: wrap;
 }
 
+/* =========================
+   PRICING CARD
+   ========================= */
 .pricing-card {
-  width: 300px;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 30px 20px;
-  background: #fff;
+  width: 320px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 36px 30px;
+  text-align: left;
+  position: relative;
+  box-shadow: var(--shadow);
+  transition: all 0.35s ease;
 }
 
+.pricing-card:hover {
+  transform: translateY(-10px);
+  box-shadow: var(--shadow-strong);
+}
+
+/* =========================
+   PRO CARD
+   ========================= */
 .pricing-card.highlight {
-  border: 2px solid #2563eb;
-  transform: scale(1.05);
+  border: 2px solid var(--primary);
 }
 
+.pricing-card.highlight::before {
+  content: "MOST POPULAR";
+  position: absolute;
+  top: -14px;
+  right: 22px;
+  background: linear-gradient(90deg, var(--primary), #60a5fa);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+
+/* =========================
+   PRICE
+   ========================= */
 .price {
-  font-size: 32px;
-  font-weight: 700;
-  margin: 15px 0;
+  font-size: 38px;
+  font-weight: 800;
+  margin-top: 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .per {
   font-size: 14px;
-  margin-left: 4px;
+  color: var(--text-muted);
 }
 
 .billing {
-  font-size: 14px;
-  color: #777;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 6px;
 }
 
-.features {
-  list-style: none;
-  padding: 0;
-  margin: 25px 0;
-  text-align: left;
-}
-
-.features li {
-  margin-bottom: 10px;
+/* =========================
+   DISCOUNT
+   ========================= */
+.discount-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .old-price {
+  font-size: 15px;
+  color: var(--text-muted);
   text-decoration: line-through;
-  color: #888;
-  margin-right: 10px;
-}
-
-.discount-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
 }
 
 .discount-badge {
-  background: #2563eb;
+  background: linear-gradient(135deg, var(--primary), #60a5fa);
   color: #fff;
-  padding: 4px 8px;
+  padding: 5px 12px;
   font-size: 12px;
-  border-radius: 6px;
+  border-radius: 999px;
+  font-weight: 700;
+  animation: pulse 1.8s infinite;
 }
 
+@keyframes pulse {
+  0% { opacity: 0.75; }
+  50% { opacity: 1; }
+  100% { opacity: 0.75; }
+}
+
+/* =========================
+   FEATURES
+   ========================= */
+.features {
+  list-style: none;
+  padding: 0;
+  margin: 28px 0 36px;
+}
+
+.features li {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.features li:hover {
+  transform: translateX(6px);
+  color: var(--text);
+}
+
+.features .muted {
+  opacity: 0.45;
+}
+
+/* =========================
+   BUTTONS
+   ========================= */
 .primary-btn {
   width: 100%;
-  padding: 12px;
-  border-radius: 10px;
+  padding: 15px;
+  border-radius: 16px;
   border: none;
-  background: #2563eb;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--primary-dark)
+  );
   color: #fff;
   font-size: 16px;
+  font-weight: 800;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .primary-btn:hover {
-  background: #1e4fd6;
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(59, 130, 246, 0.45);
+}
+
+.secondary-btn {
+  width: 100%;
+  padding: 15px;
+  border-radius: 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondary-btn:hover {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.08);
 }

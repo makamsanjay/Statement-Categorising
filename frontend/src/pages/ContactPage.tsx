@@ -6,6 +6,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Footer from "../components/layout/Footer";
+import "./ContactPage.css";
 
 const faqs = [
   {
@@ -22,11 +23,7 @@ const faqs = [
   },
   {
     q: "Do you support international currencies?",
-    a: "Yes. ExpenseAI is optimized for INR, USD, EUR, GBP and more.",
-  },
-  {
-    q: "Is this suitable for personal use?",
-    a: "Yes — ExpenseAI is designed for individuals who want clarity without spreadsheets.",
+    a: "Yes. We support INR, USD, EUR, GBP and more.",
   },
 ];
 
@@ -36,35 +33,37 @@ export default function ContactPage() {
   const [form, setForm] = useState({
     name: "",
     email: userEmail,
-    type: "demo",
+    type: "",
     message: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [formError, setFormError] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.name || !form.email || !form.type || !form.message) {
+  setFormError("All fields are mandatory");
+  return;
+}
 
-    const { name, email, type, message } = form;
-    if (!name || !email || !type || !message) {
-      alert("All fields are mandatory");
-      return;
-    }
 
     setLoading(true);
+    setFormError("");
     setSuccess(false);
 
     try {
-      const res = await fetch("http://localhost:5050/support", {
+      await fetch("http://localhost:5050/support", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,71 +72,56 @@ export default function ContactPage() {
         body: JSON.stringify(form),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Request failed");
-      }
-
       setSuccess(true);
       setForm({
         name: "",
         email: userEmail,
-        type: "demo",
+        type: "",
         message: "",
       });
-    } catch (err: any) {
-      alert(err.message);
+    } catch {
+      alert("Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="pt-40 pb-32">
-      <div className="max-w-6xl mx-auto px-6">
-
-        {/* HEADER */}
-        <div className="text-center max-w-xl mx-auto">
-          <h1 className="text-4xl lg:text-5xl font-semibold tracking-tight">
-            How can we help?
-          </h1>
-          <p className="mt-4 text-foreground/70">
-            Answers to common questions and direct support when you need it.
-          </p>
+    <main className="help-wrapper">
+      <div className="help-container">
+        {/* TOP LEFT TITLE */}
+        <div className="help-title">
+          <HelpCircle className="help-icon" />
+          <h1>Help & Support</h1>
         </div>
 
-        {/* FAQ + FORM */}
-        <div className="mt-20 grid grid-cols-1 lg:grid-cols-2 gap-16">
 
-          {/* FAQ SECTION */}
+        <p className="help-subtitle">
+          Answers to common questions and direct support when you need it.
+        </p>
+
+        <div className="help-grid">
+          {/* FAQ */}
           <div>
-            <div className="flex items-center gap-3 mb-8">
-              <HelpCircle className="text-primary" />
-              <h2 className="text-2xl font-semibold">Frequently asked questions</h2>
-            </div>
+            <h2 className="section-heading">Frequently asked questions</h2>
 
-            <div className="space-y-4">
+            <div className="faq-list">
               {faqs.map((faq, i) => {
                 const open = openFaq === i;
                 return (
-                  <div
-                    key={i}
-                    className="glass bg-card rounded-2xl border border-white/10"
-                  >
+                  <div key={i} className="faq-card">
                     <button
+                      className="faq-button"
                       onClick={() => setOpenFaq(open ? null : i)}
-                      className="w-full flex items-center justify-between p-5 text-left"
                     >
-                      <span className="font-medium">{faq.q}</span>
+                      <span>{faq.q}</span>
                       <ChevronDown
-                        className={`transition-transform ${
-                          open ? "rotate-180" : ""
-                        }`}
+                        className={`faq-chevron ${open ? "open" : ""}`}
                       />
                     </button>
 
                     {open && (
-                      <div className="px-5 pb-5 text-sm text-foreground/70 leading-relaxed">
+                      <div className="faq-answer">
                         {faq.a}
                       </div>
                     )}
@@ -147,48 +131,47 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* SUPPORT FORM */}
-          <div className="glass bg-card rounded-3xl p-8 border border-white/10 shadow-lg">
-            <div className="flex items-center gap-3 mb-6">
-              <Mail className="text-primary" />
-              <h2 className="text-2xl font-semibold">Contact support</h2>
+          {/* FORM */}
+          <div className="help-form-card">
+            <div className="form-heading">
+              <Mail className="help-icon" />
+              <h2>Contact support</h2>
             </div>
 
-            <p className="text-sm text-foreground/70 mb-6">
-              Submit your request and we’ll get back to you shortly.
-            </p>
-
             {success && (
-              <div className="mb-6 flex items-center gap-2 rounded-xl bg-green-500/10 text-green-400 px-4 py-3 text-sm">
+              <div className="success-banner">
                 <ShieldCheck size={18} />
-                Your request has been sent successfully.
+                Request sent successfully
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="help-form">
               <input
                 name="name"
+                placeholder="Your full name"
                 value={form.name}
                 onChange={handleChange}
-                placeholder="Your full name"
-                className="w-full rounded-xl bg-transparent border border-white/15 px-4 py-3 focus:outline-none focus:border-primary"
+                className="help-input"
               />
 
               <input
                 name="email"
                 type="email"
+                placeholder="you@example.com"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="you@example.com"
-                className="w-full rounded-xl bg-transparent border border-white/15 px-4 py-3 focus:outline-none focus:border-primary"
+                className="help-input"
               />
 
               <select
                 name="type"
                 value={form.type}
                 onChange={handleChange}
-                className="w-full rounded-xl bg-transparent border border-white/15 px-4 py-3 focus:outline-none focus:border-primary"
+                className="help-input"
               >
+                <option value="" disabled>
+                  Select your concern
+                </option>
                 <option value="demo">Need a demo</option>
                 <option value="payment">Payment issue</option>
                 <option value="bug">Bug / problem</option>
@@ -198,24 +181,30 @@ export default function ContactPage() {
 
               <textarea
                 name="message"
+                rows={5}
+                placeholder="Describe your issue or request…"
                 value={form.message}
                 onChange={handleChange}
-                rows={5}
-                placeholder="Describe your issue or request..."
-                className="w-full rounded-xl bg-transparent border border-white/15 px-4 py-3 focus:outline-none focus:border-primary"
+                className="help-input"
               />
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-4 rounded-xl bg-primary text-white py-3 font-medium transition hover:opacity-90 disabled:opacity-50"
+                className="help-submit-btn"
               >
-                {loading ? "Sending..." : "Submit request"}
+                {loading ? "Sending…" : "Submit request"}
               </button>
+                    {formError && (
+  <div className="form-toast-error">
+    {formError}
+  </div>
+)}
             </form>
           </div>
         </div>
       </div>
+
       <Footer />
     </main>
   );

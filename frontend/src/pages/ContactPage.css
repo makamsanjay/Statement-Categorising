@@ -1,0 +1,259 @@
+/* =====================
+   THEME TOKENS
+   ===================== */
+:root {
+  --bg: #ffffff;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: rgba(0, 0, 0, 0.06);
+  --blue: #2563eb;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+}
+
+.dark {
+  --bg: #0b0f19;
+  --card: #111827;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --border: rgba(255, 255, 255, 0.06);
+  --shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+}
+
+/* =====================
+   LAYOUT
+   ===================== */
+.help-wrapper {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 140px 24px 120px;
+  color: var(--text);
+}
+
+.help-container {
+  max-width: 1100px;
+  margin: auto;
+}
+
+/* =====================
+   HEADER
+   ===================== */
+.help-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.help-title h1 {
+  font-size: 36px;
+  font-weight: 800;
+}
+
+.help-subtitle {
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+/* =====================
+   GRID
+   ===================== */
+.help-grid {
+  margin-top: 70px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+}
+
+@media (max-width: 900px) {
+  .help-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =====================
+   ICONS
+   ===================== */
+.help-icon {
+  color: var(--blue);
+}
+
+/* =====================
+   FAQ
+   ===================== */
+.section-heading {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.faq-card {
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  transition: transform 0.25s ease;
+}
+
+.faq-card:hover {
+  transform: translateY(-2px);
+}
+
+.faq-button {
+  width: 100%;
+  padding: 18px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.faq-chevron {
+  transition: transform 0.25s ease;
+}
+
+.faq-chevron.open {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  padding: 0 22px 18px;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* =====================
+   FORM
+   ===================== */
+.help-form-card {
+  background: var(--card);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  padding: 34px;
+}
+
+.form-heading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.help-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.help-input {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: var(--text);
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.help-input:hover {
+  border-color: rgba(37, 99, 235, 0.4);
+}
+
+.help-input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
+
+.help-submit-btn {
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.help-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.35);
+}
+
+.help-submit-btn:disabled {
+  opacity: 0.6;
+}
+
+/* =====================
+   SUCCESS
+   ===================== */
+.success-banner {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+/* ===== SELECT ARROW FIX ===== */
+.select-wrapper {
+  position: relative;
+}
+
+.help-select {
+  appearance: none;
+  padding-right: 44px;
+}
+
+.select-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--primary);
+  opacity: 0.9;
+}
+
+/* ===== ERROR / SUCCESS TOASTS ===== */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.success-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+
+.form-toast-error {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: 500;
+}
