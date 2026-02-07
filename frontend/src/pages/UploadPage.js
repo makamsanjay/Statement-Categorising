@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { previewUpload, saveConfirmedTransactions } from "../api";
 import "./UploadPage.css";
 
@@ -25,16 +25,26 @@ const fixAmountSign = (amount, type) => {
 };
 
 function UploadPage({ cards, activeCardIndex, refreshData }) {
-  const [files, setFiles] = useState([]);
-  const [preview, setPreview] = useState([]);
-  const [showPreview, setShowPreview] = useState(false);
+const [preview, setPreview] = useState([]);
+const [showPreview, setShowPreview] = useState(false);
 const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+const [modal, setModal] = useState(null);
+const [modalInput, setModalInput] = useState("");
+const [toast, setToast] = useState(null);
+
+
 
 useEffect(() => {
   setCategories(DEFAULT_CATEGORIES);
 }, []);
 
-  
+const toastTimer = useRef(null);
+
+const showToast = (message, duration = 8000) => {
+  setToast(message);
+  clearTimeout(toastTimer.current);
+  toastTimer.current = setTimeout(() => setToast(null), duration);
+};
 
   const fileInputRef = useRef(null);
 
@@ -57,7 +67,7 @@ useEffect(() => {
       : [];
 
     if (!inputFiles.length) {
-      alert("Select file(s)");
+      showToast("Select file(s)");
       return;
     }
 
@@ -92,7 +102,7 @@ useEffect(() => {
     }
 
     if (skippedMessages.length) {
-      alert(
+      showToast(
         "Some files were skipped:\n\n" +
           skippedMessages.map(m => `• ${m}`).join("\n")
       );
@@ -108,13 +118,13 @@ useEffect(() => {
   const handleConfirm = async () => {
     const selected = preview.filter(t => t.selected);
     if (!selected.length) {
-      alert("Select at least one transaction");
+      showToast("Select at least one transaction");
       return;
     }
 
     const card = cards?.[activeCardIndex];
     if (!card || !card._id) {
-      alert("Please select a card before confirming upload");
+      showToast("Please select a card before confirming upload");
       return;
     }
 
@@ -130,7 +140,7 @@ useEffect(() => {
     try {
       await saveConfirmedTransactions(payload);
     } catch (err) {
-      alert(err.message || "Upload failed");
+      showToast(err.message || "Upload failed");
       return;
     }
 
@@ -142,6 +152,7 @@ useEffect(() => {
     resetFileInput();
   };
 
+  
   /* =========================
      JSX
      ========================= */
@@ -170,10 +181,6 @@ useEffect(() => {
             e.preventDefault();
             const droppedFiles = Array.from(e.dataTransfer.files || []);
             setFiles(droppedFiles);
-
-            if (fileInputRef.current) {
-              fileInputRef.current.files = e.dataTransfer.files;
-            }
           }}
         >
           <div className="upload-icon">☁️</div>
@@ -294,18 +301,32 @@ useEffect(() => {
                         const value = e.target.value;
 
                         if (value === "__add_new__") {
-                          const newCat = prompt("Enter new category name");
-                          if (!newCat) return;
+  setModal({
+    type: "input",
+    title: "Add New Category",
+    placeholder: "Category name",
+    onSubmit: (name) => {
+      const trimmed = name?.trim();
+      if (!trimmed) {
+        showToast("Category name cannot be empty.");
+        return;
+      }
 
-                          if (!categories.includes(newCat)) {
-                            setCategories(prev => [...prev, newCat]);
-                          }
+      if (!categories.includes(trimmed)) {
+        setCategories(prev => [...prev, trimmed]);
+      }
 
-                          const copy = [...preview];
-                          copy[i].category = newCat;
-                          setPreview(copy);
-                          return;
-                        }
+      const copy = [...preview];
+      copy[i].category = trimmed;
+      setPreview(copy);
+
+      setModal(null);
+      setModalInput("");
+    }
+  });
+  return;
+}
+
 
                         const copy = [...preview];
                         copy[i].category = value;
@@ -317,7 +338,7 @@ useEffect(() => {
                           {c}
                         </option>
                       ))}
-                      <option value="__add_new__">➕ Add new category</option>
+                      <option value="__add_new__"> Add new category</option>
                     </select>
                   </td>
                 </tr>
@@ -334,6 +355,41 @@ useEffect(() => {
           </button>
         </>
       )}
+
+      {modal && (
+  <div className="modal-backdrop">
+    <div className="modal">
+      <h3>{modal.title}</h3>
+
+      {modal.type === "input" && (
+        <input
+          autoFocus
+          placeholder={modal.placeholder}
+          value={modalInput}
+          onChange={(e) => setModalInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              modal.onSubmit(modalInput);
+            }
+          }}
+        />
+      )}
+
+      <div className="modal-actions">
+        <button onClick={() => setModal(null)}>Cancel</button>
+        <button
+          className="primary"
+          onClick={() => modal.onSubmit(modalInput)}
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{toast && <div className="toast">{toast}</div>}
+
     </div>
   );
 }
