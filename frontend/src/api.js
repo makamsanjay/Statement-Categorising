@@ -517,3 +517,22 @@ export const startCheckout = async () => {
 
   return res.json(); // returns subscription
 };
+
+// api.js
+export const submitSupportRequest = async (payload) => {
+  const res = await fetch(`${BASE_URL}/support`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err?.error || "Failed to submit support request");
+  }
+
+  return res.json();
+};

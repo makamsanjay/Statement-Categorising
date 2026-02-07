@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { submitSupportRequest } from "../api";
 import "./HelpPage.css";
 
 export default function HelpPage() {
@@ -13,6 +14,7 @@ export default function HelpPage() {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setForm(prev => ({
@@ -22,48 +24,48 @@ export default function HelpPage() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const { name, email, type, message } = form;
-  if (!name || !email || !type || !message) {
-    alert("All fields are mandatory");
-    return;
-  }
+    const { name, email, type, message } = form;
 
-  setLoading(true);
-  setSuccess(false);
-
-  try {
-    const res = await fetch("http://localhost:5050/support", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      },
-      body: JSON.stringify(form)
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Request failed");
+    if (!name || !email || !type || !message) {
+      setError("All fields are mandatory");
+      return;
     }
 
-    setSuccess(true);
-    setForm({
-      name: "",
-      email: userEmail,
-      type: "demo",
-      message: ""
-    });
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Please log in to submit a request.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess(false);
+
+    try {
+      await submitSupportRequest(form);
+
+      setSuccess(true);
+      setForm({
+        name: "",
+        email: userEmail,
+        type: "demo",
+        message: ""
+      });
+    } catch (err) {
+      setError(
+        err?.message || "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="help-page">
+      {error && <div className="help-error">{error}</div>}
+
       <div className="help-card">
         <h2>Need Help?</h2>
         <p className="help-subtitle">
