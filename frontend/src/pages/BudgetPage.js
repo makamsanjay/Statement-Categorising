@@ -78,7 +78,6 @@ const cardFor = (b) => {
   if (!b.cardId) return null;
   return cards.find(c => c._id === b.cardId) || null;
 };
-const currency = SYMBOL[card?.displayCurrency || "USD"];
 
 
   /* =========================
@@ -86,7 +85,7 @@ const currency = SYMBOL[card?.displayCurrency || "USD"];
      ========================= */
   const handleSetBudget = async () => {
    if (!category || !budgetAmount) {
-  setError("Please select a category and amount");
+  setError("");
   return;
 }
 
@@ -165,11 +164,13 @@ const handleDelete = async (id) => {
 
       {/* BUDGET LIST */}
       <div className="budget-list">
-        {sortedBudgets.map(b => {
-          const spent = spentFor(b);
-          const percent = Math.min((spent / b.budget) * 100, 100);
-          const over = spent > b.budget;
+       {sortedBudgets.map(b => {
+  const spent = spentFor(b);
+  const percent = Math.min((spent / b.budget) * 100, 100);
+  const over = spent > b.budget;
 
+  const card = cardFor(b);
+  const currency = SYMBOL[card?.displayCurrency || "USD"];
           return (
             <div
               key={b._id}

@@ -25,6 +25,7 @@ export default function AnalyticsPage({ refreshKey }) {
   const [cardChartType, setCardChartType] = useState(CHARTS.PIE);
 
   const [activeCardIndex, setActiveCardIndex] = useState(0);
+  
 
   /* ---------------- FILTERS ---------------- */
   const [range, setRange] = useState("30");
@@ -38,15 +39,16 @@ export default function AnalyticsPage({ refreshKey }) {
   const [cardCategory, setCardCategory] = useState(null);
 
   /* ---------------- LOAD ---------------- */
-  useEffect(() => {
-    getCards().then(setCards);
-  }, []);
+ useEffect(() => {
+  getCards().then(setCards).catch(() => setCards([]));
+}, []);
 
-  useEffect(() => {
-    getTransactions().then(txns => {
-      setAllTransactions([...txns]);
-    });
-  }, [refreshKey]);
+useEffect(() => {
+  getTransactions()
+    .then(txns => setAllTransactions([...txns]))
+    .catch(() => setAllTransactions([]));
+}, [refreshKey]);
+
 
   /* ---------------- DATE FILTER ---------------- */
   const filteredTxns = useMemo(() => {
@@ -81,7 +83,8 @@ export default function AnalyticsPage({ refreshKey }) {
   const buildLineData = (txns) => {
     const map = {};
     txns.forEach(t => {
-      map[t.date] = (map[t.date] || 0) + Math.abs(t.amount);
+      const day = new Date(t.date).toISOString().slice(0, 10);
+      map[day] = (map[day] || 0) + Math.abs(t.amount);
     });
 
     const labels = Object.keys(map).sort();
@@ -97,9 +100,30 @@ export default function AnalyticsPage({ refreshKey }) {
       ]
     };
   };
+const globalExpenseTxns = filteredTxns.filter(t => t.amount < 0);
+
+  const globalLineData = useMemo(
+  () => buildLineData(globalExpenseTxns),
+  [globalExpenseTxns]
+);
+
+/* ================= CARD ================= */
+const activeCard = cards[activeCardIndex];
+
+const cardExpenseTxns = useMemo(() => {
+  if (!activeCard) return [];
+  return filteredTxns.filter(
+    t => t.cardId === activeCard._id && t.amount < 0
+  );
+}, [filteredTxns, activeCard]);
+
+const cardLineData = useMemo(
+  () => buildLineData(cardExpenseTxns),
+  [cardExpenseTxns]
+);
+
 
   /* ================= GLOBAL ================= */
-  const globalExpenseTxns = filteredTxns.filter(t => t.amount < 0);
 
   const globalBaseChartData = useMemo(() => {
     const map = {};
@@ -136,14 +160,6 @@ export default function AnalyticsPage({ refreshKey }) {
   }, [globalExpenseTxns, globalCategory, globalSort]);
 
   /* ================= CARD ================= */
-  const activeCard = cards[activeCardIndex];
-
-  const cardExpenseTxns = useMemo(() => {
-    if (!activeCard) return [];
-    return filteredTxns.filter(
-      t => t.cardId === activeCard._id && t.amount < 0
-    );
-  }, [filteredTxns, activeCard]);
 
   const cardChartData = useMemo(() => {
     const map = {};
@@ -187,7 +203,7 @@ export default function AnalyticsPage({ refreshKey }) {
       <AnalyticsSection
         title="All Cards"
         chartData={globalCategory ? globalSubChartData : globalBaseChartData}
-        lineData={buildLineData(globalExpenseTxns)}
+        lineData={globalLineData}
         chartType={globalChartType}
         setChartType={setGlobalChartType}
         onCategory={setGlobalCategory}
@@ -203,7 +219,7 @@ export default function AnalyticsPage({ refreshKey }) {
         <AnalyticsSection
           title={activeCard.name}
           chartData={cardChartData}
-          lineData={buildLineData(cardExpenseTxns)}
+          lineData={cardLineData}
           chartType={cardChartType}
           setChartType={setCardChartType}
           onCategory={setCardCategory}
@@ -215,13 +231,18 @@ export default function AnalyticsPage({ refreshKey }) {
           cards={cards}
           arrows
           onPrev={() => {
-            setCardCategory(null);
-            setActiveCardIndex(i => i - 1);
-          }}
-          onNext={() => {
-            setCardCategory(null);
-            setActiveCardIndex(i => i + 1);
-          }}
+  if (activeCardIndex === 0) return;
+  setCardCategory(null);
+  setActiveCardIndex(i => i - 1);
+}}
+
+onNext={() => {
+  if (activeCardIndex === cards.length - 1) return;
+  setCardCategory(null);
+  setActiveCardIndex(i => i + 1);
+}}
+
+
           disablePrev={activeCardIndex === 0}
           disableNext={activeCardIndex === cards.length - 1}
         />
@@ -329,7 +350,13 @@ function AnalyticsSection({
 
         <div className="analytics-panel">
           <div className="analytics-txn-header">
-            <h4>{selectedCategory || "Top Transactions"}</h4>
+            <h4
+  className={selectedCategory ? "clickable" : ""}
+  onClick={() => selectedCategory && onClose()}
+>
+  {selectedCategory || "Top Transactions"}
+</h4>
+
 
             <div className="analytics-actions">
               <select value={sort} onChange={e => setSort(e.target.value)}>
@@ -345,21 +372,25 @@ function AnalyticsSection({
           </div>
 
           <div className="analytics-txns scroll">
-            {txns.map(t => {
-              const card = cards.find(c => c._id === t.cardId);
-              return (
-                <div key={t._id} className="analytics-txn">
-                  <div>
-                    <div className="txn-desc">{t.description}</div>
-                    <div className="txn-meta">
-                      {t.date} • {card?.name || "Card"}
-                    </div>
-                  </div>
-                  <strong>{Math.abs(t.amount).toFixed(2)}</strong>
-                </div>
-              );
-            })}
+  {txns.map(t => {
+    const card = cards.find(c => c._id === t.cardId);
+    const currency = card?.displayCurrency || "";
+
+    return (
+      <div key={t._id} className="analytics-txn">
+        <div>
+          <div className="txn-desc">{t.description}</div>
+          <div className="txn-meta">
+            {t.date} • {card?.name || "Card"}
           </div>
+        </div>
+        <strong>
+          {currency} {Math.abs(t.amount).toFixed(2)}
+        </strong>
+      </div>
+    );
+  })}
+</div>
         </div>
       </div>
     </div>
