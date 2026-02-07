@@ -63,6 +63,7 @@ function Dashboard() {
   
   const [files, setFiles] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [redirecting, setRedirecting] = useState(false);
 
   const [preview, setPreview] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -152,6 +153,13 @@ const [showAddTxn, setShowAddTxn] = useState(false);
 const [activeView, setActiveView] = useState(() => {
   return localStorage.getItem("activeView") || "dashboard";
 });
+
+useEffect(() => {
+  if (!localStorage.getItem("token")) {
+    setRedirecting(true);
+    window.location.replace("/login");
+  }
+}, []);
 
 useEffect(() => {
   localStorage.setItem("activeView", activeView);
@@ -252,7 +260,8 @@ useEffect(() => {
 const [health, setHealth] = useState(null);
 
 useEffect(() => {
-  fetchHealthScore().then(setHealth);
+  if (!localStorage.getItem("token")) return;
+  fetchHealthScore().then(setHealth).catch(() => {});
 }, [transactions]);
 
 const { totalIncome, totalExpense } = useMemo(() => {
@@ -483,7 +492,6 @@ if (fileInputRef.current) {
   fileInputRef.current.value = "";
 }
 
-// 🚀 navigate ONLY after everything is synced
 setActiveView("transactions");
 };
 
@@ -763,12 +771,6 @@ const categoryCardChartData =
         ]
       };
 
-useEffect(() => {
-  if (activeView === "login") {
-    setActiveView("login");
-  }
-}, [activeView]);
-
 const handleAddPreviewTxn = () => {
   const today = new Date().toISOString().slice(0, 10);
 
@@ -801,7 +803,9 @@ const refreshActiveCardTransactions = async () => {
 
 const logout = () => {
   localStorage.clear();
-  setActiveView("login");
+
+  // hard redirect — kills React completely
+  window.location.replace("/login");
 };
 
 const openAddCardModal = () => {

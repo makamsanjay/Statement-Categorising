@@ -9,6 +9,7 @@ import PricingPage from "./pages/PricingPage";
 import LandingPage from "./pages/LandingPage";
 import ContactPage from "./pages/ContactPage";
 import { loadGoogleAnalytics } from "./utils/analytics";
+import RequireAuth from "./components/RequireAuth";
 
 
 // Providers
