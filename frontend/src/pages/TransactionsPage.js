@@ -64,6 +64,10 @@ useEffect(() => {
   const [selectedTxns, setSelectedTxns] = useState([]);
   const [bulkCategory, setBulkCategory] = useState("");
   const [showExport, setShowExport] = useState(false);
+const [pageError, setPageError] = useState("");
+const [modal, setModal] = useState(null);
+const [modalInput, setModalInput] = useState("");
+const [toast, setToast] = useState(null);
 
 
   const [newTxn, setNewTxn] = useState({
@@ -74,6 +78,14 @@ useEffect(() => {
     category: "Other",
     cardIndex: 0
   });
+
+  const showToast = (message, duration = 8000) => {
+  setToast(message);
+
+  setTimeout(() => {
+    setToast(null);
+  }, duration);
+};
 
   /* ---------------- LOAD DATA ---------------- */
 
@@ -116,18 +128,23 @@ const handleAddCategory = (setter, value) => {
     return;
   }
 
-  const name = prompt("Enter new category");
-  if (!name) return;
+  setModal({
+    type: "input",
+    title: "Add New Category",
+    placeholder: "Category name",
+    onSubmit: (categoryName) => {
+      if (!categoryName) return;
 
-  setCategories(prev => {
-    if (prev.includes(name)) return prev;
-    return [...prev, name];
+      setCategories(prev =>
+        prev.includes(categoryName)
+          ? prev
+          : [...prev, categoryName]
+      );
+
+      setter(categoryName);
+      setModal(null);
+    }
   });
-
-  // IMPORTANT: delay setter until categories update
-  setTimeout(() => {
-    setter(name);
-  }, 0);
 };
 
 const calculateTotals = (transactions) => {
@@ -151,21 +168,23 @@ const { income, expense } = useMemo(() => {
   /* ---------------- ADD TRANSACTION ---------------- */
 
   const handleAddTransaction = async () => {
+    setPageError("");
   const { date, description, amount, category } = newTxn;
 
   if (!date || !description || !amount || !category) {
-    alert("Please fill all fields before saving the transaction");
-    return;
-  }
+  setPageError("Please fill all fields before saving the transaction.");
+  return;
+}
+
 
   if (Number(amount) <= 0) {
-    alert("Amount must be greater than 0");
+    setPageError("Amount must be greater than 0.");
     return;
   }
 
   const card = cards[newTxn.cardIndex];
   if (!card) {
-    alert("Please select a card");
+    setPageError("Please select a card");
     return;
   }
 
@@ -204,7 +223,10 @@ onRefresh?.(); //
   /* ---------------- BULK UPDATE ---------------- */
 
 const handleBulkUpdate = async () => {
-  if (!selectedTxns.length) return;
+  if (!selectedTxns.length) {
+    showToast("Select at least one transaction to update.");
+    return;
+  }
 
   for (const id of selectedTxns) {
     const txn = draftTxns.find(t => t._id === id);
@@ -235,26 +257,39 @@ const handleBulkUpdate = async () => {
 
   /* ---------------- DELETE ---------------- */
 
-  const handleBulkDelete = async () => {
-    if (!selectedTxns.length) return;
-    if (!window.confirm("Delete selected transactions permanently?")) return;
+  const handleBulkDelete = () => {
+   if (!selectedTxns.length) {
+    showToast("Select at least one transaction to delete.");
+    return;
+  }
 
-    await fetch("http://localhost:5050/transactions/bulk-delete", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      },
-      body: JSON.stringify({ ids: selectedTxns })
-    });
+  setModal({
+    type: "confirm",
+    title: "Delete Transactions",
+    message: "Delete selected transactions permanently?",
+    onConfirm: async () => {
+      await fetch("http://localhost:5050/transactions/bulk-delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({ ids: selectedTxns })
+      });
 
-    const refreshed = await getTransactionsByCard(cards[activeCardIndex]._id);
-    setTransactions([...refreshed]);
-    setDraftTxns(JSON.parse(JSON.stringify(refreshed)));
-    setSelectedTxns([]);
-    setEditMode(false);
-    onRefresh?.();
-  };
+      const refreshed = await getTransactionsByCard(
+        cards[activeCardIndex]._id
+      );
+
+      setTransactions(refreshed);
+      setDraftTxns(JSON.parse(JSON.stringify(refreshed)));
+      setSelectedTxns([]);
+      setEditMode(false);
+      onRefresh?.();
+      setModal(null);
+    }
+  });
+};
 
   /* ---------------- PIE CHART (REAL-TIME FIX) ---------------- */
 
@@ -296,8 +331,6 @@ const derivedCategories = useMemo(() => {
   return Array.from(set);
 }, [categories, transactions, draftTxns]);
 
-
-
   /* ---------------- JSX ---------------- */
 
   return (
@@ -305,6 +338,7 @@ const derivedCategories = useMemo(() => {
     <div className="tx-page">
   <div className="tx-header">
   <h2>Transactions</h2>
+  {pageError && <div className="page-error">{pageError}</div>}
 
   <div className="tx-header-right">
    <button
@@ -377,12 +411,43 @@ const derivedCategories = useMemo(() => {
   <div className="card-actions">
     <button
       className="card-btn"
-      onClick={() => {
-        const name = prompt("Rename card");
-        if (!name) return;
-        renameCard(cards[activeCardIndex]._id, name)
-          .then(() => getCards().then(setCards));
-      }}
+     onClick={() => {
+  setPageError("");
+  setModalInput(cards[activeCardIndex]?.name || ""); // preload current name
+
+  setModal({
+    type: "input",
+    title: "Rename Card",
+    placeholder: "New card name",
+    onSubmit: async (cardName) => {
+      const currentName = cards[activeCardIndex]?.name;
+
+      if (!cardName) {
+        showToast("Card name cannot be empty.");
+        return;
+      }
+
+      if (cardName.trim() === currentName?.trim()) {
+        showToast("New card name must be different from the current name.");
+        // ❗ DO NOT close modal
+        // ❗ DO NOT clear modalInput
+        return;
+      }
+
+     try {
+  await renameCard(cards[activeCardIndex]._id, cardName.trim());
+  setCards(await getCards());
+
+  setModal(null);
+  setModalInput("");
+  setPageError("");
+} catch (err) {
+  showToast("Failed to rename card. Please try again.");
+}
+    }
+  });
+}}
+
     >
       Rename Card
     </button>
@@ -390,15 +455,18 @@ const derivedCategories = useMemo(() => {
     <button
       className="card-btn danger"
       onClick={() => {
-        if (!window.confirm("Delete this card and all its transactions?"))
-          return;
+        setModal({
+  type: "confirm",
+  title: "Delete Card",
+  message: "Delete this card and all its transactions?",
+  onConfirm: async () => {
+    await deleteCard(cards[activeCardIndex]._id);
+    setActiveCardIndex(0);
+    setCards(await getCards());
+    setModal(null);
+  }
+});
 
-        deleteCard(cards[activeCardIndex]._id)
-          .then(() => {
-            setActiveCardIndex(0);
-            return getCards();
-          })
-          .then(setCards);
       }}
     >
       Delete Card
@@ -406,19 +474,72 @@ const derivedCategories = useMemo(() => {
 
  <button
   className="card-btn primary add-card-btn add-card-force"
-  onClick={() => {
-    const name = prompt("Enter card name");
-    if (!name) return;
+onClick={() => {
+  setPageError("");
+  setModalInput(""); // always start clean
 
-    const last4 = prompt("Last 4 digits (optional)");
+  setModal({
+    type: "input",
+    title: "Add Card",
+    placeholder: "Card name",
+    onSubmit: (cardName) => {
+      const trimmedName = cardName?.trim();
 
-    createCard({
-      name,
-      last4: last4 || undefined,
+      // ❌ empty name
+      if (!trimmedName) {
+        showToast("Card name cannot be empty.");
+        return; // stay on name field
+      }
+
+      // ❌ duplicate card name
+      const alreadyExists = cards.some(
+        c => c.name?.toLowerCase() === trimmedName.toLowerCase()
+      );
+
+      if (alreadyExists) {
+        showToast("A card with this name already exists.");
+        return; // stay on name field
+      }
+
+      // ✅ valid → move to last4
+      setPageError("");
+      setModalInput(""); // IMPORTANT: clear before next modal
+
+      setModal({
+        type: "input",
+        title: "Last 4 digits (optional)",
+        placeholder: "1234",
+        onSubmit: async (last4Digits) => {
+  const digits = last4Digits?.trim();
+
+  // ❌ validation: must be exactly 4 digits if provided
+  if (digits && !/^\d{4}$/.test(digits)) {
+    showToast("Last 4 digits must be exactly 4 numbers");
+    return; // stay on number field
+  }
+
+  try {
+    await createCard({
+      name: trimmedName,
+      last4: digits || undefined,
       baseCurrency: "USD",
       displayCurrency: "USD"
-    }).then(() => getCards().then(setCards));
-  }}
+    });
+
+    setCards(await getCards());
+    setModal(null);
+    setModalInput("");
+  } catch (err) {
+    // 🔥 backend/runtime safety net
+    showToast("Failed to create card. Please try again.");
+  }
+}
+      });
+    }
+  });
+}}
+
+
 >
   + Add Card
 </button>
@@ -546,6 +667,16 @@ const derivedCategories = useMemo(() => {
 
       {editMode && (
         <div className="bulk-actions">
+          <div className="bulk-info-icon">
+  <span className="info-dot">i</span>
+
+  <div className="bulk-info-tooltip">
+    Select one or more transactions using the checkbox, then edit any
+    field directly in the table. Use <b>Update Selected</b> to save or
+    <b>Delete Selected</b> to remove them.
+  </div>
+</div>
+
           <label>
             <input
               type="checkbox"
@@ -733,6 +864,57 @@ const derivedCategories = useMemo(() => {
 </tbody>
 
       </table>
+     {modal && (
+  <div className="modal-backdrop">
+    <div className="modal">
+      <h3>{modal.title}</h3>
+      {modal.message && <p>{modal.message}</p>}
+
+      {modal.type === "input" && (
+        <input
+          autoFocus
+          value={modalInput}
+          placeholder={modal.placeholder}
+          onChange={(e) => setModalInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              modal.onSubmit(modalInput);
+              setModalInput(""); // 🔥 clear after submit
+            }
+          }}
+        />
+      )}
+
+      <div className="modal-actions">
+        <button
+          onClick={() => {
+            setModal(null);
+            setModalInput("");
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          className="primary"
+          onClick={() => {
+            modal.onSubmit(modalInput);
+            setModalInput(""); // 🔥 clear after confirm
+          }}
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{toast && (
+  <div className="toast">
+    {toast}
+  </div>
+)}
+
     </div>
   );
 }
