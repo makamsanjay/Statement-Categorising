@@ -25,7 +25,9 @@ export default function BudgetPage({
   const [category, setCategory] = useState("");
   const [scope, setScope] = useState("ALL");
   const [budgetAmount, setBudgetAmount] = useState("");
-  const [pinned, setPinned] = useState({}); // ⭐ local pin state
+  const [pinned, setPinned] = useState({}); 
+  const [error, setError] = useState("");
+
 
   const MONTH = new Date().toISOString().slice(0, 7);
 
@@ -54,7 +56,8 @@ export default function BudgetPage({
 
 useEffect(() => {
   reloadBudgets();
-}, [MONTH, categories, allTransactions, cards]);
+}, [MONTH]);
+
 
 
   /* =========================
@@ -71,27 +74,31 @@ useEffect(() => {
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
   };
 
-  const cardFor = (b) =>
-    b.cardId
-      ? cards.find(c => c._id === b.cardId)
-      : cards[0];
+const cardFor = (b) => {
+  if (!b.cardId) return null;
+  return cards.find(c => c._id === b.cardId) || null;
+};
+const currency = SYMBOL[card?.displayCurrency || "USD"];
+
 
   /* =========================
      SAVE BUDGET
      ========================= */
   const handleSetBudget = async () => {
-    if (!category || !budgetAmount) {
-      alert("Select category and amount");
-      return;
-    }
+   if (!category || !budgetAmount) {
+  setError("Please select a category and amount");
+  return;
+}
 
-    await saveBudget({
-      category,
-      amount: Number(budgetAmount),
-      month: MONTH,
-      scope,
-      cardId: scope === "ALL" ? null : scope
-    });
+
+ await saveBudget({
+  category,
+  amount: Number(budgetAmount),
+  month: MONTH,
+  scope: scope === "ALL" ? "ALL" : "CARD",
+  cardId: scope === "ALL" ? null : scope
+});
+
 
     const updated = await getBudgetSummary(MONTH);
     setBudgets(Array.isArray(updated) ? updated : []);
@@ -101,10 +108,15 @@ useEffect(() => {
     setScope("ALL");
   };
 
-  const handleDelete = async (id) => {
+const handleDelete = async (id) => {
+  try {
     await deleteBudget(id);
     setBudgets(prev => prev.filter(b => b._id !== id));
-  };
+  } catch {
+    setError("Failed to delete budget");
+  }
+};
+
 
   const togglePin = (id) => {
     setPinned(prev => ({ ...prev, [id]: !prev[id] }));
@@ -122,6 +134,7 @@ useEffect(() => {
      ========================= */
   return (
     <div className="budget-page">
+      {error && <div className="budget-error">{error}</div>}
       <h2 className="budget-title">Monthly Budgets</h2>
 
       {/* ADD BUDGET */}
@@ -156,9 +169,6 @@ useEffect(() => {
           const spent = spentFor(b);
           const percent = Math.min((spent / b.budget) * 100, 100);
           const over = spent > b.budget;
-
-          const card = cardFor(b);
-          const currency = SYMBOL[card?.displayCurrency || "USD"];
 
           return (
             <div
