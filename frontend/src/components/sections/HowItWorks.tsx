@@ -27,7 +27,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="glass bg-card rounded-3xl p-8 border border-white/5 text-center">
+    <section className="glass bg-card rounded-3xl p-8 border border-white/5 text-center" id="how-it-works">
       <div className="max-w-6xl mx-auto px-6">
         {/* Section Heading */}
         <motion.div

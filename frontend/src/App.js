@@ -10,6 +10,10 @@ import LandingPage from "./pages/LandingPage";
 import ContactPage from "./pages/ContactPage";
 import { loadGoogleAnalytics } from "./utils/analytics";
 import RequireAuth from "./components/RequireAuth";
+import PrivacyPolicy from "./components/layout/PrivacyPolicy";
+import ScrollToTop from "./components/layout/ScrollToTop";
+import TermsOfService from "./components/layout/TermsOfService";
+import DataSecurity from "./components/layout/DataSecurity";
 
 
 // Providers
@@ -48,10 +52,12 @@ function App() {
 
 
   return (
+    
     <ThemeProvider>
       <BrowserRouter>
         {/* ✅ NAVBAR ONLY WHERE ALLOWED */}
         <NavbarGate />
+         <ScrollToTop />
 
         <Routes>
           {/* 🌐 Public */}
@@ -80,6 +86,10 @@ function App() {
           />
 
           <Route path="/help" element={<ContactPage />} />
+
+<Route path="/privacy-policy" element={<PrivacyPolicy />} />
+<Route path="/terms" element={<TermsOfService />} />
+<Route path="/data-security" element={<DataSecurity />} />
 
 
           {/* ❓ Fallback */}

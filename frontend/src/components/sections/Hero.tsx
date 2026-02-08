@@ -80,19 +80,30 @@ export default function Hero() {
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.45, ease: "easeOut" }}
-            className="mt-8 flex gap-4"
-          >
-            <button className="px-6 py-3 rounded-xl bg-primary text-white font-medium hover:scale-[1.03] transition-all duration-300 ease-out">
-              Get started for free
-            </button>
+  initial={{ opacity: 0, y: 12 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.3, duration: 0.45, ease: "easeOut" }}
+  className="mt-8 flex gap-4"
+>
+  <button
+    onClick={() => window.location.href = "/signup"}
+    className="px-6 py-3 rounded-xl bg-primary text-white font-medium hover:scale-[1.03] transition-all duration-300 ease-out"
+  >
+    Get started for free
+  </button>
 
-            <button className="px-6 py-3 rounded-xl border border-foreground/20 hover:bg-foreground/5 transition">
-              See how it works
-            </button>
-          </motion.div>
+  <button
+    onClick={() =>
+      document
+        .getElementById("how-it-works")
+        ?.scrollIntoView({ behavior: "smooth" })
+    }
+    className="px-6 py-3 rounded-xl border border-foreground/20 hover:bg-foreground/5 transition"
+  >
+    See how it works
+  </button>
+</motion.div>
+
         </div>
 
         {/* RIGHT VISUALS */}

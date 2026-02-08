@@ -5,39 +5,38 @@ import "./Signup.css";
 
 const tips = [
   {
-    title: "Extract Transactions from PDFs",
-    desc: "Automatically extract transactions from bank statement PDFs in seconds."
+    title: "Upload bank statement PDFs",
+    desc: "Upload bank statement PDFs and automatically extract transactions in seconds - no manual entry required.",
   },
   {
-    title: "Multiple File Formats Supported",
-    desc: "Upload PDF, CSV, XLS, and XLSX files without any manual conversion."
+    title: "Support for common file formats",
+    desc: "Works with PDF, CSV, XLS, and XLSX files, so you can upload statements from almost any bank or platform.",
   },
   {
-    title: "AI-Powered Categorization",
-    desc: "Transactions are auto-categorized using AI for better insights."
+    title: "Automatic expense categorization",
+    desc: "Transactions are automatically categorized into clear categories and sub-categories for easy understanding.",
   },
   {
-    title: "Smart Multi-Card Management",
-    desc: "Manage multiple cards separately with individual summaries and reports."
+    title: "Multi-card expense tracking",
+    desc: "Add and manage multiple credit or debit cards and view combined spending insights across all cards.",
   },
   {
-    title: "Monthly Budget Tracking",
-    desc: "Set monthly budgets and track overspending before it happens."
+    title: "Spending health overview",
+    desc: "Get a simple spending health view that highlights unusual patterns and areas that may need attention.",
   },
   {
-    title: "Clear & Actionable Analytics",
-    desc: "Visualize your spending patterns with clean charts and summaries."
+    title: "Clear spending analytics",
+    desc: "Understand your spending with clean charts, summaries, and breakdowns instead of complex spreadsheets.",
   },
   {
-    title: "Secure by Design",
-    desc: "Your data is protected with encrypted storage and email verification."
+    title: "Privacy-first and secure",
+    desc: "Your data is protected with read-only access and modern encryption. We never sell or advertise using your data.",
   },
   {
-    title: "Simple & Affordable Pricing",
-    desc: "Powerful features at a price designed for everyday users."
-  }
+    title: "Start free, upgrade anytime",
+    desc: "Begin with the free plan and upgrade only when you need advanced insights - no long-term commitment.",
+  },
 ];
-
 
 function Signup() {
   const navigate = useNavigate();

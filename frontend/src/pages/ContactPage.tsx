@@ -10,22 +10,55 @@ import "./ContactPage.css";
 
 const faqs = [
   {
-    q: "Is my financial data safe?",
-    a: "Yes. We use read-only access and industry-standard encryption. We never move money or initiate transactions.",
+    q: "Is my financial data safe with SpendSwitch?",
+    a: "Yes. SpendSwitch is built with a privacy-first approach. We use read-only access and modern encryption standards to protect your data. We never move money, initiate transactions, or sell your information.",
   },
   {
-    q: "Do you connect directly to my bank?",
-    a: "No. You can upload statements manually. Bank connections are optional and read-only.",
+    q: "Do you connect directly to my bank account?",
+    a: "No. SpendSwitch does not require direct bank connections. You can upload bank statement PDFs or files manually. This gives you full control over what data you share.",
   },
   {
-    q: "Can I cancel anytime?",
-    a: "Absolutely. There are no contracts or lock-ins.",
+    q: "Can I upload bank statement PDFs and CSV files?",
+    a: "Yes. SpendSwitch supports uploading bank statement PDFs, CSV files, and exported transaction files. Uploaded data is automatically extracted and categorized.",
   },
   {
-    q: "Do you support international currencies?",
-    a: "Yes. We support INR, USD, EUR, GBP and more.",
+    q: "How does expense categorization work?",
+    a: "SpendSwitch automatically categorizes transactions into clear categories and sub-categories. This helps you understand where your money goes without manual tagging or spreadsheets.",
+  },
+  {
+    q: "Does SpendSwitch support multiple cards?",
+    a: "Yes. Our Pro plan allows you to add multiple credit or debit cards and view combined spending insights across all of them in one place.",
+  },
+  {
+    q: "What are sub-category insights?",
+    a: "Sub-category insights break down broad categories into more detailed views, helping you understand specific spending habits rather than just totals.",
+  },
+  {
+    q: "Does SpendSwitch provide credit card suggestions?",
+    a: "SpendSwitch analyzes your spending patterns and highlights opportunities where different cards may offer better rewards. We provide insights, not financial advice.",
+  },
+  {
+    q: "What is the spending health score?",
+    a: "The spending health score summarizes your spending behavior to help you quickly understand whether your habits are balanced or need attention.",
+  },
+  {
+    q: "Is there a free plan available?",
+    a: "Yes. SpendSwitch offers a free plan that includes core expense tracking features with limits. You can upgrade anytime if you need advanced insights.",
+  },
+  {
+    q: "Can I cancel or downgrade my plan anytime?",
+    a: "Yes. There are no long-term contracts. You can cancel or downgrade your plan at any time from your account.",
+  },
+  {
+    q: "Does SpendSwitch work internationally?",
+    a: "Yes. SpendSwitch supports multiple currencies, including INR, USD, EUR, and GBP, and works with international bank statements.",
+  },
+  {
+    q: "Is my data shared with advertisers or third parties?",
+    a: "No. SpendSwitch is not ad-driven. Your data is never sold, shared, or used for advertising or profiling.",
   },
 ];
+
 
 export default function ContactPage() {
   const userEmail = localStorage.getItem("userEmail") || "";

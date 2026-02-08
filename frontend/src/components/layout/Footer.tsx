@@ -11,7 +11,7 @@ export default function Footer() {
         {/* BRAND */}
         <div>
           <h3 className="text-lg font-semibold">
-            Expense<span className="text-primary">AI</span>
+            Spend<span className="text-primary">Switch</span>
           </h3>
           <p className="mt-3 text-sm text-foreground/60 max-w-sm">
             Understand your spending.  
@@ -43,6 +43,22 @@ export default function Footer() {
                 Help
               </button>
             </li>
+<button
+                onClick={() => navigate("/privacy-policy")}
+                className="hover:text-primary transition"
+              >
+                privacy Policy
+              </button>
+              <button onClick={() => navigate("/terms")} className="hover:text-primary">
+  Terms of Service
+</button>
+
+<button
+  onClick={() => navigate("/data-security")}
+  className="hover:text-primary transition"
+>
+  Data Security
+</button>
 
             <li>
               <button
@@ -97,7 +113,7 @@ export default function Footer() {
 
       {/* BOTTOM BAR */}
       <div className="border-t border-white/10 py-6 text-center text-xs text-foreground/50">
-        © {new Date().getFullYear()} Expense AI. All rights reserved.
+        © {new Date().getFullYear()} SpendSwitch. All rights reserved.
       </div>
     </footer>
   );

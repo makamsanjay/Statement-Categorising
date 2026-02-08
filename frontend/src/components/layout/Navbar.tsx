@@ -2,23 +2,31 @@ import { motion as _motion } from "framer-motion";
 import { Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ContactPage from "../../pages/ContactPage";
 
 const motion = _motion as any;
 
 export default function Navbar() {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [scrolled, setScrolled] = useState(false);
 
-  // Initialize theme from <html> class
+  // Initialize theme
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark");
     setTheme(isDark ? "dark" : "light");
   }, []);
 
+  // Scroll detection
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 40);
+    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const toggleTheme = () => {
     const root = document.documentElement;
-
     if (theme === "dark") {
       root.classList.remove("dark");
       setTheme("light");
@@ -35,18 +43,26 @@ export default function Navbar() {
       transition={{ duration: 0.6 }}
       className="fixed top-6 left-1/2 -translate-x-1/2 z-40"
     >
-      <div className="glass bg-card border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-6 shadow-lg">
+      <div
+        className={`
+          flex items-center gap-5 px-6 py-3 rounded-2xl shadow-lg
+          transition-all duration-300
+          bg-card border border-white/10 backdrop-blur-xl
+          ${scrolled ? "opacity-20 dark:opacity-25" : "opacity-100"}
+        `}
+      >
         {/* Logo */}
         <button
           onClick={() => navigate("/")}
           className="font-semibold text-lg hover:opacity-90 transition"
         >
-          Expense<span className="text-primary">AI</span>
+          Spend<span className="text-primary">Switch</span>
         </button>
 
-        <div className="w-px h-6 bg-foreground/10" />
+        {/* Divider */}
+        <div className="w-px h-5 bg-foreground/10" />
 
-        {/* Primary links */}
+        {/* Nav links */}
         <button
           onClick={() => navigate("/pricing")}
           className="text-sm hover:text-primary transition"
@@ -55,15 +71,12 @@ export default function Navbar() {
         </button>
 
         <button
-  onClick={() => navigate("/help")}
-  className="hover:text-primary transition"
->
-  Help
-</button>
+          onClick={() => navigate("/help")}
+          className="text-sm hover:text-primary transition"
+        >
+          Help
+        </button>
 
-        <div className="w-px h-6 bg-foreground/10" />
-
-        {/* Auth */}
         <button
           onClick={() => navigate("/login")}
           className="text-sm hover:text-primary transition"
@@ -78,7 +91,8 @@ export default function Navbar() {
           Sign up
         </button>
 
-        <div className="w-px h-6 bg-foreground/10" />
+        {/* Divider */}
+        <div className="w-px h-5 bg-foreground/10" />
 
         {/* Theme toggle */}
         <button

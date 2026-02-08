@@ -21,6 +21,7 @@ Income
 Taxes
 Transfers
 Subscriptions
+Credit Card Payment
 Other
 
 Transaction description:
