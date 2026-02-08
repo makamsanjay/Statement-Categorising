@@ -13,39 +13,75 @@ import {
 const reasons = [
   {
     icon: ShieldCheck,
-    title: "Privacy-first by design",
+    title: "Privacy-first and secure by design",
     description:
-      "Your data is never sold, shared, or used for advertising. Everything stays yours.",
+      "Your financial data is never sold or shared. Sensitive information is protected using hashing and secure processing, with no unnecessary data stored.",
   },
   {
     icon: CreditCard,
-    title: "Works with any card or statement",
+    title: "Support for multiple cards",
     description:
-      "Upload PDFs, CSVs, exports — no forced bank connections or lock-in.",
-  },
-  {
-    icon: Globe,
-    title: "Built for global users",
-    description:
-      "Optimized for INR, USD, EUR, GBP and international spending patterns.",
+      "Add multiple credit or debit cards and view unified spending insights across all cards in one place.",
   },
   {
     icon: BarChart3,
-    title: "Insights, not dashboards",
+    title: "Automatic expense categorization",
     description:
-      "We surface conclusions directly so you don’t interpret confusing charts.",
-  },
-  {
-    icon: Lock,
-    title: "Read-only access",
-    description:
-      "We never move money or initiate transactions — analysis only.",
+      "Transactions are automatically categorized into categories and sub-categories, helping you understand exactly where your money goes.",
   },
   {
     icon: Sparkles,
-    title: "Designed like a product",
+    title: "Smart sub-category insights",
     description:
-      "You’ll actually enjoy using it. Clean, fast, and thoughtfully crafted.",
+      "Go beyond basic categories with sub-category analysis that reveals detailed spending behavior, not just totals.",
+  },
+  {
+    icon: Globe,
+    title: "Upload statements from anywhere",
+    description:
+      "Upload bank statement PDFs, CSVs, or exports from any bank or country - no forced bank connections required.",
+  },
+  {
+    icon: BarChart3,
+    title: "Deeper spending analytics",
+    description:
+      "Explore your expenses using bar charts, pie charts, and trend lines for clearer and more meaningful financial analysis.",
+  },
+  {
+    icon: CreditCard,
+    title: "Smarter card reward suggestions",
+    description:
+      "SpendSwitch compares your spending patterns with card reward structures to highlight cards that may earn you more cashback or rewards.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Read-only analysis only",
+    description:
+      "We never move money or initiate transactions. SpendSwitch is strictly read-only and used only for analysis.",
+  },
+  {
+    icon: BarChart3,
+    title: "Spending health score",
+    description:
+      "Get a clear spending health score based on your habits to quickly understand whether your spending patterns are balanced or risky.",
+  },
+  {
+    icon: Lock,
+    title: "Export your transactions anytime",
+    description:
+      "Download categorized transactions and insights whenever you need them for budgeting, taxes, or personal records.",
+  },
+  {
+    icon: Sparkles,
+    title: "Custom category exploration",
+    description:
+      "Click any category or sub-category to view expanded analytics and drill down into the transactions you care about most.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Cancel anytime with priority support",
+    description:
+      "No lock-ins or hidden commitments. Cancel anytime and get access to fast, priority support when you need help.",
   },
 ];
 
@@ -74,10 +110,10 @@ export default function WhyChooseUs() {
         {/* Heading */}
         <div className="text-center max-w-xl mx-auto">
           <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight">
-            Why choose ExpenseAI
+            Why choose SpendSwitch
           </h2>
           <p className="mt-4 text-foreground/70">
-            Built for trust, clarity, and real-world finance.
+            A modern expense tracking platform built for clarity, security, and smarter financial decisions.
           </p>
         </div>
 

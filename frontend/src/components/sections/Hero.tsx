@@ -67,7 +67,7 @@ export default function Hero() {
           >
             Understand your spending.
             <br />
-            <span className="text-primary">Without trying.</span>
+            <span className="text-primary">Without spreadsheets or effort.</span>
           </motion.h1>
 
           <motion.p
@@ -76,8 +76,7 @@ export default function Hero() {
             transition={{ delay: 0.15, duration: 0.5, ease: "easeOut" }}
             className="mt-6 text-lg text-foreground/70 max-w-[42ch]"
           >
-            Upload expenses from anywhere and get clean, intelligent insights —
-            no spreadsheets, no effort.
+            Track expenses automatically, analyze your spending, and get clear financial insights - without spreadsheets, manual work, or confusion.
           </motion.p>
 
           <motion.div
@@ -87,7 +86,7 @@ export default function Hero() {
             className="mt-8 flex gap-4"
           >
             <button className="px-6 py-3 rounded-xl bg-primary text-white font-medium hover:scale-[1.03] transition-all duration-300 ease-out">
-              Get Started
+              Get started for free
             </button>
 
             <button className="px-6 py-3 rounded-xl border border-foreground/20 hover:bg-foreground/5 transition">
@@ -114,7 +113,7 @@ export default function Hero() {
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             className="absolute -top-12 left-6"
           >
-            <FloatingCard title="Monthly Spend" value="₹42,380" />
+            <FloatingCard title="Monthly Spend" value="$4280" />
           </motion.div>
 
           {/* Insight — clearly BELOW */}
@@ -124,7 +123,7 @@ export default function Hero() {
             transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
             className="absolute -bottom-14 left-16"
           >
-            <FloatingCard title="Insight" value="+18% this month" />
+            <FloatingCard title="Top Category" value="Food & Dining" />
           </motion.div>
         </div>
       </div>

@@ -9,19 +9,19 @@ const steps = [
     icon: Upload,
     title: "Upload your expenses",
     description:
-      "Import expenses from different platforms or files in seconds.",
+      "Upload bank statements, expense files, or transaction data in seconds - no manual entry required.",
   },
   {
     icon: Brain,
-    title: "We understand the data",
+    title: "Automatically categorize transactions",
     description:
-      "The system automatically categorizes and finds patterns.",
+      "SpendSwitch extracts, categorizes, and analyzes your expenses to identify spending patterns automatically.",
   },
   {
     icon: LineChart,
-    title: "Get clear insights",
+    title: "Get clear spending insights",
     description:
-      "Visual breakdowns and smart observations appear instantly.",
+      "View visual spending breakdowns, summaries, and insights that help you understand where your money goes.",
   },
 ];
 
@@ -38,10 +38,10 @@ export default function HowItWorks() {
           className="text-center mb-20"
         >
           <h2 className="text-4xl font-semibold">
-            How it works
+            How SpendSwitch works
           </h2>
           <p className="mt-4 text-lg text-foreground/60">
-            Simple steps. Intelligent results.
+           Upload expenses, analyze spending, and get clear financial insights automatically.
           </p>
         </motion.div>
 

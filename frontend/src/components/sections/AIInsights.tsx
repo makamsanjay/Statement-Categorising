@@ -52,8 +52,8 @@ function DonutChart() {
 
       {/* Center label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <p className="text-sm text-foreground/60">Monthly spend</p>
-        <p className="text-xl font-semibold">₹39,120</p>
+        <p className="text-sm text-foreground/60">Monthly spending</p>
+        <p className="text-xl font-semibold">$39,120</p>
       </div>
     </div>
   );
@@ -88,10 +88,10 @@ export default function AIInsights() {
           className="text-center max-w-xl mx-auto"
         >
           <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight">
-            Insights that feel human
+            Smart insights across all your cards
           </h2>
           <p className="mt-4 text-foreground/70">
-            AI highlights what matters — without charts you have to interpret.
+           SpendSwitch analyzes spending across multiple credit and debit cards to show where and how you actually spend - automatically.
           </p>
         </motion.div>
 
@@ -139,24 +139,23 @@ export default function AIInsights() {
             {/* Main Insight */}
             <div className="glass rounded-3xl p-8 border border-white/10 shadow-lg">
               <p className="text-xs uppercase tracking-wide text-primary font-medium">
-                AI Insight
+                Cross-card insight
               </p>
               <p className="mt-3 text-lg leading-relaxed">
-                Food and shopping account for a majority of your discretionary
-                spending, with higher activity during weekends and late
-                evenings.
+                Most of your Food & Dining spend happens on Card 2, while shopping
+expenses are spread across multiple cards.
               </p>
             </div>
 
             {/* Trend */}
             <div className="glass rounded-3xl p-8 border border-white/10 shadow-lg">
               <p className="text-sm text-foreground/60 mb-3">
-                Spending trend (last 4 months)
+                Card reward opportunity
               </p>
               <TrendStrip />
               <p className="mt-4 text-sm text-foreground/70">
-                Your overall spending has stabilized, with fewer sharp spikes
-                compared to previous months.
+                Right now, you’re earning about 1% back here.
+With a better-matched card, the same spending could earn you up to 5–6% back.
               </p>
             </div>
           </motion.div>

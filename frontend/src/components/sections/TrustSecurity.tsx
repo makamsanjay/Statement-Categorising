@@ -2,27 +2,26 @@ import { motion as _motion } from "framer-motion";
 
 const motion = _motion as any;
 
-
 const trustPoints = [
   {
-    title: "Read-only access",
+    title: "Read-only financial access",
     description:
-      "We never initiate transactions or move money. Your data is accessed in read-only mode.",
+      "SpendSwitch never initiates transactions or moves money. Your financial data is accessed strictly in read-only mode for analysis only.",
   },
   {
-    title: "End-to-end encryption",
+    title: "Strong encryption and secure processing",
     description:
-      "All sensitive information is encrypted in transit and at rest using modern standards.",
+      "Sensitive data is protected using modern encryption standards in transit and at rest, following best practices used across financial software.",
   },
   {
-    title: "You stay in control",
+    title: "Your data, your control",
     description:
-      "Disconnect sources, delete data, or export insights at any time — no lock-in.",
+      "Disconnect sources, delete uploaded statements, or export your data at any time — no lock-in, no hidden dependencies.",
   },
   {
-    title: "Privacy-first by design",
+    title: "Privacy-first, not ad-driven",
     description:
-      "Your data is never sold, shared, or used for advertising. Period.",
+      "Unlike many finance apps, your data is never sold, shared, or used for advertising or profiling. Your insights stay yours.",
   },
 ];
 
@@ -42,10 +41,10 @@ export default function TrustSecurity() {
           className="text-center max-w-xl mx-auto"
         >
           <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight">
-            Built with security in mind
+            Built for trust, privacy, and control
           </h2>
           <p className="mt-4 text-foreground/70">
-            Your financial data deserves careful handling — not shortcuts.
+            Unlike many expense tracking tools, SpendSwitch is designed to analyze your data - not monetize it.
           </p>
         </motion.div>
 
@@ -80,8 +79,7 @@ export default function TrustSecurity() {
           transition={{ delay: 0.25, duration: 0.4 }}
           className="mt-16 text-center text-sm text-foreground/60"
         >
-          We designed this product the same way we’d want our own finances
-          handled.
+         We built SpendSwitch as a financial tool we would trust with our own data.
         </motion.div>
       </div>
     </section>

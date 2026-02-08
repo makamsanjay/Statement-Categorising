@@ -69,7 +69,7 @@ export default function CardStack() {
         {/* Top row */}
         <div className="flex items-center justify-between">
           <div className="w-10 h-8 rounded-md bg-gradient-to-br from-yellow-300/80 to-yellow-500/80" />
-          <span className="text-sm text-foreground/70">Debit</span>
+          <span className="text-sm text-foreground/70">Card</span>
         </div>
 
         {/* Card number */}
@@ -83,7 +83,7 @@ export default function CardStack() {
         <div className="flex items-center justify-between mt-4">
           <div>
             <p className="text-xs text-foreground/60">Card Holder</p>
-            <p className="text-sm font-medium">Pavan Reddy</p>
+            <p className="text-sm font-medium">Spend Switch</p>
           </div>
           <p className="text-sm font-semibold">VISA</p>
         </div>

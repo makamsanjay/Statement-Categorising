@@ -17,8 +17,8 @@ export default function LandingPage() {
         <Hero />
         <HowItWorks />
         <TryNow />
-        <AIInsights />
         <WhyChooseUs />
+        <AIInsights />
         <TrustSecurity />
          <Footer />
       </main>

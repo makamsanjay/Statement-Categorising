@@ -17,16 +17,17 @@ function InsightCard({ title, value }: { title: string; value: string }) {
 export default function TryNow() {
   const [preview, setPreview] = useState(false);
 
-  return (
+return (
     <section className="relative py-24 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         {/* HEADER */}
         <div className="text-center max-w-xl mx-auto">
           <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight">
-            Try it with real context
+            Why use SpendSwitch for tracking?
           </h2>
           <p className="mt-4 text-foreground/70">
-            See how raw card data turns into meaningful insights — instantly.
+            Go beyond basic expense tracking with smart sub-categories, a spending health score,
+            and personalized card suggestions - all built from how you actually spend.
           </p>
         </div>
 
@@ -44,19 +45,20 @@ export default function TryNow() {
               className="absolute inset-0"
             >
               <h3 className="text-xl font-medium">
-                From transactions to clarity
+                A smarter way to track and understand spending
               </h3>
 
               <p className="mt-4 text-foreground/70 leading-relaxed">
-                We analyze spending patterns across merchants, time, and
-                categories to surface insights that actually help you make
-                better decisions.
+                SpendSwitch automatically transforms raw transaction data into clear spending insights. 
+                Instead of managing spreadsheets, you get categorized expenses, spending breakdowns, 
+                and summaries that make it easy to understand where your money goes.
               </p>
 
               <ul className="mt-6 space-y-3 text-sm text-foreground/70">
-                <li>• Automatic categorization</li>
-                <li>• Behavioral spending patterns</li>
-                <li>• Month-over-month changes</li>
+                <li>• Automatic expense categorization</li>
+                <li>• Clear spending breakdowns by category</li>
+                <li>• Detects behavioral spending patterns</li>
+                <li>• Easy-to-understand summaries of your expenses</li>
               </ul>
             </motion.div>
 
@@ -100,9 +102,9 @@ export default function TryNow() {
               transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
               className="absolute inset-0 space-y-4 max-w-[420px] ml-auto"
             >
-              <InsightCard title="Monthly spend" value="₹39,120" />
+              <InsightCard title="Spending Health Score" value="Unusual Spending Detected" />
               <InsightCard title="Top category" value="Food & Dining" />
-              <InsightCard title="Change" value="+18% this month" />
+              <InsightCard title="Largest expense" value="Rent" />
 
               <div className="pt-4 text-center">
                 <button
@@ -118,13 +120,19 @@ export default function TryNow() {
 
         {/* PREVIEW BUTTON */}
         {!preview && (
-          <div className="mt-14 flex justify-center">
-            <button
-              onClick={() => setPreview(true)}
-              className="px-7 py-3 rounded-xl bg-primary text-white font-medium transition hover:opacity-90"
-            >
-              Preview insights
-            </button>
+          <div className="mt-24 w-full flex justify-center">
+            <div className="flex flex-col items-center text-center max-w-md">
+              <p className="mb-3 text-sm text-foreground/60">
+                See how SpendSwitch turns expenses into clear spending insights
+              </p>
+
+              <button
+                onClick={() => setPreview(true)}
+                className="px-7 py-3 rounded-xl bg-primary text-white font-medium transition hover:opacity-90"
+              >
+                Preview insights
+              </button>
+            </div>
           </div>
         )}
       </div>
