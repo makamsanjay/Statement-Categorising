@@ -68,8 +68,7 @@ export default function PricingPage() {
             Simple, transparent pricing
           </h1>
           <p className="pricing-subtitle">
-            Pay less than a coffee per month and finally understand where your
-            money goes.
+            Pay less than a coffee per month and finally understand where your money goes - without spreadsheets.
           </p>
         </div>
 
@@ -93,7 +92,7 @@ export default function PricingPage() {
           <div className="pricing-card">
             <h3>Free</h3>
             <p className="plan-desc">
-              Start here. No commitment.
+             Explore SpendSwitch with no commitment.
             </p>
 
             <div className="price">
@@ -103,20 +102,26 @@ export default function PricingPage() {
               Unlimited access
             </div>
 
-            <ul className="features">
-              <li>✔ Upload expenses</li>
-              <li>✔ Auto categorization</li>
-              <li>✔ Monthly summaries</li>
-              <li className="muted">✖ AI insights</li>
-              <li className="muted">✖ Smart suggestions</li>
-            </ul>
+           <ul className="features">
+  <li>✔ Add 1 card</li>
+  <li>✔ Upload 1 bank statement per day</li>
+  <li>✔ Supports multiple files per upload</li>
+  <li>✔ Automatic expense categorization</li>
+  <li>✔ Monthly spending summaries</li>
+  <li className="muted">✖ Multiple cards</li>
+  <li className="muted">✖ Card reward suggestions</li>
+  <li className="muted">✖ Priority support</li>
+</ul>
 
             <button
               className="secondary-btn"
               onClick={() => navigate("/login")}
             >
-              Continue free
+              Continue With free
             </button>
+            <p className="plan-note">
+  No payment required. Upgrade anytime when you need more.
+</p>
           </div>
 
           {/* PRO PLAN */}
@@ -150,27 +155,29 @@ export default function PricingPage() {
             )}
 
             <ul className="features">
-              <li>✔ Everything in Free</li>
-              <li>✔ AI-powered insights</li>
-              <li>✔ Spending pattern analysis</li>
-              <li>✔ Smart saving advice</li>
-              <li>✔ Priority support</li>
-            </ul>
+  <li>✔ Everything in Free</li>
+  <li>✔ Add multiple cards</li>
+  <li>✔ Unlimited statement uploads</li>
+  <li>✔ Sub-category spending insights</li>
+  <li>✔ Spending health score</li>
+  <li>✔ Card reward suggestions based on spending</li>
+  <li>✔ Priority support</li>
+</ul>
 
             <button
               className="primary-btn"
               onClick={handleUpgradeClick}
             >
-              Upgrade to Pro
+              Start Pro plan
             </button>
 
             <div className="trust-text">
-              🔒 Secure payment · Cancel anytime
+              No long-term contracts. Cancel or downgrade at any time.
             </div>
 
-            <div className="social-proof">
+           {/* <div className="social-proof">
               ⭐ Trusted by 1,000+ early users
-            </div>
+            </div> */}
           </div>
         </div>
 

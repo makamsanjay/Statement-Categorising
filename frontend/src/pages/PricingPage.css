@@ -297,3 +297,63 @@ body.dark,
   border-color: var(--primary);
   background: rgba(59, 130, 246, 0.08);
 }
+
+/* ---------- Plan description (above price) ---------- */
+.plan-desc {
+  margin-top: 6px;
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* ---------- Price block spacing ---------- */
+.price {
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+.billing {
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Features list polish ---------- */
+.features {
+  margin-top: 16px;
+  margin-bottom: 22px;
+}
+
+.features li {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.features li.muted {
+  color: var(--text-muted);
+}
+
+/* ---------- Below-button note (Free + Pro) ---------- */
+.plan-note {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* ---------- Pro trust text ---------- */
+.trust-text {
+  margin-top: 14px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* ---------- Button spacing consistency ---------- */
+.primary-btn,
+.secondary-btn {
+  margin-top: 8px;
+}
