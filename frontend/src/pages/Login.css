@@ -309,114 +309,183 @@
   margin-top: 6px;
 }
 
-/* ===============================
-   MOBILE FIRST (≤ 768px)
-================================ */
+/* =====================================================
+   AUTH — TABLET & MOBILE (VERTICAL ONLY)
+   ===================================================== */
 
-@media (max-width: 768px) {
-  /* Collapse 50/50 layout */
+@media (max-width: 1024px) {
+
+  /* FORCE vertical flow */
   .auth-container {
-    grid-template-columns: 1fr;
-    background: #f8fafc;
+    display: flex;              /* 🔒 override grid */
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 32px 16px;
+    gap: 24px;
   }
 
-  /* Hide card wall on mobile */
+  /* MOVING CARDS — TOP BANNER */
+  .card-wall {
+    order: 1;
+    height: 160px;
+    padding: 12px 0;
+    justify-content: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  /* Only 2 rows on tablet */
+  .card-row:nth-child(n+3) {
+    display: none;
+  }
+
+  .card-row {
+    gap: 28px;
+  }
+
+  .card-row img {
+    height: 36px;
+  }
+
+  /* LOGIN FORM — BELOW */
+  .auth-form {
+    order: 2;
+    margin: 0 auto;
+    padding: 40px 36px;
+    max-width: 420px;
+    width: 100%;
+  }
+}
+
+/* =====================================================
+   AUTH — VERY SMALL DEVICES
+   ===================================================== */
+
+@media (max-width: 380px) {
+
+  /* Remove animation entirely */
   .card-wall {
     display: none;
   }
 
-  /* Center form */
+  .auth-container {
+    padding-top: 32px;
+  }
+
   .auth-form {
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 32px 24px;
-    border-radius: 16px;
-    box-shadow:
-      0 18px 36px rgba(15, 23, 42, 0.12),
-      0 6px 14px rgba(15, 23, 42, 0.08);
+    margin-top: 0;
   }
+}
 
-  /* Title */
-  .auth-form h2 {
-    font-size: 22px;
-    margin-bottom: 22px;
+/* =====================================================
+   🔒 HARD OVERRIDE — MOBILE LOGIN STACK
+   (beats auth-transition)
+   ===================================================== */
+
+@media (max-width: 1024px) {
+  .auth-transition.auth-container {
+    display: flex !important;
+    flex-direction: column !important;
   }
+}
 
-  .auth-form h2::after {
-    width: 36px;
+/* =====================================================
+   AUTH BRAND (SpendSwitch)
+   ===================================================== */
+
+.auth-form-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* =========================
+   AUTH BRAND — FORCE COLORS
+========================= */
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 22px;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.auth-brand .brand-spend {
+  color: #020617;          /* 🔥 TRUE BLACK */
+}
+
+.auth-brand .brand-switch {
+  color: #2563eb;          /* 🔵 BRAND BLUE */
+}
+
+
+.brand-switch {
+  color: #2563eb; /* blue */
+  margin-left: 4px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .auth-brand {
+    font-size: 30px;
+    margin-bottom: 16px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .auth-brand {
+    font-size: 26px;
+    margin-bottom: 14px;
+  }
+}
+
+/* =====================================================
+   LOGIN RIGHT COLUMN WRAPPER
+   ===================================================== */
+
+.auth-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =====================================================
+   AUTH BRAND — TRANSPARENT TEXT ONLY
+   ===================================================== */
+
+.auth-brand {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  margin-bottom: 18px;
+  text-align: center;
+  user-select: none;
+}
+
+.brand-spend {
+  color: #020617; /* true black */
+}
+
+.brand-switch {
+  color: #2563eb; /* blue */
+  margin-left: 4px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .auth-brand {
+    font-size: 34px;
     margin-top: 10px;
   }
-
-  /* Inputs */
-  .auth-form input {
-    font-size: 15px;
-    padding: 14px 16px;
-  }
-
-  /* Primary button */
-  .auth-form button {
-    padding: 14px;
-    font-size: 15px;
-    border-radius: 12px;
-  }
-
-  /* Links */
-  .auth-form p,
-  .forgot-link,
-  .link-text {
-    font-size: 14px;
-  }
 }
 
-/* ===============================
-   SMALL PHONES (≤ 380px)
-================================ */
-
-@media (max-width: 380px) {
-  .auth-form {
-    padding: 28px 20px;
-  }
-
-  .auth-form h2 {
-    font-size: 20px;
-  }
-}
-
-/* ===============================
-   TABLET (769px – 1024px)
-================================ */
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .auth-container {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .card-wall {
-    padding: 40px 0;
-  }
-
-  .auth-form {
-    max-width: 380px;
-    padding: 40px 36px;
-  }
-
-  .auth-form h2 {
-    font-size: 24px;
-  }
-}
-
-/* ===============================
-   ACCESSIBILITY & PERFORMANCE
-================================ */
-
-/* Reduce motion */
-@media (prefers-reduced-motion: reduce) {
-  .card-row {
-    animation: none;
-  }
-
-  .auth-form,
-  .auth-form button {
-    transition: none;
+/* Mobile */
+@media (max-width: 640px) {
+  .auth-brand {
+    font-size: 30px;
+    margin-top: 6px;
   }
 }

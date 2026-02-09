@@ -172,24 +172,32 @@ const handleVerifyOTP = async () => {
   /* =========================
      RENDER
   ========================= */
-  return (
-    <div className="auth-transition auth-container">
-      {/* LEFT SIDE */}
-      <div className="card-wall">
-        {rows.map((row, i) => (
-          <div
-            key={i}
-            className={`card-row ${i % 2 === 0 ? "left" : "right"}`}
-            style={{ animationDuration: `${22 + i * 4}s` }}
-          >
-            {row.map((src, idx) => (
-              <img key={idx} src={src} alt="card-logo" />
-            ))}
-          </div>
-        ))}
+return (
+  <div className="auth-transition auth-container">
+    {/* LEFT / TOP — MOVING CARDS */}
+    <div className="card-wall">
+      {rows.map((row, i) => (
+        <div
+          key={i}
+          className={`card-row ${i % 2 === 0 ? "left" : "right"}`}
+          style={{ animationDuration: `${22 + i * 4}s` }}
+        >
+          {row.map((src, idx) => (
+            <img key={idx} src={src} alt="card-logo" />
+          ))}
+        </div>
+      ))}
+    </div>
+
+    {/* RIGHT / BELOW — BRAND + FORM */}
+    <div className="auth-form-wrapper">
+      {/* BRAND — TRANSPARENT TEXT */}
+      <div className="auth-brand">
+        <span className="brand-spend">Spend</span>
+        <span className="brand-switch">Switch</span>
       </div>
 
-      {/* RIGHT SIDE */}
+      {/* LOGIN / RESET FORM */}
       <div className="auth-form">
         {mode === "login" && (
           <>
@@ -210,17 +218,16 @@ const handleVerifyOTP = async () => {
 
             <button onClick={handleLogin}>Login</button>
 
-<p
-  className="forgot-link center"
-  onClick={() => {
-    setMode("forgot");
-    setFpEmail("");
-    setError("");
-  }}
->
-  Forgot password?
-</p>
-
+            <p
+              className="forgot-link center"
+              onClick={() => {
+                setMode("forgot");
+                setFpEmail("");
+                setError("");
+              }}
+            >
+              Forgot password?
+            </p>
 
             <p>
               Don’t have an account?{" "}
@@ -245,55 +252,54 @@ const handleVerifyOTP = async () => {
 
             <button onClick={handleSendOTP}>Send OTP</button>
 
-            <p className="link-btn" onClick={() => setMode("login")}>
+            <p className="link-text" onClick={() => setMode("login")}>
               Back to login
             </p>
           </>
         )}
 
-       {mode === "otp" && (
-  <>
-    <h2>Verify OTP</h2>
+        {mode === "otp" && (
+          <>
+            <h2>Verify OTP</h2>
 
-    <input
-      placeholder="Enter OTP"
-      value={otp}
-      onChange={(e) => setOtp(e.target.value)}
-    />
+            <input
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+            />
 
-    {error && <p className="auth-error">{error}</p>}
+            {error && <p className="auth-error">{error}</p>}
 
-    <button onClick={handleVerifyOTP}>Verify</button>
+            <button onClick={handleVerifyOTP}>Verify</button>
 
-    {/* RESEND OTP */}
-    <p
-      className="link-text"
-      onClick={async () => {
-        try {
-          setError("");
-          await sendForgotPasswordOTP(fpEmail);
-        } catch (err) {
-          setError(err.message || "Failed to resend OTP");
-        }
-      }}
-    >
-      Resend OTP
-    </p>
+            <p
+              className="link-text"
+              onClick={async () => {
+                try {
+                  setError("");
+                  await sendForgotPasswordOTP(fpEmail);
+                } catch (err) {
+                  setError(err.message || "Failed to resend OTP");
+                }
+              }}
+            >
+              Resend OTP
+            </p>
 
-    {/* BACK TO LOGIN */}
-    <p
-      className="link-text muted"
-      onClick={() => {
-        setMode("login");
-        setOtp("");
-        setFpEmail("");
-        setError("");
-      }}
-    >
-      Back to login
-    </p>
-  </>
-)}
+            <p
+              className="link-text muted"
+              onClick={() => {
+                setMode("login");
+                setOtp("");
+                setFpEmail("");
+                setError("");
+              }}
+            >
+              Back to login
+            </p>
+          </>
+        )}
+
         {mode === "reset" && (
           <>
             <h2>Set New Password</h2>
@@ -325,7 +331,8 @@ const handleVerifyOTP = async () => {
         )}
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 export default Login;

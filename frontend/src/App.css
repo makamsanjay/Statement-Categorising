@@ -909,212 +909,110 @@ th {
   background: #1d4ed8;
 }
 
-/* ===============================
-   MOBILE FIRST (≤ 640px)
-================================ */
 
-@media (max-width: 640px) {
-  /* Dashboard layout */
+/* =====================================================
+   MOBILE & TABLET RESPONSIVE LAYER (SAFE / ISOLATED)
+   ===================================================== */
+
+/* ---------- <= 1024px (tablets + phones) ---------- */
+@media (max-width: 1024px) {
+
+  /* --- Dashboard shell --- */
   .dashboard-layout {
-    flex-direction: column;
+    display: block;
   }
 
   .dashboard-main {
-    margin-left: 0;
+    margin-left: 0; /* remove sidebar offset */
   }
 
   .dashboard-content {
     margin-top: var(--topbar-height);
-    padding: 0 12px;
+    padding: 16px;
   }
 
-  /* Summary cards */
-  .summary-cards {
-    grid-template-columns: 1fr;
-    gap: 14px;
-    margin: 16px 0 24px;
-  }
-
-  .summary-card {
-    padding: 18px 20px;
-  }
-
-  .summary-amount {
-    font-size: 28px;
-  }
-
-  /* Charts */
+  /* --- Charts stack vertically --- */
   .charts-row {
     grid-template-columns: 1fr;
-    gap: 18px;
-    margin-bottom: 28px;
+    gap: 20px;
   }
 
   .chart-card {
-    height: auto;
-    padding: 16px;
+    height: auto;            /* prevent squashed charts */
+    min-height: 360px;
   }
 
   .chart-wrapper {
-    height: 260px;
+    height: auto;
+    min-height: 260px;
   }
 
-  .chart-title {
-    font-size: 14px;
-  }
-
-  /* Active card overview */
-  .active-card-overview {
-    padding: 16px;
-    border-radius: 14px;
-  }
-
-  .active-card-header {
+  /* --- Summary cards full width --- */
+  .summary-cards {
     grid-template-columns: 1fr;
-    gap: 10px;
-    text-align: center;
-  }
-
-  .card-nav-btn {
-    width: 36px;
-    height: 36px;
-  }
-
-  .txn-left {
-    max-width: 100%;
-  }
-
-  .txn-desc {
-    font-size: 13px;
-  }
-
-  /* Subcategory txns */
-  .subcat-txns {
-    padding: 16px;
-  }
-
-  .subcat-txns-list {
-    max-height: 260px;
-  }
-
-  /* Upload page */
-  .upload-page {
-    padding: 20px 12px;
-  }
-
-  .upload-card {
-    max-width: 100%;
-    padding: 20px;
-    border-radius: 16px;
-  }
-
-  .preview-row {
-    grid-template-columns: 32px 1fr;
-    grid-row-gap: 8px;
-  }
-
-  /* Tables */
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  th,
-  td {
-    font-size: 12.5px;
-    padding: 10px;
-  }
-
-  /* Tooltips */
-  .tooltip-box,
-  .tooltip-content {
-    width: 220px;
-    font-size: 12px;
-  }
-
-  /* Modal */
-  .modal {
-    max-width: 100%;
-    margin: 0 12px;
-    padding: 18px;
-    border-radius: 12px;
-  }
-
-  .modal-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .modal-actions button {
-    width: 100%;
   }
 }
 
-/* ===============================
-   SMALL PHONES (≤ 380px)
-================================ */
+/* ---------- <= 768px (phones) ---------- */
+@media (max-width: 768px) {
 
-@media (max-width: 380px) {
-  .summary-amount {
-    font-size: 24px;
+  /* --- Containers --- */
+  .container {
+    padding: 14px;
   }
 
-  .chart-wrapper {
-    height: 220px;
+  /* --- Cards spacing --- */
+  .summary-card,
+  .chart-card,
+  .active-card-overview,
+  .subcat-txns {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  /* --- Transaction rows readability --- */
+  .txn-desc {
+    font-size: 13px;
   }
 
   .txn-amount {
     font-size: 14px;
   }
-}
 
-/* ===============================
-   TABLET (641px – 1024px)
-================================ */
-
-@media (min-width: 641px) and (max-width: 1024px) {
-  .dashboard-main {
-    margin-left: var(--sidebar-width);
-  }
-
-  .charts-row {
-    grid-template-columns: 1fr;
-  }
-
-  .chart-wrapper {
-    height: 300px;
+  /* --- Tables stay scrollable, NOT broken --- */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
   }
 }
 
-/* ===============================
-   TOUCH & ACCESSIBILITY
-================================ */
+/* =====================================================
+   SIDEBAR OFF-CANVAS (MOBILE ONLY)
+   ===================================================== */
 
-@media (pointer: coarse) {
-  .card-nav-btn,
-  .primary-btn,
-  .modal-actions button {
-    padding: 14px;
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--bg-sidebar);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 1200;
   }
 
-  input,
-  select {
-    padding: 14px 16px;
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* overlay when sidebar open */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1100;
   }
 }
-
-/* ===============================
-   REDUCE MOTION
-================================ */
-
-@media (prefers-reduced-motion: reduce) {
-  .summary-card,
-  .chart-card,
-  .txn-card,
-  .modal {
-    transition: none;
-    animation: none;
-  }
-}
-

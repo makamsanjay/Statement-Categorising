@@ -12,7 +12,7 @@ function TopBar({
   onLogout,
   onNavigate,
   billingState
-})  {
+}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -29,6 +29,17 @@ function TopBar({
 
   return (
     <div className="topbar">
+      {/* ✅ HAMBURGER — MOBILE ONLY (does not affect desktop) */}
+      <button
+        className="topbar-hamburger"
+        aria-label="Toggle sidebar"
+        onClick={() => {
+          document.body.classList.toggle("sidebar-open");
+        }}
+      >
+        ☰
+      </button>
+
       <div className="topbar-spacer" />
 
       <div className="topbar-actions" ref={menuRef}>
@@ -47,20 +58,18 @@ function TopBar({
 
         {/* UPGRADE BUTTON — ONLY FOR FREE USERS */}
         {!isPro && (
-  <button
-    className="topbar-upgrade"
-    onClick={onUpgrade}
-    disabled={billingState === "processing"}
-  >
-    {billingState === "processing"
-      ? "Activating…"
-      : pricing?.display
-        ? `Upgrade to Pro — ${pricing.display}`
-        : "Upgrade to Pro"}
-  </button>
-)}
-
-
+          <button
+            className="topbar-upgrade"
+            onClick={onUpgrade}
+            disabled={billingState === "processing"}
+          >
+            {billingState === "processing"
+              ? "Activating…"
+              : pricing?.display
+                ? `Upgrade to Pro — ${pricing.display}`
+                : "Upgrade to Pro"}
+          </button>
+        )}
 
         {/* USER ICON */}
         <button
@@ -84,7 +93,7 @@ function TopBar({
         {open && (
           <div
             className="profile-dropdown"
-            onClick={(e) => e.stopPropagation()} // prevent accidental close
+            onClick={(e) => e.stopPropagation()}
           >
             <button
               className="dropdown-item"

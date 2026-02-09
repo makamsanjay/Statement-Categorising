@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ShieldCheck,
   CreditCard,
@@ -39,7 +39,7 @@ const reasons = [
     icon: Globe,
     title: "Upload statements from anywhere",
     description:
-      "Upload bank statement PDFs, CSVs, or exports from any bank or country - no forced bank connections required.",
+      "Upload bank statement PDFs, CSVs, or exports from any bank or country — no forced bank connections required.",
   },
   {
     icon: BarChart3,
@@ -87,7 +87,20 @@ const reasons = [
 
 export default function WhyChooseUs() {
   const [index, setIndex] = useState(0);
-  const visibleCards = 3;
+  const [visibleCards, setVisibleCards] = useState(3);
+
+  /* 🔁 Responsive card count */
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth < 640) setVisibleCards(1);
+      else if (window.innerWidth < 1024) setVisibleCards(2);
+      else setVisibleCards(3);
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   const next = () => {
     setIndex((prev) => (prev + 1) % reasons.length);
@@ -104,46 +117,53 @@ export default function WhyChooseUs() {
   );
 
   return (
-    <section className="relative py-32">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="relative py-20 sm:py-24 lg:py-32">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
         {/* Heading */}
         <div className="text-center max-w-xl mx-auto">
-          <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight">
             Why choose SpendSwitch
           </h2>
-          <p className="mt-4 text-foreground/70">
-            A modern expense tracking platform built for clarity, security, and smarter financial decisions.
+          <p className="mt-4 text-sm sm:text-base text-foreground/70">
+            A modern expense tracking platform built for clarity, security,
+            and smarter financial decisions.
           </p>
         </div>
 
         {/* Carousel */}
-        <div className="mt-20 relative flex items-center">
+        <div className="mt-14 sm:mt-16 lg:mt-20 relative flex items-center justify-center">
 
           {/* Left Arrow */}
           <button
             onClick={prev}
-            className="hidden md:flex absolute -left-6 z-10 w-12 h-12 items-center justify-center rounded-full bg-card border border-white/15 hover:bg-white/10 transition"
+            className="absolute left-0 sm:-left-6 z-10 w-10 h-10 sm:w-12 sm:h-12
+              flex items-center justify-center rounded-full bg-card
+              border border-white/15 hover:bg-white/10 transition"
+            aria-label="Previous"
           >
             <ChevronLeft />
           </button>
 
           {/* Cards */}
-          <div className="flex gap-8 mx-auto">
+          <div className="flex gap-6 sm:gap-8">
             {visible.map((item, i) => {
               const Icon = item.icon;
               return (
                 <div
                   key={i}
-                  className="glass bg-card w-[300px] h-[380px] rounded-3xl p-8 border border-white/10 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                  className="glass bg-card w-[280px] sm:w-[300px] h-[360px] sm:h-[380px]
+                    rounded-3xl p-7 sm:p-8 border border-white/10 shadow-lg
+                    transition-all duration-300"
                 >
                   {/* Icon */}
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                    <Icon size={28} />
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary
+                    flex items-center justify-center mb-6">
+                    <Icon size={26} />
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl font-semibold">
+                  <h3 className="text-lg sm:text-xl font-semibold">
                     {item.title}
                   </h3>
                   <p className="mt-4 text-sm text-foreground/70 leading-relaxed">
@@ -157,7 +177,10 @@ export default function WhyChooseUs() {
           {/* Right Arrow */}
           <button
             onClick={next}
-            className="hidden md:flex absolute -right-6 z-10 w-12 h-12 items-center justify-center rounded-full bg-card border border-white/15 hover:bg-white/10 transition"
+            className="absolute right-0 sm:-right-6 z-10 w-10 h-10 sm:w-12 sm:h-12
+              flex items-center justify-center rounded-full bg-card
+              border border-white/15 hover:bg-white/10 transition"
+            aria-label="Next"
           >
             <ChevronRight />
           </button>

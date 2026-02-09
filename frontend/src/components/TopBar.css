@@ -168,109 +168,152 @@
   border-color: #6ee7b7;
 }
 
-/* ================================
-   RESPONSIVE TOPBAR FIXES
-================================ */
+/* =====================================================
+   TOPBAR — RESPONSIVE SAFE OVERRIDES
+   ===================================================== */
 
-/* Smooth transition when sidebar opens/closes */
-.topbar {
-  transition: left 0.25s ease;
+@media (max-width: 1024px) {
+
+  /* Topbar becomes full-width */
+  .topbar {
+    left: 0;
+  }
+
+  /* Hamburger button */
+  .topbar-hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 40px;
+    height: 40px;
+
+    background: none;
+    border: none;
+    border-radius: 10px;
+
+    cursor: pointer;
+    margin-right: 8px;
+  }
+
+  .topbar-hamburger:hover {
+    background: var(--bg-main);
+  }
+
+  .topbar-hamburger span {
+    width: 20px;
+    height: 2px;
+    background: var(--text-primary);
+    display: block;
+    position: relative;
+  }
+
+  .topbar-hamburger span::before,
+  .topbar-hamburger span::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 20px;
+    height: 2px;
+    background: inherit;
+  }
+
+  .topbar-hamburger span::before {
+    top: -6px;
+  }
+
+  .topbar-hamburger span::after {
+    top: 6px;
+  }
 }
 
-/* ================================
-   MOBILE (≤ 768px)
-================================ */
-
 @media (max-width: 768px) {
+
   .topbar {
-    left: 0; /* sidebar hidden on mobile */
     padding: 0 12px;
   }
 
-  /* Actions spacing */
   .topbar-actions {
     gap: 10px;
   }
 
-  /* Upgrade button smaller */
   .topbar-upgrade {
     padding: 6px 10px;
     font-size: 13px;
   }
 
-  /* Logout button tighter */
   .topbar-logout {
     padding: 6px 10px;
     font-size: 13px;
   }
+}
 
-  /* Profile button bigger tap target */
-  .topbar-profile {
-    padding: 8px;
-  }
+.topbar-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
 
-  /* Dropdown: center-safe on small screens */
-  .profile-dropdown {
-    right: 8px;
-    width: min(90vw, 220px);
-  }
-
-  /* Hide plan badge text if needed */
-  .topbar-plan {
-    display: none;
+/* show hamburger on tablet + mobile */
+@media (max-width: 1024px) {
+  .topbar-hamburger {
+    display: block;
   }
 }
 
-/* ================================
-   TABLET (769px – 1024px)
-================================ */
+/*/* =====================================================
+   TOPBAR — MOBILE / TABLET (SINGLE ROW, LOCKED ORDER)
+   ===================================================== */
 
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (max-width: 1024px) {
+
+  /* Full-width topbar */
   .topbar {
-    left: 220px; /* matches tablet sidebar width */
-  }
-
-  .topbar-actions {
-    gap: 12px;
-  }
-
-  .topbar-upgrade {
-    font-size: 13.5px;
-  }
-}
-
-/* ================================
-   SIDEBAR OPEN STATE (MOBILE)
-   Optional polish
-================================ */
-
-/* If body has sidebar-open class */
-@media (max-width: 768px) {
-  body.sidebar-open .topbar {
     left: 0;
-  }
-}
-
-/* ================================
-   TOUCH & ACCESSIBILITY
-================================ */
-
-@media (pointer: coarse) {
-  .dropdown-item {
-    padding: 12px 14px;
-    font-size: 15px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
   }
 
-  .dropdown-select {
-    padding: 8px 10px;
-    font-size: 14px;
+  /* Hamburger always left */
+  .topbar-hamburger {
+    display: block;
+    margin-right: 10px;
+    flex-shrink: 0;
   }
-}
 
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .topbar,
+  /* Actions stay on ONE LINE */
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;              /* 🔒 critical */
+    width: 100%;
+  }
+
+  /* Plan badge stays inline */
+  .topbar-plan {
+    white-space: nowrap;
+    font-size: 12px;
+  }
+
+  .plan-badge {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  /* Profile icon pinned to far right */
+  .topbar-profile {
+    margin-left: auto;              /* 🔒 key line */
+    flex-shrink: 0;
+  }
+
+  /* Optional: slightly smaller upgrade button */
   .topbar-upgrade {
-    transition: none;
+    padding: 6px 10px;
+    font-size: 13px;
   }
 }

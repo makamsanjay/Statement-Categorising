@@ -27,11 +27,11 @@ const trustPoints = [
 
 export default function TrustSecurity() {
   return (
-    <section className="relative py-24">
+    <section className="relative py-16 sm:py-20 lg:py-24">
       {/* Subtle divider background */}
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-foreground/5 to-transparent" />
 
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -40,16 +40,16 @@ export default function TrustSecurity() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="text-center max-w-xl mx-auto"
         >
-          <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight">
             Built for trust, privacy, and control
           </h2>
-          <p className="mt-4 text-foreground/70">
-            Unlike many expense tracking tools, SpendSwitch is designed to analyze your data - not monetize it.
+          <p className="mt-4 text-sm sm:text-base text-foreground/70">
+            Unlike many expense tracking tools, SpendSwitch is designed to analyze your data — not monetize it.
           </p>
         </motion.div>
 
         {/* Trust Points */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="mt-12 sm:mt-14 lg:mt-16 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
           {trustPoints.map((item, i) => (
             <motion.div
               key={item.title}
@@ -61,10 +61,12 @@ export default function TrustSecurity() {
                 duration: 0.45,
                 ease: "easeOut",
               }}
-              className="glass rounded-2xl p-6 border border-white/10 shadow-lg"
+              className="glass rounded-2xl p-5 sm:p-6 border border-white/10 shadow-lg"
             >
-              <h3 className="text-lg font-medium">{item.title}</h3>
-              <p className="mt-3 text-foreground/70 leading-relaxed">
+              <h3 className="text-base sm:text-lg font-medium">
+                {item.title}
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-foreground/70 leading-relaxed">
                 {item.description}
               </p>
             </motion.div>
@@ -77,9 +79,9 @@ export default function TrustSecurity() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.25, duration: 0.4 }}
-          className="mt-16 text-center text-sm text-foreground/60"
+          className="mt-12 sm:mt-14 lg:mt-16 text-center text-xs sm:text-sm text-foreground/60"
         >
-         We built SpendSwitch as a financial tool we would trust with our own data.
+          We built SpendSwitch as a financial tool we would trust with our own data.
         </motion.div>
       </div>
     </section>

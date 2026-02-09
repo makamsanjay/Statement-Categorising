@@ -1,76 +1,90 @@
 import "./Sidebar.css";
 
 function Sidebar({ activeView, onNavigate }) {
+  // helper to navigate + close sidebar on mobile
+  const handleNavigate = (view) => {
+    onNavigate(view);
+    document.body.classList.remove("sidebar-open");
+  };
+
   return (
-    <aside className="sidebar">
-      {/* BRAND */}
-      <div className="sidebar-logo">
-        <span className="brand-spend">Spend</span>
-        <span className="brand-switch">Switch</span>
-      </div>
+    <>
+      {/* BACKDROP (mobile only via CSS) */}
+      <div
+        className="sidebar-backdrop"
+        onClick={() => document.body.classList.remove("sidebar-open")}
+      />
 
-      {/* PRIMARY ACTION */}
-      <button
-        className="upload-cta"
-        onClick={() => onNavigate("upload")}
-      >
-        Upload +
-      </button>
+      <aside className="sidebar">
+        {/* BRAND */}
+        <div className="sidebar-logo">
+          <span className="brand-spend">Spend</span>
+          <span className="brand-switch">Switch</span>
+        </div>
 
-      {/* NAV */}
-      <nav className="sidebar-nav">
+        {/* PRIMARY ACTION */}
         <button
-          className={`sidebar-item ${activeView === "dashboard" ? "active" : ""}`}
-          onClick={() => onNavigate("dashboard")}
+          className="upload-cta"
+          onClick={() => handleNavigate("upload")}
         >
-          Dashboard
+          Upload +
         </button>
 
-        <button
-          className={`sidebar-item ${activeView === "transactions" ? "active" : ""}`}
-          onClick={() => onNavigate("transactions")}
-        >
-          Transactions
-        </button>
+        {/* NAV */}
+        <nav className="sidebar-nav">
+          <button
+            className={`sidebar-item ${activeView === "dashboard" ? "active" : ""}`}
+            onClick={() => handleNavigate("dashboard")}
+          >
+            Dashboard
+          </button>
 
-        <button
-          className={`sidebar-item ${activeView === "budget" ? "active" : ""}`}
-          onClick={() => onNavigate("budget")}
-        >
-          Monthly Budgets
-        </button>
+          <button
+            className={`sidebar-item ${activeView === "transactions" ? "active" : ""}`}
+            onClick={() => handleNavigate("transactions")}
+          >
+            Transactions
+          </button>
 
-        <button
-          className={`sidebar-item ${activeView === "health" ? "active" : ""}`}
-          onClick={() => onNavigate("health")}
-        >
-          Health Score
-        </button>
+          <button
+            className={`sidebar-item ${activeView === "budget" ? "active" : ""}`}
+            onClick={() => handleNavigate("budget")}
+          >
+            Monthly Budgets
+          </button>
 
-        <button
-          className={`sidebar-item ${activeView === "analytics" ? "active" : ""}`}
-          onClick={() => onNavigate("analytics")}
-        >
-          Analytics
-        </button>
+          <button
+            className={`sidebar-item ${activeView === "health" ? "active" : ""}`}
+            onClick={() => handleNavigate("health")}
+          >
+            Health Score
+          </button>
 
-        <button
-          className={`sidebar-item ${activeView === "card-suggestions" ? "active" : ""}`}
-          onClick={() => onNavigate("card-suggestions")}
-        >
-          Card Suggestions
-        </button>
+          <button
+            className={`sidebar-item ${activeView === "analytics" ? "active" : ""}`}
+            onClick={() => handleNavigate("analytics")}
+          >
+            Analytics
+          </button>
 
-        <div className="sidebar-divider" />
+          <button
+            className={`sidebar-item ${activeView === "card-suggestions" ? "active" : ""}`}
+            onClick={() => handleNavigate("card-suggestions")}
+          >
+            Card Suggestions
+          </button>
 
-        <button
-          className={`sidebar-item ${activeView === "help" ? "active" : ""}`}
-          onClick={() => onNavigate("help")}
-        >
-          Help
-        </button>
-      </nav>
-    </aside>
+          <div className="sidebar-divider" />
+
+          <button
+            className={`sidebar-item ${activeView === "help" ? "active" : ""}`}
+            onClick={() => handleNavigate("help")}
+          >
+            Help
+          </button>
+        </nav>
+      </aside>
+    </>
   );
 }
 

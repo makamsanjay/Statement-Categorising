@@ -176,8 +176,15 @@ const verifyOtp = async () => {
 
 
       {/* RIGHT */}
-      <div className="auth-form-wrapper">
-      <div className="auth-form">
+     <div className="auth-form-wrapper">
+  {/* BRAND */}
+  <div className="auth-brand">
+    <span className="brand-spend">Spend</span>
+    <span className="brand-switch">Switch</span>
+  </div>
+
+  <div className="auth-form">
+
         <h2>Create account</h2>
 
         <input

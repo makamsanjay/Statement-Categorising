@@ -2,12 +2,11 @@ import { motion as _motion } from "framer-motion";
 
 const motion = _motion as any;
 
-
 export default function FooterCTA() {
   return (
     <section className="relative">
       {/* FINAL CTA */}
-      <div className="py-36 border-t border-white/10">
+      <div className="py-20 sm:py-28 lg:py-36 border-t border-white/10">
         <div className="max-w-5xl mx-auto px-6 text-center">
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
@@ -24,7 +23,7 @@ export default function FooterCTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1, duration: 0.45, ease: "easeOut" }}
-            className="mt-4 text-foreground/70 max-w-xl mx-auto"
+            className="mt-4 text-foreground/70 max-w-xl mx-auto text-sm sm:text-base"
           >
             Upload your expenses and get clear insights — no spreadsheets, no
             setup, no guesswork.
@@ -35,13 +34,23 @@ export default function FooterCTA() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2, duration: 0.4 }}
-            className="mt-10 flex justify-center gap-4"
+            className="mt-10 flex flex-col sm:flex-row justify-center gap-4"
           >
-            <button className="px-8 py-4 rounded-xl bg-primary text-white font-medium transition hover:opacity-90">
+            <button
+              onClick={() => (window.location.href = "/signup")}
+              className="px-8 py-4 rounded-xl bg-primary text-white font-medium transition hover:opacity-90"
+            >
               Get started for free
             </button>
 
-            <button className="px-8 py-4 rounded-xl border border-white/15 text-foreground/80 hover:bg-white/5 transition">
+            <button
+              onClick={() =>
+                document
+                  .getElementById("how-it-works")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="px-8 py-4 rounded-xl border border-white/15 text-foreground/80 hover:bg-white/5 transition"
+            >
               See sample insights
             </button>
           </motion.div>
@@ -53,15 +62,19 @@ export default function FooterCTA() {
       </div>
 
       {/* FOOTER */}
-      <footer className="border-t border-white/10 py-12">
+      <footer className="border-t border-white/10 py-10 sm:py-12">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Brand */}
           <div className="text-sm text-foreground/70">
-            © {new Date().getFullYear()} Expense AI. All rights reserved.
+            © {new Date().getFullYear()}{" "}
+            <span className="font-medium">
+              Spend<span className="text-primary">Switch</span>
+            </span>
+            . All rights reserved.
           </div>
 
           {/* Links */}
-          <div className="flex gap-6 text-sm text-foreground/60">
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-foreground/60">
             <a href="#" className="hover:text-foreground transition">
               Privacy
             </a>
