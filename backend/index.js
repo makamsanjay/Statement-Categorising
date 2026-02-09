@@ -12,7 +12,6 @@ const app = express();
 /* ================================
    🔑 TRUST PROXY (REQUIRED FOR RATE LIMIT)
 ================================ */
-// ✅ FIX: must be BEFORE rate-limit middleware
 app.set("trust proxy", 1);
 
 /* ================================
@@ -31,7 +30,9 @@ app.use(
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:5173",
-  "https://yourdomain.com" // 🔥 change before prod
+  "https://spendswitch.com",
+  "https://www.spendswitch.com",
+  "https://api.spendswitch.com"
 ];
 
 app.use(
@@ -56,7 +57,7 @@ app.use(generalLimiter);
    🔔 RAZORPAY WEBHOOK (RAW BODY)
 ================================ */
 app.post(
-  "/api/razorpay/webhook",
+  "/api.spendswitch.com/razorpay/webhook",
   express.raw({ type: "application/json" }),
   razorpayWebhook
 );
@@ -89,7 +90,9 @@ app.use("/ai/card-suggestions", require("./routes/cardSuggestions"));
 ================================ */
 app.use((err, req, res, next) => {
   console.error("GLOBAL ERROR:", err.message);
-  res.status(500).json({ error: "Internal server error" });
+  res.status(err.status || 500).json({
+  error: err.message || "Internal server error"
+});
 });
 
 /* ================================

@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5050";
+const BASE_URL = process.env.REACT_APP_API_URL
 
 /* ============================
    AUTH FETCH (SINGLE SOURCE)
@@ -62,7 +62,7 @@ export const saveConfirmedTransactions = async ({
 
 export const updateTransaction = async (id, data) => {
   const res = await fetch(
-    `http://localhost:5050/transactions/${id}`,
+    `${BASE_URL}/transactions/${id}`,
     {
       method: "PUT",
       headers: {
@@ -232,7 +232,7 @@ export const deleteBudget = async (id) => {
 };
 
 export const getMyProfile = async () => {
-  const res = await fetch("http://localhost:5050/users/me", {
+  const res = await fetch(`${BASE_URL}/users/me`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`
     }
@@ -245,9 +245,8 @@ export const getMyProfile = async () => {
   return res.json();
 };
 
-
 export const updateProfile = async (data) => {
-  const res = await fetch("/users/me", {
+  const res = await fetch(`${BASE_URL}/users/me`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -255,6 +254,12 @@ export const updateProfile = async (data) => {
     },
     body: JSON.stringify(data)
   });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update profile");
+  }
+
   return res.json();
 };
 
@@ -364,7 +369,7 @@ export async function resetPassword(email, password, confirmPassword) {
 
 export async function getCardSuggestions(payload) {
   const res = await fetch(
-    "http://localhost:5050/ai/card-suggestions",
+    `${BASE_URL}/ai/card-suggestions`,
     {
       method: "POST",
       headers: {
@@ -386,7 +391,7 @@ export async function getCardSuggestions(payload) {
 
 export async function getSavedCardSuggestions() {
   const res = await fetch(
-    "http://localhost:5050/ai/card-suggestions",
+    `${BASE_URL}/ai/card-suggestions`,
     {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -403,7 +408,7 @@ export async function getSavedCardSuggestions() {
 
 export async function deleteCardSuggestion(id) {
   const res = await fetch(
-    `http://localhost:5050/ai/card-suggestions/${id}`,
+    `${BASE_URL}/ai/card-suggestions/${id}`,
     {
       method: "DELETE",
       headers: {
@@ -419,7 +424,7 @@ export async function deleteCardSuggestion(id) {
 
 export async function updateOriginalCardName(cardId, payload) {
   const res = await fetch(
-    `http://localhost:5050/cards/${cardId}/original-card`,
+    `${BASE_URL}/cards/${cardId}/original-card`,
     {
       method: "PUT",
       headers: {
@@ -440,7 +445,7 @@ export async function updateOriginalCardName(cardId, payload) {
 
 export const deleteOriginalCardName = async (cardId) => {
   const res = await fetch(
-    `http://localhost:5050/cards/${cardId}/original-name`,
+    `${BASE_URL}/cards/${cardId}/original-name`,
     {
       method: "DELETE",
       headers: {
@@ -489,7 +494,7 @@ export const getManageBilling = async () => {
 };
 
 export const resumeRazorpaySubscription = async () => {
-  const res = await fetch("http://localhost:5050/billing/resume", {
+  const res = await fetch(`${BASE_URL}/billing/resume`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${localStorage.getItem("token")}`
