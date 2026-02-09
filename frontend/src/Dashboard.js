@@ -408,11 +408,10 @@ const startRazorpayCheckout = async () => {
   }
 
   const options = {
-    key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-    subscription_id: subscription.id,
-    name: "SpendSwitch",
-    description: "Pro Subscription",
-
+  key: import.meta.env.RAZORPAY_KEY_ID,
+  subscription_id: subscription.id,
+  name: "SpendSwitch",
+  description: "Pro Subscription",
     prefill: {
       email: billing?.email || ""
     },

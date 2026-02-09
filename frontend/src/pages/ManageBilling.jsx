@@ -57,20 +57,17 @@ const endDate = billing.planExpiresAt
     try {
       const subscription = await createRazorpaySubscription();
 
-   const rzp = new window.Razorpay({
-  key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+const rzp = new window.Razorpay({
+  key: import.meta.env.RAZORPAY_KEY_ID,
   subscription_id: subscription.id,
   name: "SpendSwitch Pro",
   description: "Monthly Subscription",
   handler: () => {
-    // webhook will confirm → reload billing state
     setLoading(true);
     setTimeout(load, 3000);
   },
   modal: {
-    ondismiss: () => {
-      setLoading(false);
-    }
+    ondismiss: () => setLoading(false)
   },
   theme: { color: "#4f46e5" }
 });
