@@ -323,3 +323,162 @@
   transform: rotate(45deg);
 }
 
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .analytics-page {
+    padding: 20px 14px 48px;
+  }
+
+  .analytics-page h2 {
+    font-size: 20px;
+    margin-bottom: 18px;
+  }
+
+  /* Filters stack cleanly */
+  .analytics-filters {
+    gap: 8px;
+  }
+
+  .analytics-filters select,
+  .analytics-filters input {
+    width: 100%;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  /* Cards */
+  .analytics-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  /* Split always collapses */
+  .analytics-card.split .analytics-split {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-split {
+    gap: 20px;
+  }
+
+  /* Chart */
+  .chart-header h3 {
+    font-size: 16px;
+  }
+
+  .analytics-chart canvas {
+    max-width: 260px !important;
+    max-height: 260px !important;
+  }
+
+  /* Chart switch buttons */
+  .chart-switch {
+    justify-content: center;
+  }
+
+  .chart-switch button {
+    flex: 1;
+    padding: 8px 0;
+    font-size: 13px;
+  }
+
+  /* Transaction panel */
+  .analytics-panel {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .analytics-txn-header h4 {
+    font-size: 15px;
+  }
+
+  /* Actions wrap */
+  .analytics-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .analytics-actions select {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  /* Txn rows */
+  .analytics-txn {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .analytics-txn strong {
+    align-self: flex-end;
+    font-size: 14px;
+  }
+
+  /* Scroll height tighter */
+  .analytics-txns.scroll {
+    max-height: 240px;
+  }
+
+  /* Tooltip safety */
+  .analytics-tooltip-content {
+    width: min(90vw, 260px);
+    right: -6px;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .analytics-page {
+    padding: 24px 18px 56px;
+  }
+
+  .analytics-page h2 {
+    font-size: 22px;
+  }
+
+  .analytics-card {
+    padding: 20px;
+  }
+
+  .analytics-card.split .analytics-split {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-chart canvas {
+    max-width: 320px !important;
+    max-height: 320px !important;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .chart-header button {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .analytics-close {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .analytics-card,
+  .analytics-split {
+    transition: none;
+  }
+}

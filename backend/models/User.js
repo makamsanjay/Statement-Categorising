@@ -56,7 +56,7 @@ const UserSchema = new mongoose.Schema(
       default: "free"
     },
 
-    // 🔴 Legacy (Stripe) — keep temporarily for safety
+    // 🔴 Legacy Stripe (keep for safety)
     stripeCustomerId: {
       type: String,
       default: null
@@ -73,48 +73,63 @@ const UserSchema = new mongoose.Schema(
       default: null
     },
 
-   subscriptionStatus: {
-  type: String,
-  enum: [
-    "none",          
-    "pending",       
-    "authenticated", 
-    "active",        
-    "canceled"       
-  ],
-  default: "none"
-},subscriptionStartedAt: {
-  type: Date,
-  default: null
-},
+    subscriptionStatus: {
+      type: String,
+      enum: [
+        "none",
+        "pending",
+        "authenticated",
+        "active",
+        "canceled"
+      ],
+      default: "none"
+    },
+
+    subscriptionStartedAt: {
+      type: Date,
+      default: null
+    },
 
     planExpiresAt: {
       type: Date,
       default: null
     },
+
     country: {
-  type: String,
-  uppercase: true,
-  default: "IN" // safe fallback
-},
-pricingGroup: {
-  type: String,
-  enum: ["INR", "USD", "EUR", "GBP"],
-  default: null,
-  index: true
-},
+      type: String,
+      uppercase: true,
+      default: "IN"
+    },
 
-
+    pricingGroup: {
+      type: String,
+      enum: ["INR", "USD", "EUR", "GBP"],
+      default: null,
+      index: true
+    },
 
     /* =========================
        USAGE LIMITING
     ========================= */
+
+    // 🔒 CONFIRMED UPLOADS (used by /confirm)
     uploadsToday: {
       type: Number,
       default: 0
     },
 
     lastUploadDate: {
+      type: Date,
+      default: null
+    },
+
+    // 🔒 PREVIEW LIMITING (used by /preview)
+    previewUploadsToday: {
+      type: Number,
+      default: 0
+    },
+
+    lastPreviewDate: {
       type: Date,
       default: null
     }
@@ -125,7 +140,7 @@ pricingGroup: {
 );
 
 /* =========================
-   SAFETY INDEX
+   INDEXES
 ========================= */
 UserSchema.index({ email: 1 });
 

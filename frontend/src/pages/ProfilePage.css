@@ -206,3 +206,116 @@ button.danger-btn:hover {
   }
 }
 
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .profile-page {
+    margin: 20px auto;
+    padding: 0 14px;
+  }
+
+  .profile-card {
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+  }
+
+  .profile-card h2,
+  .profile-card h3 {
+    font-size: 18px;
+  }
+
+  .profile-subtitle,
+  .muted {
+    font-size: 13px;
+  }
+
+  /* Fields */
+  .profile-field {
+    margin-top: 16px;
+  }
+
+  .profile-field label {
+    font-size: 12.5px;
+  }
+
+  .profile-input,
+  .profile-card input,
+  .profile-readonly {
+    padding: 12px 14px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  .profile-hint {
+    font-size: 11.5px;
+  }
+
+  /* Error box */
+  .error-box {
+    font-size: 12.5px;
+    padding: 10px;
+  }
+
+  /* Buttons become full-width */
+  button {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  button.primary,
+  button.danger-btn {
+    padding: 12px;
+  }
+
+  /* Space between stacked buttons */
+  button + button {
+    margin-top: 10px;
+  }
+
+  /* Danger zone input */
+  .profile-card.danger input {
+    letter-spacing: 4px;
+    font-size: 15px;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .profile-page {
+    margin: 30px auto;
+    padding: 0 18px;
+  }
+
+  .profile-card {
+    padding: 24px;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  button {
+    padding: 14px;
+  }
+
+  .profile-input,
+  .profile-card input {
+    padding: 14px 16px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+}

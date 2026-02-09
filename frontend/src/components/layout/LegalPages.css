@@ -1,50 +1,114 @@
+/* ================= LEGAL PAGE BASE (MOBILE FIRST) ================= */
+
 .legal-page {
-  padding-top: 140px;
-  padding-bottom: 80px;
+  padding-top: 96px;      /* smaller header offset for mobile */
+  padding-bottom: 56px;
 }
 
 .legal-container {
-  max-width: 820px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 16px;        /* tighter padding on mobile */
 }
 
+/* ---------- Headings ---------- */
+
 .legal-container h1 {
-  font-size: 2.5rem;
+  font-size: 1.9rem;
   font-weight: 600;
-  margin-bottom: 12px;
+  line-height: 1.25;
+  margin-bottom: 10px;
 }
 
 .legal-meta {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--muted);
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .legal-container h2 {
-  font-size: 1.4rem;
-  margin-top: 36px;
-  margin-bottom: 12px;
+  font-size: 1.25rem;
+  margin-top: 28px;
+  margin-bottom: 10px;
 }
 
 .legal-container h3 {
-  font-size: 1.1rem;
-  margin-top: 24px;
-  margin-bottom: 8px;
+  font-size: 1.05rem;
+  margin-top: 20px;
+  margin-bottom: 6px;
 }
 
+/* ---------- Text ---------- */
+
 .legal-container p {
-  line-height: 1.7;
+  font-size: 0.95rem;
+  line-height: 1.65;
   margin-bottom: 12px;
   color: var(--foreground);
 }
 
+/* ---------- Lists ---------- */
+
 .legal-container ul {
-  padding-left: 18px;
-  margin-bottom: 16px;
+  padding-left: 16px;
+  margin-bottom: 14px;
 }
 
 .legal-container li {
-  margin-bottom: 8px;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
   line-height: 1.6;
+}
+
+/* ================= TABLET (≥ 768px) ================= */
+
+@media (min-width: 768px) {
+  .legal-page {
+    padding-top: 120px;
+    padding-bottom: 72px;
+  }
+
+  .legal-container {
+    max-width: 720px;
+    padding: 0 20px;
+  }
+
+  .legal-container h1 {
+    font-size: 2.3rem;
+  }
+
+  .legal-container h2 {
+    font-size: 1.4rem;
+  }
+
+  .legal-container p,
+  .legal-container li {
+    font-size: 1rem;
+  }
+}
+
+/* ================= DESKTOP (≥ 1024px) ================= */
+
+@media (min-width: 1024px) {
+  .legal-page {
+    padding-top: 140px;
+    padding-bottom: 80px;
+  }
+
+  .legal-container {
+    max-width: 820px;
+    padding: 0 24px;
+  }
+
+  .legal-container h1 {
+    font-size: 2.5rem;
+  }
+
+  .legal-container h2 {
+    font-size: 1.5rem;
+  }
+
+  .legal-container h3 {
+    font-size: 1.15rem;
+  }
 }

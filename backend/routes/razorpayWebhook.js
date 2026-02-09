@@ -11,31 +11,34 @@ const ALLOWED_EVENTS = new Set([
 module.exports = async function razorpayWebhook(req, res) {
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    const receivedSignature = req.headers["x-razorpay-signature"];
+    const signature = req.headers["x-razorpay-signature"];
 
-    if (!receivedSignature || !secret) {
-      console.error(" Missing webhook secret or signature");
+    if (!secret || !signature) {
+      console.error("❌ Missing Razorpay webhook secret or signature");
       return res.sendStatus(400);
     }
 
-    const body = req.body.toString();
+    /* ============================
+       VERIFY SIGNATURE (RAW BODY)
+    ============================ */
+    const rawBody = req.body.toString();
 
     const expectedSignature = crypto
       .createHmac("sha256", secret)
-      .update(body)
+      .update(rawBody)
       .digest("hex");
 
     if (
       !crypto.timingSafeEqual(
-        Buffer.from(receivedSignature),
+        Buffer.from(signature),
         Buffer.from(expectedSignature)
       )
     ) {
-      console.error(" Invalid Razorpay webhook signature");
+      console.error("❌ Invalid Razorpay webhook signature");
       return res.sendStatus(400);
     }
 
-    const event = JSON.parse(body);
+    const event = JSON.parse(rawBody);
 
     if (!ALLOWED_EVENTS.has(event.event)) {
       return res.sendStatus(200);
@@ -43,41 +46,41 @@ module.exports = async function razorpayWebhook(req, res) {
 
     /* ============================
        SUBSCRIPTION ACTIVATED
-       ============================ */
+       (First successful auth)
+    ============================ */
     if (event.event === "subscription.activated") {
       const sub = event.payload.subscription.entity;
       const userId = sub.notes?.userId;
 
-      if (!userId || !sub.id) return res.sendStatus(200);
+      if (!sub?.id || !userId) {
+        console.warn("⚠️ subscription.activated missing userId");
+        return res.sendStatus(200);
+      }
 
-      const existing = await User.findOne({
-        razorpaySubscriptionId: sub.id,
-        subscriptionStatus: "active"
-      });
-
-      if (!existing) {
-        await User.findByIdAndUpdate(userId, {
+      await User.findByIdAndUpdate(
+        userId,
+        {
           plan: "monthly",
           razorpaySubscriptionId: sub.id,
           subscriptionStatus: "active",
           planExpiresAt: new Date(sub.current_end * 1000)
-        });
-      }
+        },
+        { new: true }
+      );
     }
 
     /* ============================
-       RENEWAL / CHARGE
-       ============================ */
-    if (
-      event.event === "subscription.charged" ||
-      event.event === "invoice.paid"
-    ) {
+       SUBSCRIPTION CHARGED
+       (Recurring payment)
+    ============================ */
+    if (event.event === "subscription.charged") {
       const sub = event.payload.subscription?.entity;
       if (!sub?.id) return res.sendStatus(200);
 
       await User.findOneAndUpdate(
         { razorpaySubscriptionId: sub.id },
         {
+          plan: "monthly",
           subscriptionStatus: "active",
           planExpiresAt: new Date(sub.current_end * 1000)
         }
@@ -85,8 +88,33 @@ module.exports = async function razorpayWebhook(req, res) {
     }
 
     /* ============================
+       INVOICE PAID
+       (MOST IMPORTANT EVENT)
+    ============================ */
+    if (event.event === "invoice.paid") {
+      const invoice = event.payload.invoice.entity;
+      const subscriptionId = invoice.subscription_id;
+
+      if (!subscriptionId) {
+        console.warn("⚠️ invoice.paid missing subscription_id");
+        return res.sendStatus(200);
+      }
+
+      await User.findOneAndUpdate(
+        { razorpaySubscriptionId: subscriptionId },
+        {
+          plan: "monthly",
+          subscriptionStatus: "active",
+          planExpiresAt: new Date(invoice.current_end * 1000)
+        }
+      );
+    }
+
+    /* ============================
        SUBSCRIPTION CANCELLED
-       ============================ */
+       (Auto-pay stopped)
+       ⚠️ DO NOT DOWNGRADE IMMEDIATELY
+    ============================ */
     if (event.event === "subscription.cancelled") {
       const sub = event.payload.subscription.entity;
       if (!sub?.id) return res.sendStatus(200);
@@ -94,8 +122,8 @@ module.exports = async function razorpayWebhook(req, res) {
       await User.findOneAndUpdate(
         { razorpaySubscriptionId: sub.id },
         {
-          plan: "free",
           subscriptionStatus: "canceled",
+          // ⛔ Keep plan until expiry
           planExpiresAt: new Date(sub.current_end * 1000)
         }
       );
@@ -103,7 +131,7 @@ module.exports = async function razorpayWebhook(req, res) {
 
     return res.status(200).json({ status: "ok" });
   } catch (err) {
-    console.error(" Razorpay webhook error:", err);
+    console.error("🔥 Razorpay webhook error:", err);
     return res.sendStatus(500);
   }
 };

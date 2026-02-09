@@ -435,3 +435,132 @@
   border-radius: 10px;
   font-size: 13px;
 }
+
+/* ===============================
+   MOBILE FIRST (≤ 768px)
+================================ */
+
+@media (max-width: 768px) {
+  /* Collapse split layout */
+  .auth-container {
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+  }
+
+  /* Hide premium visual on mobile (performance + focus) */
+  .signup-left {
+    display: none;
+  }
+
+  /* Form wrapper becomes main page */
+  .auth-form-wrapper {
+    background: #f8fafc;
+    padding: 24px 14px;
+  }
+
+  /* Form panel */
+  .auth-form {
+    max-width: 100%;
+    padding: 32px 24px;
+    border-radius: 18px;
+
+    box-shadow:
+      0 18px 36px rgba(2, 6, 23, 0.12),
+      0 6px 14px rgba(2, 6, 23, 0.08);
+  }
+
+  /* Title */
+  .auth-form h2 {
+    font-size: 22px;
+    margin-bottom: 24px;
+  }
+
+  .auth-form h2::after {
+    width: 36px;
+    margin-top: 10px;
+  }
+
+  /* Inputs */
+  .auth-form input {
+    padding: 14px 16px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  /* Password rules → single column */
+  .password-rules.compact {
+    grid-template-columns: 1fr;
+    font-size: 12px;
+    gap: 8px;
+  }
+
+  /* OTP actions stack */
+  .otp-actions {
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  /* Primary button */
+  .primary-btn.simple {
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 14px;
+  }
+
+  /* Footer */
+  .auth-form p {
+    font-size: 14px;
+  }
+}
+
+/* ===============================
+   SMALL PHONES (≤ 380px)
+================================ */
+
+@media (max-width: 380px) {
+  .auth-form {
+    padding: 28px 20px;
+  }
+
+  .auth-form h2 {
+    font-size: 20px;
+  }
+}
+
+/* ===============================
+   TABLET (769px – 1024px)
+================================ */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .auth-container {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .signup-left {
+    padding: 60px 40px;
+  }
+
+  .auth-form {
+    max-width: 420px;
+    padding: 44px 40px;
+  }
+
+  .auth-form h2 {
+    font-size: 26px;
+  }
+}
+
+/* ===============================
+   ACCESSIBILITY & PERFORMANCE
+================================ */
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .auth-transition,
+  .bg-orb,
+  .tip-card,
+  .auth-form {
+    animation: none;
+  }
+}

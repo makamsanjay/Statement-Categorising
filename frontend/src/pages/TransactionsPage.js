@@ -13,6 +13,11 @@ import "chart.js/auto";
 import "./TransactionsPage.css";
 import ExportModal from "../components/ExportModal";
 import OriginalCardEditor from "../components/OriginalCardEditor";
+import { createTransaction } from "../api";
+
+
+
+const BASE_URL = process.env.REACT_APP_API_URL;
 
 const DEFAULT_CATEGORIES = [
   "Food & Dining",
@@ -193,14 +198,15 @@ const { income, expense } = useMemo(() => {
       ? Math.abs(Number(amount))
       : -Math.abs(Number(amount));
 
-  await saveConfirmedTransactions([{
-    date,
-    description,
-    amount: finalAmount,
-    category,
-    cardId: card._id,
-    currency: card.displayCurrency
-  }]);
+await createTransaction({
+  date,
+  description,
+  amount: finalAmount,
+  category,
+  cardId: card._id,
+  currency: card.displayCurrency
+});
+
 
 const refreshed = await getTransactionsByCard(card._id);
 setTransactions([...refreshed]);
@@ -268,7 +274,7 @@ const handleBulkUpdate = async () => {
     title: "Delete Transactions",
     message: "Delete selected transactions permanently?",
     onConfirm: async () => {
-      await fetch("http://localhost:5050/transactions/bulk-delete", {
+      await fetch(`${BASE_URL}/transactions/bulk-delete`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -530,8 +536,10 @@ onClick={() => {
     setModal(null);
     setModalInput("");
   } catch (err) {
-    // 🔥 backend/runtime safety net
-    showToast("Failed to create card. Please try again.");
+  showToast(
+    err?.message ||
+    "Free plan allows only 1 card. Upgrade to Pro."
+  );
   }
 }
       });

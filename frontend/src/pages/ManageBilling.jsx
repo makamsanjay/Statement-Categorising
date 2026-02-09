@@ -157,6 +157,8 @@ const STATUS_LABELS = {
                 You can renew your subscription again on {endDate} by clicking
                 “Upgrade to Pro”.
               </strong>
+              <strong><b>Important: Cancelling here stops renewal on our side. </b>
+              To fully prevent future charges, please also cancel the auto-pay in your bank or payment app.</strong>
             </p>
 
             <div className="cancel-actions">
@@ -189,6 +191,11 @@ const STATUS_LABELS = {
                 You can renew your subscription again on {endDate} by clicking
                 “Upgrade to Pro”.
               </strong>
+
+              <br />
+              
+              <strong><b>Important: Cancelling here stops renewal on our side. </b>
+              To fully prevent future charges, please also cancel the auto-pay in your bank or payment app.</strong>
             </p>
           </div>
         )}

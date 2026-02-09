@@ -1049,3 +1049,221 @@
   transform: translateY(0);
 }
 
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .tx-page {
+    padding: 16px 12px;
+  }
+
+  /* Page header */
+  .tx-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .tx-header-right {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .export-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Card carousel */
+  .card-carousel {
+    gap: 10px;
+    justify-content: space-between;
+  }
+
+  .card-carousel strong {
+    font-size: 14px;
+  }
+
+  /* Card actions */
+  .card-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .card-actions button {
+    width: 100%;
+  }
+
+  /* Top row (Add txn + Chart) */
+  .txn-top-row {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+
+  /* Add transaction card */
+  .add-txn {
+    padding: 18px;
+  }
+
+  .add-txn h3 {
+    font-size: 16px;
+  }
+
+  .add-txn .txn-type {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .add-txn button {
+    width: 100%;
+  }
+
+  /* Chart card */
+  .txn-chart-card {
+    padding: 18px;
+  }
+
+  .txn-chart-card .chart-wrapper {
+    min-height: 240px;
+  }
+
+  /* Summary card */
+  .txn-summary-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .txn-summary-item {
+    min-width: auto;
+  }
+
+  .txn-summary-card .divider {
+    display: none;
+  }
+
+  /* Bulk actions */
+  .bulk-actions {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .bulk-actions label {
+    font-size: 12.5px;
+  }
+
+  .bulk-actions select,
+  .bulk-actions button {
+    width: 100%;
+  }
+
+  /* Table → horizontal scroll */
+  .tx-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .tx-table th,
+  .tx-table td {
+    font-size: 12.5px;
+    padding: 10px;
+  }
+
+  /* Inline type toggle */
+  .txn-type-inline {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Toast */
+  .toast {
+    bottom: 16px;
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+
+  /* Modal */
+  .modal {
+    max-width: 100%;
+    margin: 0 12px;
+    padding: 20px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+}
+
+/* ===============================
+   SMALL PHONES (≤ 380px)
+================================ */
+
+@media (max-width: 380px) {
+  .card-carousel button {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .txn-chart-card .chart-wrapper {
+    min-height: 220px;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .tx-page {
+    padding: 18px 16px;
+  }
+
+  .txn-top-row {
+    gap: 20px;
+  }
+
+  .add-txn,
+  .txn-chart-card {
+    padding: 20px;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .card-actions button,
+  .bulk-actions button,
+  .export-btn {
+    padding: 14px;
+  }
+
+  .add-txn input,
+  .add-txn select {
+    padding: 14px 16px;
+  }
+}
+
+/* ===============================
+   REDUCE MOTION
+================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .edit-toggle,
+  .toast,
+  .modal {
+    animation: none;
+    transition: none;
+  }
+}

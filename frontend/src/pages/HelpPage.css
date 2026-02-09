@@ -95,3 +95,97 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .help-page {
+    padding: 24px 14px;
+  }
+
+  .help-card {
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .help-card h2 {
+    font-size: 20px;
+  }
+
+  .help-subtitle {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .help-success {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  /* Fields */
+  .help-field {
+    margin-bottom: 16px;
+  }
+
+  .help-field label {
+    font-size: 12.5px;
+  }
+
+  .help-field input,
+  .help-field select,
+  .help-field textarea {
+    padding: 12px 14px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+
+  /* Button */
+  .help-card button {
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 14px;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .help-page {
+    padding: 32px 18px;
+  }
+
+  .help-card {
+    padding: 30px;
+  }
+
+  .help-card h2 {
+    font-size: 23px;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .help-field input,
+  .help-field select,
+  .help-field textarea {
+    padding: 14px 16px;
+  }
+
+  .help-card button {
+    padding: 16px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .help-card button {
+    transition: none;
+  }
+}

@@ -261,3 +261,118 @@
 .help-grid {
   align-items: flex-start;
 }
+
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .help-wrapper {
+    padding: 100px 14px 80px;
+  }
+
+  .help-title h1 {
+    font-size: 26px;
+  }
+
+  .help-subtitle {
+    font-size: 14px;
+  }
+
+  /* Grid spacing */
+  .help-grid {
+    margin-top: 40px;
+    gap: 32px;
+  }
+
+  /* Section headings */
+  .section-heading {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  /* FAQ cards */
+  .faq-button {
+    padding: 16px 16px;
+    font-size: 14px;
+    gap: 10px;
+  }
+
+  .faq-answer {
+    padding: 0 16px 16px;
+    font-size: 13px;
+  }
+
+  /* Form card */
+  .help-form-card {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .form-heading {
+    font-size: 16px;
+  }
+
+  /* Inputs */
+  .help-input {
+    padding: 14px;
+    font-size: 14px;
+  }
+
+  .help-submit-btn {
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  /* Toasts */
+  .error-banner,
+  .success-banner,
+  .form-toast-error {
+    font-size: 13px;
+    padding: 12px;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .help-wrapper {
+    padding: 120px 18px 100px;
+  }
+
+  .help-title h1 {
+    font-size: 30px;
+  }
+
+  .help-grid {
+    gap: 40px;
+  }
+
+  .help-form-card {
+    padding: 28px;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .faq-button {
+    padding: 18px;
+  }
+
+  .help-submit-btn {
+    padding: 16px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .faq-card,
+  .help-submit-btn {
+    transition: none;
+  }
+}

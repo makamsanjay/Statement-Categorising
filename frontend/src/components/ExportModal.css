@@ -200,3 +200,108 @@
 .export-actions .primary:active {
   transform: translateY(0);
 }
+
+/* =========================
+   MOBILE FIRST FIXES
+========================= */
+
+@media (max-width: 640px) {
+  .export-card {
+    width: 100%;
+    max-width: calc(100vw - 24px);
+    padding: 22px 20px;
+    border-radius: 20px;
+  }
+
+  /* Header */
+  .export-card h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  .export-card h3::after {
+    width: 34px;
+    height: 2.5px;
+    margin-top: 10px;
+  }
+
+  /* Groups */
+  .export-group {
+    margin-bottom: 18px;
+  }
+
+  .export-group label {
+    font-size: 12.5px;
+  }
+
+  /* Export format buttons */
+  .export-options {
+    grid-template-columns: 1fr; /* stack on mobile */
+    gap: 10px;
+  }
+
+  .export-options button {
+    padding: 12px 0;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+
+  /* Checkbox rows */
+  .export-group label {
+    font-size: 13px;
+    gap: 10px;
+  }
+
+  /* Actions */
+  .export-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .export-actions .ghost,
+  .export-actions .primary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .export-actions .primary {
+    padding: 14px 0;
+    font-size: 15px;
+  }
+}
+
+/* =========================
+   TABLET IMPROVEMENTS
+========================= */
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .export-card {
+    width: 420px;
+    padding: 28px 28px;
+  }
+
+  .export-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* =========================
+   ACCESSIBILITY & SAFETY
+========================= */
+
+/* Prevent modal clipping on short screens */
+@media (max-height: 700px) {
+  .export-card {
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+  }
+}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .export-overlay,
+  .export-card {
+    animation: none;
+  }
+}

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import "./ProfilePage.css";
 
+const BASE_URL = process.env.REACT_APP_API_URL;
+
 export default function ProfilePage() {
   const token = localStorage.getItem("token");
 
@@ -8,29 +10,31 @@ export default function ProfilePage() {
   const [name, setName] = useState("");
   const [saved, setSaved] = useState(false);
 
-  /* DELETE FLOW STATE */
-  const [deleteStep, setDeleteStep] = useState("idle"); 
-  // idle | otpSent | verified
+  const [deleteStep, setDeleteStep] = useState("idle");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
 
   /* ---------------- LOAD PROFILE ---------------- */
   useEffect(() => {
-    fetch("http://localhost:5050/users/me", {
+    fetch(`${BASE_URL}/users/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to load profile");
+        return res.json();
+      })
       .then(data => {
         setProfile(data);
         setName(data.name || "");
-      });
+      })
+      .catch(() => setError("Unable to load profile"));
   }, [token]);
 
   /* ---------------- SAVE NAME ---------------- */
   const saveName = async () => {
     if (!name.trim() || saved) return;
 
-    await fetch("http://localhost:5050/users/me", {
+    await fetch(`${BASE_URL}/users/me`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -42,17 +46,14 @@ export default function ProfilePage() {
     setSaved(true);
   };
 
-  /* ---------------- DELETE ACCOUNT FLOW ---------------- */
+  /* ---------------- DELETE ACCOUNT ---------------- */
 
   const sendDeleteOTP = async () => {
     setError("");
-    const res = await fetch(
-      "http://localhost:5050/users/delete/send-otp",
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
+    const res = await fetch(`${BASE_URL}/users/delete/send-otp`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
     if (!res.ok) {
       const err = await res.json();
@@ -64,27 +65,22 @@ export default function ProfilePage() {
   };
 
   const verifyDeleteOTP = async () => {
-    setError("");
     if (otp.length !== 6) {
       setError("Enter the 6-digit code");
       return;
     }
 
-    const res = await fetch(
-      "http://localhost:5050/users/delete/verify-otp",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ otp })
-      }
-    );
+    const res = await fetch(`${BASE_URL}/users/delete/verify-otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ otp })
+    });
 
-    const data = await res.json();
     if (!res.ok) {
-      setError(data.error || "Invalid code");
+      setError("Invalid code");
       return;
     }
 
@@ -92,14 +88,13 @@ export default function ProfilePage() {
   };
 
   const confirmDeleteAccount = async () => {
-    const res = await fetch("https://spendswitch.com/users/me", {
+    const res = await fetch(`${BASE_URL}/users/me`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      setError(err.error || "Delete failed");
+      setError("Delete failed");
       return;
     }
 
@@ -109,13 +104,11 @@ export default function ProfilePage() {
 
   if (!profile) return <p className="muted">Loading profile…</p>;
 
-  /* ---------------- JSX ---------------- */
   return (
     <div className="profile-page">
       <div className="profile-card">
         <h2>Personal Information</h2>
 
-        {/* NAME */}
         <div className="profile-field">
           <label>Your Name</label>
           <input
@@ -123,25 +116,19 @@ export default function ProfilePage() {
             disabled={saved}
             onChange={e => setName(e.target.value)}
             onBlur={saveName}
-            onKeyDown={e => e.key === "Enter" && saveName()}
           />
           {saved && <span className="profile-hint">Saved</span>}
         </div>
 
-        {/* EMAIL */}
         <div className="profile-field">
           <label>Email</label>
           <div className="profile-readonly">{profile.email}</div>
         </div>
       </div>
 
-      {/* ================= DELETE ACCOUNT ================= */}
       <div className="profile-card danger">
         <h3>Delete account</h3>
-        <p className="muted">
-          This will permanently delete your account, cards, transactions,
-          budgets, and AI history. This action cannot be undone.
-        </p>
+        <p className="muted">This action is permanent.</p>
 
         {error && <div className="error-box">{error}</div>}
 

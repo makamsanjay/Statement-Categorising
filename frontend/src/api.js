@@ -35,7 +35,14 @@ export const previewUpload = async (file) => {
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Preview failed");
+
+  if (!res.ok) {
+    const err = new Error(
+      data.message || data.error || "Preview failed"
+    );
+    err.upgrade = data.upgrade === true;
+    throw err;
+  }
 
   return data;
 };
@@ -540,4 +547,36 @@ export const submitSupportRequest = async (payload) => {
   }
 
   return res.json();
+};
+
+export const addManualTransaction = async (txn) => {
+  const res = await authFetch(`${BASE_URL}/transactions`, {
+    method: "POST",
+    body: JSON.stringify(txn)
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || "Failed to add transaction");
+  }
+
+  return data;
+};
+
+/* ============================
+   MANUAL TRANSACTION (ADD)
+   ============================ */
+export const createTransaction = async (payload) => {
+  const res = await authFetch(`${BASE_URL}/transactions`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+  const text = await res.text();
+  throw new Error(text || "Failed to create transaction");
+}
+
+return await res.json();
 };

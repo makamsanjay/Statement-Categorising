@@ -91,3 +91,92 @@
   margin: 12px 0;
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* ================================
+   RESPONSIVE SIDEBAR BEHAVIOR
+================================ */
+
+/* ---------- Base safety ---------- */
+.sidebar {
+  transition: transform 0.25s ease;
+}
+
+/* ================================
+   MOBILE (≤ 768px)
+================================ */
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%); /* hidden by default */
+    width: min(88vw, 300px);
+    padding: 20px 16px;
+    z-index: 3000;
+  }
+
+  /* When sidebar is opened */
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Bigger tap targets */
+  .sidebar-item {
+    font-size: 15px;
+    padding: 14px 14px;
+  }
+
+  .upload-cta {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+}
+
+/* ================================
+   TABLET (769px – 1024px)
+   Slightly tighter sidebar
+================================ */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar {
+    width: 220px;
+    padding: 20px 14px;
+  }
+
+  .sidebar-item {
+    font-size: 13.5px;
+    padding: 10px 10px;
+  }
+
+  .upload-cta {
+    font-size: 13.5px;
+  }
+}
+
+/* ================================
+   MOBILE OVERLAY (optional but recommended)
+================================ */
+
+/* Dim background when sidebar is open */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.55);
+  z-index: 2500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ================================
+   ACCESSIBILITY
+================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}

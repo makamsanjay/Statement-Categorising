@@ -93,3 +93,103 @@
   text-align: center;
   padding: 40px;
 }
+
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .billing-page {
+    padding: 20px 14px;
+  }
+
+  .billing-title {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .billing-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  /* Stack rows on mobile */
+  .billing-row {
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  /* Actions stack */
+  .billing-actions {
+    margin-top: 20px;
+  }
+
+  .billing-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .billing-btn + .billing-btn {
+    margin-left: 0;
+    margin-top: 10px;
+  }
+
+  /* Cancel warning */
+  .cancel-warning {
+    padding: 12px;
+  }
+
+  .cancel-warning p {
+    font-size: 13px;
+  }
+
+  .cancel-actions {
+    margin-top: 10px;
+  }
+
+  /* Note */
+  .billing-note {
+    font-size: 11.5px;
+  }
+
+  /* Loading / error */
+  .billing-loading,
+  .billing-error {
+    padding: 28px;
+    font-size: 14px;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .billing-page {
+    padding: 22px 18px;
+  }
+
+  .billing-card {
+    padding: 16px;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .billing-btn {
+    padding: 14px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .billing-btn {
+    transition: none;
+  }
+}
+

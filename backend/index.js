@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
   res.status(200).send("SpendSwitch backend running");
 });
 
-console.log("🔄 Booting SpendSwitch backend...");
+console.log("Booting SpendSwitch backend...");
 
 /* ================================
    🔑 TRUST PROXY (REQUIRED)

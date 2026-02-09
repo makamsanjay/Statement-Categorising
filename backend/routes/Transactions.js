@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const Transaction = require("../models/Transaction");
-const Card = require("../models/Card"); // ⚠️ REQUIRED (was missing)
+const Card = require("../models/Card");
 
 const auth = require("../middleware/auth");
 const loadUser = require("../middleware/loadUser");
@@ -19,6 +19,53 @@ router.get("/", auth, loadUser, async (req, res) => {
     res.json(transactions);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/* ============================
+   CREATE SINGLE TRANSACTION (MANUAL ADD)
+   Unlimited for all plans
+============================ */
+router.post("/", auth, loadUser, async (req, res) => {
+  try {
+    const { date, description, amount, category, cardId, currency } = req.body;
+
+    if (!date || !description || amount === undefined || !category || !cardId) {
+      return res.status(400).json({
+        error: "Missing required fields"
+      });
+    }
+
+    // verify card belongs to user
+    const card = await Card.findOne({
+      _id: cardId,
+      userId: req.user._id
+    });
+
+    if (!card) {
+      return res.status(404).json({
+        error: "Card not found"
+      });
+    }
+
+    const txn = await Transaction.create({
+      userId: req.user._id,
+      cardId,
+      date,
+      description,
+      amount,
+      category,
+      currency,
+      source: "manual",
+      confidence: 1
+    });
+
+    res.json(txn);
+  } catch (err) {
+    console.error(" Manual transaction failed:", err);
+    res.status(500).json({
+      error: "Failed to add transaction"
+    });
   }
 });
 

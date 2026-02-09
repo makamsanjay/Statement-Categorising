@@ -357,3 +357,151 @@ body.dark,
 .secondary-btn {
   margin-top: 8px;
 }
+
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .pricing-container {
+    padding: 110px 14px 80px;
+  }
+
+  .pricing-title {
+    font-size: 28px;
+  }
+
+  .pricing-subtitle {
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  /* Currency switcher */
+  .currency-switcher {
+    margin: 32px 0 6px;
+  }
+
+  .currency-switcher select {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  /* Cards stack cleanly */
+  .pricing-cards {
+    margin-top: 42px;
+    gap: 24px;
+  }
+
+  .pricing-card {
+    width: 100%;
+    padding: 26px 22px;
+    border-radius: 20px;
+  }
+
+  .pricing-card.highlight::before {
+    top: -12px;
+    right: 16px;
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+
+  /* Price block */
+  .price {
+    font-size: 30px;
+  }
+
+  .per {
+    font-size: 13px;
+  }
+
+  .billing {
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* Discount */
+  .discount-row {
+    gap: 8px;
+  }
+
+  .old-price {
+    font-size: 14px;
+  }
+
+  .discount-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  /* Features */
+  .features {
+    margin: 14px 0 20px;
+  }
+
+  .features li {
+    font-size: 13px;
+  }
+
+  /* Buttons */
+  .primary-btn,
+  .secondary-btn {
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 14px;
+  }
+
+  .plan-note,
+  .trust-text {
+    font-size: 0.75rem;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .pricing-container {
+    padding: 120px 18px 90px;
+  }
+
+  .pricing-cards {
+    gap: 32px;
+  }
+
+  .pricing-card {
+    width: 300px;
+    padding: 30px 26px;
+  }
+
+  .price {
+    font-size: 34px;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .primary-btn,
+  .secondary-btn {
+    padding: 16px;
+  }
+
+  .currency-switcher select {
+    padding: 14px 16px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .pricing-card,
+  .discount-badge,
+  .primary-btn,
+  .secondary-btn {
+    transition: none;
+    animation: none;
+  }
+}

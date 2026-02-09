@@ -119,3 +119,98 @@
   padding: 40px;
   color: #64748b;
 }
+
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .health-page {
+    padding: 20px 12px;
+  }
+
+  .health-card {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  /* Header */
+  .health-header h2 {
+    font-size: 18px;
+  }
+
+  /* Tooltip safety on small screens */
+  .health-tooltip {
+    width: min(90vw, 260px);
+    right: -8px;
+    font-size: 11.5px;
+  }
+
+  /* Score */
+  .health-score {
+    margin: 18px 0;
+  }
+
+  .health-score-value {
+    font-size: 44px;
+  }
+
+  .health-score-max {
+    font-size: 18px;
+  }
+
+  /* Insights */
+  .health-insights h4 {
+    font-size: 15px;
+  }
+
+  .health-insights li {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  /* Empty / loading */
+  .health-muted {
+    font-size: 12.5px;
+  }
+
+  .health-loading {
+    padding: 28px;
+    font-size: 14px;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .health-card {
+    padding: 24px;
+  }
+
+  .health-score-value {
+    font-size: 50px;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .health-info {
+    font-size: 16px;
+  }
+
+  .health-insights li {
+    padding: 12px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .health-tooltip {
+    transition: none;
+  }
+}

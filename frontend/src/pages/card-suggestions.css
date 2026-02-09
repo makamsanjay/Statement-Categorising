@@ -383,3 +383,165 @@
   color: #dc2626;
   opacity: 1;
 }
+
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .card-suggestions-page {
+    padding: 18px 14px;
+  }
+
+  .card-suggestions-page h2 {
+    font-size: 1.5rem;
+    margin-bottom: 18px;
+  }
+
+  /* Suggestion input box */
+  .card-suggestion-box {
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 26px;
+  }
+
+  .card-suggestion-box::before {
+    font-size: 0.7rem;
+    margin-bottom: 8px;
+  }
+
+  .card-suggestion-box select {
+    font-size: 0.9rem;
+    padding: 12px 14px;
+  }
+
+  .card-suggestion-box button.primary {
+    width: 100%;
+    padding: 14px 0;
+    font-size: 0.95rem;
+  }
+
+  /* Results container */
+  .suggestion-results {
+    padding: 18px;
+    border-radius: 18px;
+    margin-bottom: 30px;
+  }
+
+  .suggestion-results .summary {
+    font-size: 0.9rem;
+  }
+
+  /* Header */
+  .results-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+
+  /* Info banner */
+  .info-banner {
+    padding: 12px 14px;
+    font-size: 0.85rem;
+  }
+
+  .info-banner::after {
+    font-size: 0.65rem;
+    top: 12px;
+  }
+
+  /* Card grid → single column */
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Suggestion card */
+  .suggestion-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .suggestion-card h5 {
+    font-size: 0.95rem;
+    padding-right: 70px;
+  }
+
+  .rate {
+    font-size: 1.05rem;
+  }
+
+  /* History */
+  .suggestion-history {
+    margin-top: 16px;
+  }
+
+  .suggestion-history h4 {
+    font-size: 1rem;
+  }
+
+  .history-item {
+    padding: 14px 14px 16px;
+    border-radius: 14px;
+  }
+
+  .history-item strong {
+    font-size: 0.9rem;
+  }
+
+  .history-item .small {
+    font-size: 0.75rem;
+  }
+
+  .delete-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .card-suggestions-page {
+    padding: 22px 18px;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+
+  .suggestion-results {
+    padding: 22px;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .close-btn,
+  .delete-btn {
+    padding: 6px;
+  }
+
+  .card-suggestion-box select {
+    padding: 14px 16px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .suggestion-card,
+  .history-item,
+  .card-suggestion-box button.primary {
+    transition: none;
+  }
+}

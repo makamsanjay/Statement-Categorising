@@ -61,56 +61,66 @@ const showToast = (message, duration = 8000) => {
   /* =========================
      HANDLE UPLOAD / PREVIEW
      ========================= */
-  const handleUpload = async () => {
-    const inputFiles = fileInputRef.current?.files
-      ? Array.from(fileInputRef.current.files)
-      : [];
+const handleUpload = async () => {
+  const inputFiles = fileInputRef.current?.files
+    ? Array.from(fileInputRef.current.files)
+    : [];
 
-    if (!inputFiles.length) {
-      showToast("Select file(s)");
-      return;
-    }
+  if (!inputFiles.length) {
+    showToast("Select file(s)");
+    return;
+  }
 
-    let pdfPreview = [];
-    let skippedMessages = [];
+  let pdfPreview = [];
+  let skippedMessages = [];
 
-    for (const file of inputFiles) {
-      if (file.type === "application/pdf") {
-        try {
-          const data = await previewUpload(file);
-          const rows = data.transactions || [];
-
-          pdfPreview.push(
-            ...rows.map(t => ({
-              ...t,
-              selected: true
-            }))
-          );
-        } catch (err) {
-          skippedMessages.push(`${file.name}: ${err.message}`);
-        }
-      } else {
-        skippedMessages.push(
-          `${file.name}: Only PDF uploads are supported for preview`
-        );
-      }
-    }
-
-    if (pdfPreview.length) {
-      setPreview(pdfPreview);
-      setShowPreview(true);
-    }
-
-    if (skippedMessages.length) {
-      showToast(
-        "Some files were skipped:\n\n" +
-          skippedMessages.map(m => `• ${m}`).join("\n")
+  for (const file of inputFiles) {
+    // ❌ Non-PDFs
+    if (file.type !== "application/pdf") {
+      skippedMessages.push(
+        `${file.name}: Only PDF uploads are supported for preview`
       );
+      continue;
     }
 
-    // ✅ FULL RESET AFTER PREVIEW
-    resetFileInput();
-  };
+    try {
+      const data = await previewUpload(file);
+      const rows = data.transactions || [];
+
+      pdfPreview.push(
+        ...rows.map(t => ({
+          ...t,
+          selected: true
+        }))
+      );
+    } catch (err) {
+      // 🔴 FREE PLAN LIMIT — STOP EVERYTHING
+      if (err.upgrade) {
+        showToast(err.message); // ✅ correct backend message
+        resetFileInput();
+        return; // ⛔ DO NOT continue
+      }
+
+      // 🟡 Real PDF / parsing error
+      skippedMessages.push(`${file.name}: ${err.message}`);
+    }
+  }
+
+  if (pdfPreview.length) {
+    setPreview(pdfPreview);
+    setShowPreview(true);
+  }
+
+  if (skippedMessages.length) {
+    showToast(
+      "Some files were skipped:\n\n" +
+        skippedMessages.map(m => `• ${m}`).join("\n")
+    );
+  }
+
+  // ✅ FULL RESET AFTER PREVIEW
+  resetFileInput();
+};
 
   /* =========================
      CONFIRM & SAVE
@@ -138,7 +148,9 @@ const showToast = (message, duration = 8000) => {
     }));
 
     try {
-      await saveConfirmedTransactions(payload);
+      await saveConfirmedTransactions({
+  transactions: payload
+});
     } catch (err) {
       showToast(err.message || "Upload failed");
       return;

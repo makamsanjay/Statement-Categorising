@@ -162,3 +162,110 @@
   color: #dc2626; /* red-600 */
   margin-top: -4px;
 }
+
+/* ================================
+   MOBILE FIRST FIXES
+================================ */
+
+/* Stack row items on small screens */
+@media (max-width: 640px) {
+  .original-card-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .original-card-text {
+    font-size: 13.5px;
+  }
+
+  .icon-btn {
+    align-self: flex-start;
+    padding: 6px;
+    font-size: 15px;
+  }
+
+  /* Add button */
+  .add-original-btn {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  /* Form container */
+  .original-card-form {
+    max-width: 100%;
+    padding: 14px;
+  }
+
+  /* Inputs */
+  .original-card-form input {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  /* Actions stack */
+  .original-card-form .actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .original-card-form .primary,
+  .original-card-form .secondary {
+    width: 100%;
+    padding: 10px 0;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  /* Error spacing */
+  .inline-error {
+    font-size: 12.5px;
+  }
+}
+
+/* ================================
+   TABLET TWEAKS
+================================ */
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .original-card-row {
+    gap: 10px;
+  }
+
+  .original-card-form {
+    max-width: 420px;
+  }
+
+  .original-card-form input {
+    font-size: 14.5px;
+  }
+}
+
+/* ================================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+/* Better tap targets */
+@media (pointer: coarse) {
+  .icon-btn {
+    padding: 8px;
+  }
+
+  .info-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
+  }
+}
+
+/* Reduce motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn,
+  .add-original-btn,
+  .original-card-form button {
+    transition: none;
+  }
+}
+

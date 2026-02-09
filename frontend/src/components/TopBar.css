@@ -167,3 +167,110 @@
   background: #ecfdf5;
   border-color: #6ee7b7;
 }
+
+/* ================================
+   RESPONSIVE TOPBAR FIXES
+================================ */
+
+/* Smooth transition when sidebar opens/closes */
+.topbar {
+  transition: left 0.25s ease;
+}
+
+/* ================================
+   MOBILE (≤ 768px)
+================================ */
+
+@media (max-width: 768px) {
+  .topbar {
+    left: 0; /* sidebar hidden on mobile */
+    padding: 0 12px;
+  }
+
+  /* Actions spacing */
+  .topbar-actions {
+    gap: 10px;
+  }
+
+  /* Upgrade button smaller */
+  .topbar-upgrade {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  /* Logout button tighter */
+  .topbar-logout {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  /* Profile button bigger tap target */
+  .topbar-profile {
+    padding: 8px;
+  }
+
+  /* Dropdown: center-safe on small screens */
+  .profile-dropdown {
+    right: 8px;
+    width: min(90vw, 220px);
+  }
+
+  /* Hide plan badge text if needed */
+  .topbar-plan {
+    display: none;
+  }
+}
+
+/* ================================
+   TABLET (769px – 1024px)
+================================ */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .topbar {
+    left: 220px; /* matches tablet sidebar width */
+  }
+
+  .topbar-actions {
+    gap: 12px;
+  }
+
+  .topbar-upgrade {
+    font-size: 13.5px;
+  }
+}
+
+/* ================================
+   SIDEBAR OPEN STATE (MOBILE)
+   Optional polish
+================================ */
+
+/* If body has sidebar-open class */
+@media (max-width: 768px) {
+  body.sidebar-open .topbar {
+    left: 0;
+  }
+}
+
+/* ================================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .dropdown-item {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .dropdown-select {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .topbar,
+  .topbar-upgrade {
+    transition: none;
+  }
+}

@@ -1,38 +1,48 @@
+/* ================= COOKIE BANNER (MOBILE FIRST) ================= */
+
 .cookie-banner {
   position: fixed;
-  bottom: 20px;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
+  width: calc(100% - 24px);      /* full-width on mobile */
   max-width: 520px;
   background: rgba(15, 23, 42, 0.95);
   color: #fff;
-  padding: 16px 18px;
+  padding: 14px 14px;
   border-radius: 14px;
   display: flex;
-  gap: 14px;
-  align-items: center;
+  flex-direction: column;        /* stack on mobile */
+  gap: 12px;
+  align-items: stretch;
   z-index: 1000;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
+/* ---------- Text ---------- */
+
 .cookie-text {
-  font-size: 14px;
-  line-height: 1.4;
-  flex: 1;
+  font-size: 13.5px;
+  line-height: 1.45;
 }
+
+/* ---------- Actions ---------- */
 
 .cookie-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .cookie-actions button {
+  flex: 1;                       /* full-width buttons */
   border: none;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 10px 12px;            /* better tap target */
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
 }
+
+/* ---------- Buttons ---------- */
 
 .cookie-actions .accept {
   background: #22c55e;
@@ -43,4 +53,30 @@
   background: transparent;
   color: #cbd5f5;
   border: 1px solid #475569;
+}
+
+/* ================= TABLET & UP ================= */
+
+@media (min-width: 640px) {
+  .cookie-banner {
+    bottom: 20px;
+    padding: 16px 18px;
+    flex-direction: row;         /* side-by-side again */
+    align-items: center;
+  }
+
+  .cookie-text {
+    font-size: 14px;
+    flex: 1;
+  }
+
+  .cookie-actions {
+    flex-shrink: 0;
+  }
+
+  .cookie-actions button {
+    flex: unset;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
 }

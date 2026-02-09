@@ -8,7 +8,63 @@
     ],
     "rewrites": [
       {
-        "source": "**",
+        "source": "/transactions/**",
+        "run": {
+          "serviceId": "spendswitch-backend",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/upload/**",
+        "run": {
+          "serviceId": "spendswitch-backend",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/cards/**",
+        "run": {
+          "serviceId": "spendswitch-backend",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/auth/**",
+        "run": {
+          "serviceId": "spendswitch-backend",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/billing/**",
+        "run": {
+          "serviceId": "spendswitch-backend",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/budget/**",
+        "run": {
+          "serviceId": "spendswitch-backend",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/health/**",
+        "run": {
+          "serviceId": "spendswitch-backend",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/ai/**",
+        "run": {
+          "serviceId": "spendswitch-backend",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/**",
         "destination": "/index.html"
       }
     ]

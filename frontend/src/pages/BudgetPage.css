@@ -128,3 +128,113 @@
   border-radius: 999px;
   transition: width 0.3s ease;
 }
+
+/* ===============================
+   MOBILE FIRST (≤ 640px)
+================================ */
+
+@media (max-width: 640px) {
+  .budget-page {
+    padding: 16px 14px;
+  }
+
+  .budget-title {
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+
+  /* Form stacks cleanly */
+  .budget-form {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .budget-form select,
+  .budget-form input,
+  .budget-form button {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  /* Budget card stacks */
+  .budget-card {
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .budget-left {
+    gap: 6px;
+  }
+
+  .budget-name {
+    font-size: 15px;
+  }
+
+  .budget-sub {
+    font-size: 13px;
+  }
+
+  .budget-amount {
+    font-size: 14px;
+  }
+
+  /* Right side becomes horizontal */
+  .budget-right {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .budget-actions {
+    gap: 12px;
+  }
+
+  .icon-btn {
+    font-size: 18px;
+    padding: 6px;
+  }
+
+  /* Progress bar scales */
+  .progress-track {
+    width: 100%;
+    height: 10px;
+  }
+}
+
+/* ===============================
+   TABLET (641px – 1024px)
+================================ */
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .budget-page {
+    padding: 18px 16px;
+  }
+
+  .budget-card {
+    padding: 14px 14px;
+  }
+
+  .progress-track {
+    width: 160px;
+  }
+}
+
+/* ===============================
+   TOUCH & ACCESSIBILITY
+================================ */
+
+@media (pointer: coarse) {
+  .icon-btn {
+    padding: 8px;
+  }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .budget-card,
+  .progress-fill {
+    transition: none;
+  }
+}
