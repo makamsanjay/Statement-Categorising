@@ -10,7 +10,16 @@ const { generalLimiter } = require("./middleware/rateLimiters");
 const app = express();
 
 /* ================================
-   🔑 TRUST PROXY (REQUIRED FOR RATE LIMIT)
+   🟢 BASIC HEALTH CHECK (REQUIRED)
+================================ */
+app.get("/", (req, res) => {
+  res.status(200).send("SpendSwitch backend running");
+});
+
+console.log("🔄 Booting SpendSwitch backend...");
+
+/* ================================
+   🔑 TRUST PROXY (REQUIRED)
 ================================ */
 app.set("trust proxy", 1);
 
@@ -19,7 +28,7 @@ app.set("trust proxy", 1);
 ================================ */
 app.use(
   helmet({
-    contentSecurityPolicy: false, // React needs this disabled
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false
   })
 );
@@ -32,14 +41,14 @@ const ALLOWED_ORIGINS = [
   "http://localhost:5173",
   "https://spendswitch.com",
   "https://www.spendswitch.com",
-  "https://api.spendswitch.com"
+  "https://api.spendswitch.com",
+  "https://spendswitch.web.app"
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // mobile / curl
-      if (ALLOWED_ORIGINS.includes(origin)) {
+    origin: (origin, callback) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
       return callback(new Error("Not allowed by CORS"));
@@ -49,15 +58,16 @@ app.use(
 );
 
 /* ================================
-   🧱 GLOBAL RATE LIMITER (EARLY)
+   🧱 GLOBAL RATE LIMITER
 ================================ */
 app.use(generalLimiter);
 
 /* ================================
    🔔 RAZORPAY WEBHOOK (RAW BODY)
+   ⚠️ MUST COME BEFORE JSON PARSER
 ================================ */
 app.post(
-  "/api.spendswitch.com/razorpay/webhook",
+  "/api/razorpay/webhook",
   express.raw({ type: "application/json" }),
   razorpayWebhook
 );
@@ -91,12 +101,20 @@ app.use("/ai/card-suggestions", require("./routes/cardSuggestions"));
 app.use((err, req, res, next) => {
   console.error("GLOBAL ERROR:", err.message);
   res.status(err.status || 500).json({
-  error: err.message || "Internal server error"
-});
+    error: err.message || "Internal server error"
+  });
 });
 
 /* ================================
-   DATABASE
+   🚀 START SERVER FIRST (CRITICAL)
+================================ */
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`🚀 Server listening on port ${PORT}`);
+});
+
+/* ================================
+   🗄️ DATABASE (NON-BLOCKING)
 ================================ */
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET is not set");
@@ -104,13 +122,7 @@ if (!process.env.JWT_SECRET) {
 
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
+  .then(() => console.log("✅ MongoDB connected"))
   .catch(err => {
-    console.error("Mongo error:", err.message);
-    process.exit(1);
+    console.error("❌ Mongo error:", err.message);
   });
-
-const PORT = process.env.PORT || 5050;
-app.listen(PORT, () =>
-  console.log(`🚀 Server running on port ${PORT}`)
-);

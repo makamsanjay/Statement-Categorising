@@ -92,7 +92,7 @@ export default function ProfilePage() {
   };
 
   const confirmDeleteAccount = async () => {
-    const res = await fetch("http://localhost:5050/users/me", {
+    const res = await fetch("https://spendswitch.com/users/me", {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     });
