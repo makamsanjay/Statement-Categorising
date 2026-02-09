@@ -903,15 +903,22 @@ onClick={() => {
           Cancel
         </button>
 
-        <button
-          className="primary"
-          onClick={() => {
-            modal.onSubmit(modalInput);
-            setModalInput(""); // 🔥 clear after confirm
-          }}
-        >
-          Confirm
-        </button>
+       <button
+  className="primary"
+  onClick={() => {
+    if (modal.type === "input") {
+      modal.onSubmit(modalInput);
+      setModalInput("");
+    }
+
+    if (modal.type === "confirm") {
+      modal.onConfirm();
+    }
+  }}
+>
+  Confirm
+</button>
+
       </div>
     </div>
   </div>
