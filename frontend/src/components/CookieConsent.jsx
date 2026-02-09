@@ -9,7 +9,7 @@ export default function CookieConsent() {
     if (!consent) {
       setVisible(true);
 
-      // ⏱ auto-hide after 1 minute
+      // Auto-hide after 1 minute if no action
       const timer = setTimeout(() => {
         setVisible(false);
       }, 60000);
@@ -22,7 +22,7 @@ export default function CookieConsent() {
     localStorage.setItem("cookieConsent", "accepted");
     setVisible(false);
 
-    // 🔔 tell app consent changed
+    // Notify app about consent change
     window.dispatchEvent(new Event("cookie-consent-updated"));
   };
 
@@ -36,8 +36,9 @@ export default function CookieConsent() {
   return (
     <div className="cookie-banner">
       <div className="cookie-text">
-        We use cookies only to understand how our website is used.
-        No ads. No tracking by default.
+        We use essential cookies to keep SpendSwitch running smoothly and
+        optional cookies to understand how the site is used.
+        We do not use cookies for advertising.
       </div>
 
       <div className="cookie-actions">

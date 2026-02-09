@@ -1,26 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Basic meta -->
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+
+    <!-- Brand & SEO -->
+    <title>SpendSwitch – Understand Your Spending Effortlessly</title>
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="SpendSwitch helps you upload bank statements, analyze spending across cards, and get clear financial insights without spreadsheets or manual work."
     />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
 
+    <!-- Theme -->
+    <meta name="theme-color" content="#0f172a" />
+
+    <link rel="icon" href="%PUBLIC_URL%/sslogo.png" />
+
+    <!-- Manifest -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-    <title>React App</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZJVH8MV221"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+
+      /* Consent mode: default denied */
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        analytics_storage: 'denied'
+      });
+
+      gtag('js', new Date());
+    </script>
   </head>
+
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      SpendSwitch requires JavaScript to function properly.
+    </noscript>
+
     <div id="root"></div>
 
-    <!-- Razorpay Checkout (GLOBAL, load once) -->
+    <!-- Razorpay Checkout -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
   </body>
 </html>

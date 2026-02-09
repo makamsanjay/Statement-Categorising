@@ -1,23 +1,29 @@
-let loaded = false;
+const GA_ID = "G-ZJVH8MV221";
+let enabled = false;
 
-export function loadGoogleAnalytics() {
-  if (loaded) return;
-  loaded = true;
+export function enableAnalytics() {
+  if (enabled || !window.gtag) return;
+  enabled = true;
 
-  // 🔒 DO NOTHING for now
-  // When ready, uncomment below and add GA ID
+  // Grant analytics consent
+  window.gtag("consent", "update", {
+    analytics_storage: "granted",
+  });
 
-  /*
-  const script = document.createElement("script");
-  script.src = "https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX";
-  script.async = true;
-  document.head.appendChild(script);
+  // Configure GA
+  window.gtag("config", GA_ID, {
+    anonymize_ip: true,
+    send_page_view: false, // SPA handles this manually
+  });
 
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){window.dataLayer.push(arguments);}
-  gtag("js", new Date());
-  gtag("config", "G-XXXXXXXXXX");
-  */
+  console.log("Analytics enabled");
+}
 
-  console.log("📊 Google Analytics loaded (consent granted)");
+export function trackPageView(path) {
+  if (!window.gtag || !enabled) return;
+
+  window.gtag("event", "page_view", {
+    page_path: path,
+    send_to: GA_ID,
+  });
 }

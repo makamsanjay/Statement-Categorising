@@ -8,18 +8,20 @@ import PaymentPage from "./pages/PaymentPage";
 import PricingPage from "./pages/PricingPage";
 import LandingPage from "./pages/LandingPage";
 import ContactPage from "./pages/ContactPage";
-import { loadGoogleAnalytics } from "./utils/analytics";
-import RequireAuth from "./components/RequireAuth";
+
+import { enableAnalytics } from "./utils/analytics";
+
 import PrivacyPolicy from "./components/layout/PrivacyPolicy";
-import ScrollToTop from "./components/layout/ScrollToTop";
 import TermsOfService from "./components/layout/TermsOfService";
 import DataSecurity from "./components/layout/DataSecurity";
 
+import ScrollToTop from "./components/layout/ScrollToTop";
+import TrackPageView from "./components/TrackPageView";
 
 // Providers
 import ThemeProvider from "./components/providers/ThemeProvider";
 
-// ✅ Navbar controller
+// Navbar controller
 import NavbarGate from "./components/layout/NavbarGate";
 
 function App() {
@@ -27,6 +29,7 @@ function App() {
     localStorage.getItem("token")
   );
 
+  // Sync auth across tabs
   useEffect(() => {
     const syncAuth = () => {
       setToken(localStorage.getItem("token"));
@@ -36,35 +39,38 @@ function App() {
     return () => window.removeEventListener("storage", syncAuth);
   }, []);
 
+  // Enable Google Analytics only after consent
   useEffect(() => {
-  const maybeLoadGA = () => {
-    if (localStorage.getItem("cookieConsent") === "accepted") {
-      loadGoogleAnalytics();
-    }
-  };
+    const maybeEnableGA = () => {
+      if (localStorage.getItem("cookieConsent") === "accepted") {
+        enableAnalytics();
+      }
+    };
 
-  maybeLoadGA();
-  window.addEventListener("cookie-consent-updated", maybeLoadGA);
+    // Check immediately
+    maybeEnableGA();
 
-  return () =>
-    window.removeEventListener("cookie-consent-updated", maybeLoadGA);
-}, []);
-
+    // Listen for consent changes
+    window.addEventListener("cookie-consent-updated", maybeEnableGA);
+    return () =>
+      window.removeEventListener("cookie-consent-updated", maybeEnableGA);
+  }, []);
 
   return (
-    
     <ThemeProvider>
       <BrowserRouter>
-        {/* ✅ NAVBAR ONLY WHERE ALLOWED */}
+        {/* Global helpers */}
+        <ScrollToTop />
+        <TrackPageView />
+
+        {/* Navbar */}
         <NavbarGate />
-         <ScrollToTop />
 
         <Routes>
           {/* 🌐 Public */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/pricing" element={<PricingPage />} />
-          {/* future */}
-          {/* <Route path="/help" element={<HelpPage />} /> */}
+          <Route path="/help" element={<ContactPage />} />
 
           {/* 🔐 Auth */}
           <Route
@@ -85,12 +91,10 @@ function App() {
             element={token ? <Dashboard /> : <Navigate to="/login" />}
           />
 
-          <Route path="/help" element={<ContactPage />} />
-
-<Route path="/privacy-policy" element={<PrivacyPolicy />} />
-<Route path="/terms" element={<TermsOfService />} />
-<Route path="/data-security" element={<DataSecurity />} />
-
+          {/* 📜 Legal */}
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/data-security" element={<DataSecurity />} />
 
           {/* ❓ Fallback */}
           <Route path="*" element={<Navigate to="/" />} />
